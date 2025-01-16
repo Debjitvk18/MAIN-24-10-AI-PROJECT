@@ -2,13 +2,11 @@
     import Logo from "$lib/components/general/Logo.svelte";
     import { AuthService } from '$lib/services/auth-service';
     import LoadingButton from "$lib/components/form/buttons/LoadingButton.svelte";
-	import { goto } from "$app/navigation";
 	import Errors from "$lib/components/form/messages/Errors.svelte";
+	import { goto } from "$app/navigation";
 
-    let name = '';
     let email = '';
-    let password = '';
-    let password_confirmation = '';
+    let hash = '';
     let errorMessages: string[] = [];
     let isLoading = false;
 
@@ -19,9 +17,9 @@
         isLoading = true;
 
         try {
-            const data = await authService.register({ name, email, password, password_confirmation });
+            const data = await authService.verifyEmail({ email, hash });
             if (data.success) {
-                goto('/verify-email');
+                goto('/login');
             } else {
                 handleErrors(data);
             }
@@ -57,33 +55,25 @@
             <Errors {errorMessages} />
             <form on:submit={handleSubmit}>
                 <div>
-                    <label class="block font-medium text-sm text-gray-700" for="name">Name</label>
-                    <input class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full" id="name" type="text" bind:value={name} required>
-                </div>
-                <div class="mt-4">
-                    <label class="block font-medium text-sm text-gray-700" for="email">Email</label>
+                    <label for="email" class="block font-medium text-sm text-gray-700">
+						Email
+					</label>
                     <input class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full" id="email" type="email" bind:value={email} required>
-                </div>
-                <div class="mt-4">
-                    <label class="block font-medium text-sm text-gray-700" for="password">Password</label>
-                    <input class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full" id="password" type="password" bind:value={password} required autocomplete="current-password">
                 </div>
 
                 <div class="mt-4">
-                    <label class="block font-medium text-sm text-gray-700" for="password_confirmation">Confirm Password</label>
-                    <input class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full" id="password_confirmation" type="password" bind:value={password_confirmation} required autocomplete="current-password">
+                    <label for="hash" class="block font-medium text-sm text-gray-700">
+						code from email
+					</label>
+                    <input class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full" id="hash" type="text" bind:value={hash} required>
                 </div>
 
                 <div class="flex items-center justify-end mt-4">
-                    <a class="underline text-sm text-gray-600 hover:text-gray-900" href="/login">
-                        Already registered?
-                    </a>
-                    
                     {#if isLoading}
-                        <LoadingButton buttonText="Register" />
+                        <LoadingButton buttonText="Verifying..." />
                     {:else}
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition ml-4">
-                            Register
+                            Verify Email
                         </button>
                     {/if}
                 </div>

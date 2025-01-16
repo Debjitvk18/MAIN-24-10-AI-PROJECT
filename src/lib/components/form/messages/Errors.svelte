@@ -9,7 +9,12 @@
         </div>
         <ul class="mt-3 list-disc list-inside text-sm text-red-600">
             {#each errorMessages as message}
-                <li>{message}</li>
+                <li>
+                    {message}
+                    <!-- {#if message === "Please verify your email address first."}
+                        <a href="#" on:click={resendVerificationEmail} class="text-blue-600 underline">Resend verification email</a>
+                    {/if} -->
+                </li>
             {/each}
         </ul>
     </div>

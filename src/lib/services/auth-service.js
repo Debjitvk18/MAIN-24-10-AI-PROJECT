@@ -44,4 +44,24 @@ export class AuthService {
 	async resetPassword(payload) {
 		return this.apiService.makeApiCall('reset-password', payload, 'POST');
 	}
+
+	/**
+	 * Verify email.
+	 *
+	 * @param {Object} payload
+	 * @returns {Promise<any>}
+	 */
+	async verifyEmail(payload) {
+		return this.apiService.makeApiCall('email/verify', payload, 'POST');
+	}
+
+	/**
+	 * Resend Verification email.
+	 *
+	 * @param {Object} payload
+	 * @returns {Promise<any>}
+	 */
+	async resendVerificationEmail(payload) {
+		return this.apiService.makeApiCall('resend-verification-email', payload, 'POST');
+	}
 }

@@ -9,9 +9,6 @@
         checkAuth();
     });
 
-    function handleLogin() {
-        goto('/login');
-    }
     function handleLogout(event: Event) {
         event.preventDefault();
         logout();
@@ -50,8 +47,7 @@
                 </div>
                 <!-- Navigation Links -->
                 <div class="hidden space-x-4 lg:-my-px lg:ml-10 lg:flex">
-                    <a class="inline-flex items-center px-1 pt-1 border-b-2 border-indigo-400 text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition" href="/">Home</a>
-                    <a class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition" href="/about">About</a>
+                    <a class="inline-flex items-center px-1 pt-1 border-b-2 border-indigo-400 text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition" href="/dashboard">Dashboard</a>
                 </div>
             </div>
 
