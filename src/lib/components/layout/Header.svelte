@@ -4,7 +4,6 @@
     import Logo from "../general/Logo.svelte";
     import { checkAuth, logout, user } from '$lib/stores/authStore';
     import { page } from '$app/stores';
-	import { BASE_STORAGE_URL } from '$lib/constants/constants';
 
     onMount(() => {
         checkAuth();
@@ -62,7 +61,7 @@
                     <button class="relative" on:click={toggleDropdown} on:keydown={(event) => event.key === 'Enter' && toggleDropdown()} aria-haspopup="true" aria-expanded={open}>
                         <span class="sr-only">Open user menu</span>
                         {#if $user}
-                            <img class="h-8 w-8 rounded-full object-cover" src="{BASE_STORAGE_URL}{$user.profile_photo_path}" alt="{$user.name}" />
+                            <img class="h-8 w-8 rounded-full object-cover" src="{$user.profile_photo_url}" alt="{$user.name}" />
                         {/if}
                     </button>
             

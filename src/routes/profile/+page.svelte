@@ -7,7 +7,6 @@
 	import Errors from '$lib/components/form/messages/Errors.svelte';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
-	import { BASE_STORAGE_URL } from '$lib/constants/constants';
 
     let photoInput: HTMLInputElement;
     let photoPreview = '';
@@ -17,7 +16,7 @@
     /**
 	 * @type {null}
 	 */
-    let profile_photo_path = null;
+    let profile_photo_url = null;
     let errorMessages: string[] = [];
     let isLoading = false;
     
@@ -89,7 +88,7 @@
         formData.append("name", name);
         formData.append("email", email);
         if (photoInput.files && photoInput.files[0]) {
-            formData.append("profile_photo_path", photoInput.files[0], photoInput.files[0].name);
+            formData.append("profile_photo_url", photoInput.files[0], photoInput.files[0].name);
         }
 
         try {
@@ -141,7 +140,7 @@
                 if (userData) {
                     name = userData.name || '';
                     email = userData.email || '';
-                    profile_photo_path = userData.profile_photo_path || '';
+                    profile_photo_url = userData.profile_photo_url || '';
                 }
             }
         });
@@ -183,7 +182,7 @@
                                 <!-- Current Profile Photo -->
                                 {#if !photoPreview}
                                     <div class="mt-2">
-                                        <img src="{BASE_STORAGE_URL}{profile_photo_path}" alt="{name}" class="w-20 h-20 rounded-full object-cover">
+                                        <img src="{profile_photo_url}" alt="{name}" class="w-20 h-20 rounded-full object-cover">
                                     </div>
                                 {/if}
                 

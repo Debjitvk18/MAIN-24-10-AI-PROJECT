@@ -3,8 +3,12 @@
     import { AuthService } from '$lib/services/auth-service';
     import LoadingButton from "$lib/components/form/buttons/LoadingButton.svelte";
 	import Errors from "$lib/components/form/messages/Errors.svelte";
+	import { goto } from "$app/navigation";
 
     let email = '';
+    let code = '';
+    let password = '';
+    let password_confirmation = '';
     let errorMessages: string[] = [];
     let isLoading = false;
 
@@ -15,8 +19,10 @@
         isLoading = true;
 
         try {
-            const data = await authService.forgotPassword({ email });
-            if (!data.success) {
+            const data = await authService.resetPassword({ email, code, password, password_confirmation });
+            if (data.success) {
+                goto('/login');
+            } else {
                 handleErrors(data);
             }
         } catch (error) {
@@ -48,7 +54,6 @@
         </div>
 
         <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
-            <div class="mb-4 text-sm text-gray-600">Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.</div>
             <Errors {errorMessages} />
             <form on:submit={handleSubmit}>
                 <div>
@@ -58,12 +63,33 @@
                     <input class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full" id="email" type="email" bind:value={email} required>
                 </div>
 
+                <div class="mt-4">
+                    <label for="code" class="block font-medium text-sm text-gray-700">
+						Code from email
+					</label>
+                    <input class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full" id="code" type="text" bind:value={code} required>
+                </div>
+
+                <div class="mt-4">
+                    <label for="password" class="block font-medium text-sm text-gray-700">
+						Password
+					</label>
+                    <input class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full" id="password" type="password" bind:value={password} required>
+                </div>
+
+                <div class="mt-4">
+                    <label for="password_confirmation" class="block font-medium text-sm text-gray-700">
+						Confirm Password
+					</label>
+                    <input class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full" id="password_confirmation" type="password" bind:value={password_confirmation} required>
+                </div>
+
                 <div class="flex items-center justify-end mt-4">
                     {#if isLoading}
-                        <LoadingButton buttonText="Sending..." />
+                        <LoadingButton buttonText="Resetting..." />
                     {:else}
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition ml-4">
-                            Email Password Reset Link
+                            Reset Password
                         </button>
                     {/if}
                 </div>

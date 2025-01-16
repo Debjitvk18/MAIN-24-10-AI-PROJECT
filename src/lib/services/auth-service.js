@@ -34,4 +34,14 @@ export class AuthService {
 	async forgotPassword(payload) {
 		return this.apiService.makeApiCall('forgot-password', payload, 'POST');
 	}
+
+	/**
+	 * Reset password.
+	 *
+	 * @param {Object} payload
+	 * @returns {Promise<any>}
+	 */
+	async resetPassword(payload) {
+		return this.apiService.makeApiCall('reset-password', payload, 'POST');
+	}
 }
