@@ -135,6 +135,15 @@
                         });
                 });
 
+                // set map zoom to fit the circle
+                const bounds = circle.geometry.coordinates[0].reduce((bounds, coord) => {
+                    return bounds.extend(coord);
+                }, new mapboxgl.LngLatBounds(circle.geometry.coordinates[0][0], circle.geometry.coordinates[0][0]));
+
+                map.fitBounds(bounds, { padding: 20 });
+
+                
+
                 // Show the sidebar once the circle and icons are added
                 showSidebar = true;
             });
