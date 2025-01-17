@@ -12,6 +12,7 @@
 
     let map: mapboxgl.Map;
     let mapContainer: HTMLElement;
+    let showSidebar = false;
 
     const socialMediaIcons = {
         facebook: FacebookIcon,
@@ -21,6 +22,7 @@
         panoids: PanoidsIcon
     };
 
+    // Social media data
     const socialMediaData = [
         { type: 'facebook', count: 5 },
         { type: 'linkedin', count: 2 },
@@ -28,6 +30,18 @@
         { type: 'twitter', count: 1 },
         { type: 'panoids', count: 15 }
     ];
+
+    // Visibility state for social media types
+    let visibility = {
+        facebook: true,
+        linkedin: true,
+        instagram: true,
+        twitter: true,
+        panoids: true
+    };
+
+    // Markers for social media types
+    let markers: { [key: string]: mapboxgl.Marker[] } = {};
 
     onMount(() => {
         mapboxgl.accessToken = 'pk.eyJ1Ijoid2ViZGV2dHNwIiwiYSI6ImNsdTc1cmptajAycHIya28zNzdkNmYxdzgifQ.AOfG08tSLEzv3F38u3S6yQ';
@@ -97,34 +111,53 @@
                 map.getSource('circle').setData(circle);
 
                 // Clear existing markers
-                document.querySelectorAll('.social-marker').forEach(el => el.remove());
+                Object.values(markers).flat().forEach(marker => marker.remove());
+                markers = {};
 
                 // Add social media markers
                 socialMediaData.forEach(({ type, count }) => {
                     const randomPoints = turf.randomPoint(count, { bbox: turf.bbox(circle) });
-                    randomPoints.features.forEach((feature) => {
-                        if (turf.booleanPointInPolygon(feature, circle)) {
+                    markers[type] = randomPoints.features
+                        .filter(feature => turf.booleanPointInPolygon(feature, circle))
+                        .map(feature => {
                             const coords = feature.geometry.coordinates;
                             const el = document.createElement('div');
                             el.className = 'social-marker';
                             el.innerHTML = socialMediaIcons[type];
                             el.style.fontSize = '20px';
 
-                            new mapboxgl.Marker(el)
-                                .setLngLat(coords)
-                                .addTo(map);
-                        }
-                    });
+                            const marker = new mapboxgl.Marker(el).setLngLat(coords).addTo(map);
+
+                            // Hide marker if the type is not visible
+                            if (!visibility[type]) marker.getElement().style.display = 'none';
+
+                            return marker;
+                        });
                 });
+
+                // Show the sidebar once the circle and icons are added
+                showSidebar = true;
             });
         });
     });
+    
 
     onDestroy(() => {
         if (map) {
             map.remove();
         }
     });
+
+    function toggleVisibility(type: string) {
+    // Update the visibility object
+    visibility = { ...visibility, [type]: !visibility[type] };
+
+    // Show or hide markers
+    markers[type]?.forEach(marker => {
+        marker.getElement().style.display = visibility[type] ? 'block' : 'none';
+    });
+}
+
 </script>
 
 <svelte:head>
@@ -144,14 +177,16 @@
     .sidebar {
         background-color: rgb(35 55 75 / 90%);
         color: #fff;
-        padding: 6px 12px;
+        padding: 10px;
         font-family: monospace;
         z-index: 1;
         position: absolute;
-        top: 0;
-        left: 0;
-        margin: 12px;
+        top: 10px;
+        left: 10px;
         border-radius: 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
     }
     .social-marker {
         display: flex;
@@ -164,9 +199,30 @@
         text-align: center;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
+    .icon {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
 </style>
 
 <div bind:this={mapContainer} id="map"></div>
-<div class="sidebar">
-    sidebar content goes here..
-</div>
+
+{#if showSidebar}
+    <div class="sidebar">
+        <h3>Toggle Markers</h3>
+        {#each Object.keys(socialMediaIcons) as type}
+            <div class="icon">
+                <input
+                    type="checkbox"
+                    id={type}
+                    checked={visibility[type]}
+                    on:change={() => toggleVisibility(type)}
+                />
+                <label for={type}>
+                    <span>{@html socialMediaIcons[type]}</span> {type.charAt(0).toUpperCase() + type.slice(1)}
+                </label>
+            </div>
+        {/each}
+    </div>
+{/if}
