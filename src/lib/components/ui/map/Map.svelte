@@ -14,10 +14,82 @@
 	import InstagramPostImage from '$lib/assets/posts/instagram.jpg';
 	import LinkedinPostImage from '$lib/assets/posts/linkedin.webp';
 	import TwitterPostImage from '$lib/assets/posts/twitter.jpg';
+	import Modal from '../modal/Modal.svelte';
+	import { MapService } from '$lib/services/map-service';
+	import LoadingButton from '$lib/components/form/buttons/LoadingButton.svelte';
+
+	import { showToast } from '$lib/stores/toastStore';
 
 	let map: mapboxgl.Map;
 	let mapContainer: HTMLElement;
 	let showSidebar = false;
+	let isLoading = false; // loader
+	let errorMessages: string[] = []; // validation errors
+
+	const mapService = new MapService();
+
+	// show save report modal?
+	let showSaveModal = false;
+
+	// save results form data
+	let saveResultsFormData = {
+		title: '',
+		refreshFrequency: 'No Refresh',
+		autoUpdateEmail: false
+	};
+
+	// if refreshFrequency is not 'No Refresh', show autoUpdateEmail checkbox
+	function showAutoUpdateEmail() {
+		if (saveResultsFormData.refreshFrequency !== 'No Refresh') {
+			return true;
+		}
+
+		saveResultsFormData.autoUpdateEmail = false;
+		return false;
+	}
+
+	// api call to save results
+	async function handleSaveResults(event: Event) {
+		event.preventDefault();
+		isLoading = true;
+
+		try {
+			const data = await mapService.saveResults({
+				title: saveResultsFormData.title,
+				refresh_frequency: saveResultsFormData.refreshFrequency,
+				auto_update_email: saveResultsFormData.autoUpdateEmail
+			});
+			if (data.success) {
+				showSaveModal = false;
+				saveResultsFormData = {
+					title: '',
+					refreshFrequency: 'No Refresh',
+					autoUpdateEmail: false
+				};
+
+				// show success message
+				showToast({ message: data.message })
+			} else {
+				handleErrors(data);
+			}
+		} catch (error) {
+			errorMessages.push('An unexpected error occurred.');
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	function handleErrors(data: any) {
+		errorMessages = [];
+
+		if (data.errors) {
+			Object.keys(data.errors).forEach((key) => {
+				errorMessages.push(...data.errors[key]);
+			});
+		} else {
+			errorMessages.push(data.message || 'An error occurred');
+		}
+	}
 
 	const socialMediaJson = [
 		{
@@ -494,6 +566,89 @@
 <div class="h-screen flex flex-col">
 	<div class="flex h-full flex-1 relative">
 		<div class="h-full relative flex-1">
+			{#if showSidebar}
+				<div class="absolute top-0 md:pt-3 w-full p-2 md:px-3 z-100">
+					<div class="flex items-center gap-2 max-md:gap-1 md:justify-between">
+						<div class="flex gap-2 items-center">
+							<div class="h-full">
+								<div class="flex gap-1">
+									<button
+										class="rounded-lg block disabled:cursor-not-allowed transition-all duration-100 ease-in px-3 py-1.5 font-500 flex items-center justify-center gap-2 bg-black hover:bg-black disabled:bg-zinc-600 text-white max-md:size-9"
+										on:click={() => (showSaveModal = !showSaveModal)}
+									>
+										<div class="md:hidden i-lucide-plus p-3"></div>
+										<span>Save Results</span></button
+									>
+								</div>
+								<Modal
+									title="Save your results"
+									open={showSaveModal}
+									on:close={() => (showSaveModal = false)}
+								>
+									<svelte:fragment slot="body">
+										<form on:submit={handleSaveResults}>
+											<div>
+												<label class="block font-medium text-sm text-gray-700" for="Title"
+													>Title</label
+												>
+												<input
+													class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full"
+													id="title"
+													type="text"
+													required
+													bind:value={saveResultsFormData.title}
+												/>
+											</div>
+											<div class="mt-4">
+												<label
+													class="block font-medium text-sm text-gray-700"
+													for="refresh_frequency">Refresh Frequency</label
+												>
+												<select
+													id="refresh_frequency"
+													name="refresh_frequency"
+													class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full"
+													bind:value={saveResultsFormData.refreshFrequency}
+												>
+													<option value="No Refresh">No Refresh</option>
+													<option value="Daily">Daily</option>
+													<option value="Monthly">Monthly</option>
+												</select>
+											</div>
+											{#if showAutoUpdateEmail()}
+												<div class="block mt-4">
+													<label for="auto_update_email" class="flex items-center"
+														><input
+															type="checkbox"
+															class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+															id="auto_update_email"
+															name="auto_update_email"
+															bind:checked={saveResultsFormData.autoUpdateEmail}
+														/>
+														<span class="ml-2 text-sm text-gray-600">Email me when auto-update</span
+														></label
+													>
+												</div>
+											{/if}
+											<div class="flex items-center justify-end mt-4">
+												{#if isLoading}
+													<LoadingButton buttonText="Saving..." />
+												{:else}
+													<button
+														type="submit"
+														class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition ml-4"
+														>Save results</button
+													>
+												{/if}
+											</div>
+										</form>
+									</svelte:fragment>
+								</Modal>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
 			<div bind:this={mapContainer} id="map"></div>
 		</div>
 
