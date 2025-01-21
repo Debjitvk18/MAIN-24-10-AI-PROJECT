@@ -1,48 +1,137 @@
 <script>
-    import { onMount } from 'svelte';
-    import { goto } from '$app/navigation';
-    import Logo from "../general/Logo.svelte";
-    import { isLoggedIn, checkAuth, logout } from '$lib/stores/authStore';
-    import { page } from '$app/stores';
-
-    onMount(() => {
-        checkAuth();
-    });
-
-    function handleLogin() {
-        goto('/login');
-    }
-    $: title = $page.url.pathname === '/' ? 'Dashboard' : $page.url.pathname.slice(1).replace(/-/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+	let mobileMenu = false;
 </script>
 
-<nav class="bg-white border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <div class="shrink-0 flex items-center">
-                    <a href="/">
-                        <Logo width="200" />
-                    </a>
-                </div>
-                <div class="hidden space-x-4 lg:-my-px lg:ml-10 lg:flex">
-                    <a class="inline-flex items-center px-1 pt-1 border-b-2 border-indigo-400 text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition" href="/">Home</a>
-                    <a class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition" href="/about">About</a>
-                </div>
-            </div>
-
-            <div class="hidden lg:flex lg:items-center lg:ml-6">
-                {#if isLoggedIn}
-                    <button class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition" on:click={logout}>Logout</button>
-                {:else}
-                    <button class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition" on:click={handleLogin}>Login</button>
-                {/if}
-            </div>
-        </div>
-    </div>
-</nav>
-
-<header class="bg-white shadow">
-    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{title}</h2>
-    </div>
+<header class="bg-white">
+	<nav class="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
+		<div class="flex lg:flex-1">
+			<a href="#" class="-m-1.5 p-1.5">
+				<span class="sr-only">Your Company</span>
+				<img
+					class="h-8 w-auto"
+					src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600"
+					alt=""
+				/>
+			</a>
+		</div>
+		<div class="flex lg:hidden">
+			<button
+				type="button"
+				class="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
+				on:click={() => (mobileMenu = true)}
+			>
+				<span class="sr-only">Open main menu</span>
+				<svg
+					class="size-6"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke-width="1.5"
+					stroke="currentColor"
+					aria-hidden="true"
+					data-slot="icon"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+					/>
+				</svg>
+			</button>
+		</div>
+		<div class="hidden lg:flex lg:gap-x-12">
+			<a href="#" class="text-sm/6 font-semibold text-gray-900">API's</a>
+			<a href="#" class="text-sm/6 font-semibold text-gray-900">Features</a>
+			<a href="#" class="text-sm/6 font-semibold text-gray-900">Marketplace</a>
+			<a href="#" class="text-sm/6 font-semibold text-gray-900">Company</a>
+		</div>
+		<div class="hidden lg:flex lg:flex-1 lg:justify-end">
+			<a href="/login" class="text-sm/6 font-semibold text-gray-900"
+				>Log in </a
+			>
+			<span aria-hidden="true" class="mx-2">|</span>
+			<a href="/register" class="text-sm/6 font-semibold text-gray-900"
+			>Register</a
+		>
+		</div>
+	</nav>
+	<!-- Mobile menu, show/hide based on menu open state. -->
+	<div
+		class="lg:hidden"
+		style="display: {mobileMenu ? 'block' : 'none'}"
+		role="dialog"
+		aria-modal="true"
+	>
+		<!-- Background backdrop, show/hide based on slide-over state. -->
+		<div class="fixed inset-0 z-10"></div>
+		<div
+			class="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10"
+		>
+			<div class="flex items-center justify-between">
+				<a href="#" class="-m-1.5 p-1.5">
+					<span class="sr-only">Your Company</span>
+					<img
+						class="h-8 w-auto"
+						src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600"
+						alt=""
+					/>
+				</a>
+				<button
+					type="button"
+					class="-m-2.5 rounded-md p-2.5 text-gray-700"
+					on:click={() => (mobileMenu = false)}
+				>
+					<span class="sr-only">Close menu</span>
+					<svg
+						class="size-6"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="1.5"
+						stroke="currentColor"
+						aria-hidden="true"
+						data-slot="icon"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+			<div class="mt-6 flow-root">
+				<div class="-my-6 divide-y divide-gray-500/10">
+					<div class="space-y-2 py-6">
+						<a
+							href="#"
+							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
+							>API's
+						</a>
+						<a
+							href="#"
+							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
+							>Features</a
+						>
+						<a
+							href="#"
+							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
+							>Marketplace</a
+						>
+						<a
+							href="#"
+							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
+							>Company</a
+						>
+					</div>
+					<div class="py-6">
+						<a
+							href="#"
+							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
+							>Log in</a
+						>
+						<a
+							href="/register"
+							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
+							>Register</a
+						>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </header>
