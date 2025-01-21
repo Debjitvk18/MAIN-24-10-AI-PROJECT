@@ -1,0 +1,13 @@
+version: "3"
+services:
+  sveltekit-app:
+    container_name: 'service-app-frontend'
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: always
+    ports:
+      - "5173:5173"
