@@ -7,8 +7,6 @@
 	import Pricing from '$lib/components/ui/pricing/Pricing.svelte';
 </script>
 
-<HeaderGuest />
-
 <div class="relative isolate px-6 pt-14 lg:px-8">
 	<div class="mx-auto max-w-2xl py-10 sm:py-48 lg:py-20">
 		<div class="hidden sm:mb-8 sm:flex sm:justify-center">
@@ -91,5 +89,3 @@
 </section>
 
 <Faq />
-
-<FooterGuest />
