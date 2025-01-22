@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 	import { onMount, onDestroy } from 'svelte';
 	import mapboxgl from 'mapbox-gl';
 	import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
@@ -68,7 +69,7 @@
 				};
 
 				// show success message
-				showToast({ message: data.message })
+				showToast({ message: data.message });
 			} else {
 				handleErrors(data);
 			}
@@ -396,8 +397,7 @@
 	let markers: { [key: string]: mapboxgl.Marker[] } = {};
 
 	onMount(() => {
-		mapboxgl.accessToken =
-			'pk.eyJ1Ijoid2ViZGV2dHNwIiwiYSI6ImNsdTc1cmptajAycHIya28zNzdkNmYxdzgifQ.AOfG08tSLEzv3F38u3S6yQ';
+		mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
 		map = new mapboxgl.Map({
 			container: mapContainer, // Container ID
 			style: 'mapbox://styles/mapbox/streets-v12', // Map style to use
