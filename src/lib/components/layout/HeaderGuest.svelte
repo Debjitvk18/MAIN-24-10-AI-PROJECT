@@ -1,4 +1,6 @@
 <script>
+	import { isLoggedIn, logout } from '$lib/stores/authStore';
+
 	let mobileMenu = false;
 </script>
 
@@ -45,13 +47,19 @@
 			<a href="#" class="text-sm/6 font-semibold text-gray-900">Company</a>
 		</div>
 		<div class="hidden lg:flex lg:flex-1 lg:justify-end">
-			<a href="/login" class="text-sm/6 font-semibold text-gray-900"
-				>Log in </a
-			>
-			<span aria-hidden="true" class="mx-2">|</span>
-			<a href="/register" class="text-sm/6 font-semibold text-gray-900"
-			>Register</a
-		>
+			{#if $isLoggedIn}
+				<a href="/dashboard" class="text-sm/6 font-semibold text-gray-900">Dashboard</a>
+				<span aria-hidden="true" class="mx-2">|</span>
+				<a
+					href="javascript:void(0)"
+					on:click={logout()}
+					class="text-sm/6 font-semibold text-gray-900">Log out</a
+				>
+			{:else}
+				<a href="/login" class="text-sm/6 font-semibold text-gray-900">Log in </a>
+				<span aria-hidden="true" class="mx-2">|</span>
+				<a href="/register" class="text-sm/6 font-semibold text-gray-900">Register</a>
+			{/if}
 		</div>
 	</nav>
 	<!-- Mobile menu, show/hide based on menu open state. -->

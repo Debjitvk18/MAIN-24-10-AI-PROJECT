@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
-	import { user } from '$lib/stores/authStore';
+	import { logout, user } from '$lib/stores/authStore';
 	import { initDropdown } from '$lib/utils/dropdown.js';
 	import { toggleTheme, theme } from '$lib/stores/themeStore';
 	import { truncateString } from '$lib/utils/generalUtils';
@@ -160,7 +160,8 @@
 									<li>
 										<a
 											class="relative px-7 py-2.5 flex items-center rounded-[inherit] text-sm leading-5 font-medium text-slate-600 dark:text-slate-400 hover:text-primary-600 hover:dark:text-primary-600 transition-all duration-300"
-											href="/logout"
+											href="javascript:void(0)"
+											on:click={logout()}
 										>
 											<Icon icon="lucide:log-out" class="text-lg leading-none w-7" />
 											<span>Sign out</span>

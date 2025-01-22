@@ -55,7 +55,7 @@ export function logout() {
 	localStorage.removeItem(USER_KEY);
 	isLoggedIn.set(false);
 	user.set(null);
-	goto('/');
+	goto('/login');
 }
 
 /**
