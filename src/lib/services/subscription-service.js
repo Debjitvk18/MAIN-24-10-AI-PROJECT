@@ -13,4 +13,23 @@ export class SubscriptionService {
     async getPricingPlans() {
         return this.apiService.makeApiCall('pricing-plans');
     }
+
+    /**
+     * Get Setup Intent.
+     *
+     * @returns {Promise<any>}
+     */
+    async getSetupIntent() {
+        return this.apiService.makeApiCall('setup-intent', {}, 'post');
+    }
+
+    /**
+     * Create Subscription.
+     *
+     * @param {object} payload
+     * @returns {Promise<any>}
+     */
+    async createSubscription(payload) {
+        return this.apiService.makeApiCall('create-subscription', payload, 'post');
+    }
 }

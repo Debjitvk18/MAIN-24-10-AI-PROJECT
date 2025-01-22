@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isLoggedIn } from '$lib/stores/authStore';
 	export let plan;
 </script>
 
@@ -61,12 +62,11 @@
 		</ul>
 	{/if}
 	<a
-		href="#"
-		aria-describedby={plan.is_recommended ? 'tier-enterprise' : 'tier-hobby'}
+		href={$isLoggedIn ? `/buy` : `/login`}
 		class={plan.is_recommended
 			? 'mt-8 block rounded-md bg-[#2C7BE5] px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-[#000000] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C7BE5] hover:ring-1 hover:ring-[#2C7BE5] sm:mt-10'
 			: 'mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold text-[#2C7BE5] ring-1 ring-inset ring-indigo-200 hover:text-[#FFFFFF] hover:bg-[#2C7BE5] hover:ring-[#2C7BE5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C7BE5] sm:mt-10'}
 	>
-		Get started today
+		{$isLoggedIn ? `Get started today` : `Sign up`}
 	</a>
 </div>

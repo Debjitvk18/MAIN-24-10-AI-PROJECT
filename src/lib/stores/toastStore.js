@@ -16,6 +16,7 @@ export const TOAST_POSITION = {
 }
 
 Object.freeze(TOAST_TYPE);
+Object.freeze(TOAST_POSITION);
 
 export const toastMessage = writable('');
 export const toastType = writable('');
