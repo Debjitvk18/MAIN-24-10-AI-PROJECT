@@ -46,8 +46,8 @@
 	let Sidebar = {
 		compact: function () {
 			let toggle = document.querySelectorAll('.sidebar-compact-toggle');
-			let parent = document.querySelector('.nk-sidebar');
-			let body = parent && parent.querySelector('.nk-sidebar-body');
+			let parent = document.querySelector('.serviceapp-sidebar');
+			let body = parent && parent.querySelector('.serviceapp-sidebar-body');
 			toggle &&
 				toggle.forEach((item) => {
 					item.addEventListener('click', function (e) {
@@ -69,7 +69,7 @@
 
 		toggle: function () {
 			let toggle = document.querySelectorAll('.sidebar-toggle');
-			let parent = document.querySelector('.nk-sidebar');
+			let parent = document.querySelector('.serviceapp-sidebar');
 			toggle.forEach((item) => {
 				item.addEventListener('click', function (e) {
 					e.preventDefault();
@@ -82,7 +82,7 @@
 
 		page_resize: function () {
 			let toggle = document.querySelectorAll('.sidebar-toggle');
-			let parent = document.querySelector('.nk-sidebar');
+			let parent = document.querySelector('.serviceapp-sidebar');
 			if (config.win.width > config.break.xl) {
 				toggle.forEach((item) => {
 					item.classList.remove('active');
@@ -131,7 +131,7 @@
 </script>
 
 <div
-	class="nk-sidebar group/sidebar peer dark fixed w-72 [&.is-compact:not(.has-hover)]:w-[74px] min-h-screen max-h-screen overflow-hidden h-full start-0 top-0 z-[1031] transition-[transform,width] duration-300 -translate-x-full rtl:translate-x-full xl:translate-x-0 xl:rtl:translate-x-0 [&.sidebar-visible]:translate-x-0"
+	class="serviceapp-sidebar group/sidebar peer dark fixed w-72 [&.is-compact:not(.has-hover)]:w-[74px] min-h-screen max-h-screen overflow-hidden h-full start-0 top-0 z-[1031] transition-[transform,width] duration-300 -translate-x-full rtl:translate-x-full xl:translate-x-0 xl:rtl:translate-x-0 [&.sidebar-visible]:translate-x-0"
 >
 	<div
 		class="flex items-center min-w-full w-72 h-16 border-b border-e bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-900 px-6 py-3 overflow-hidden"
@@ -169,7 +169,7 @@
 		</div>
 	</div>
 	<div
-		class="nk-sidebar-body max-h-full relative overflow-hidden w-full bg-white dark:bg-gray-950 border-e border-gray-200 dark:border-gray-900"
+		class="serviceapp-sidebar-body max-h-full relative overflow-hidden w-full bg-white dark:bg-gray-950 border-e border-gray-200 dark:border-gray-900"
 	>
 		<div class="flex flex-col w-full h-[calc(100vh-theme(spacing.16))]">
 			<div class="h-full pt-4 pb-10">
@@ -205,7 +205,7 @@
 
 					<li class="serviceapp-menu-item py-0.5 has-sub group/item">
 						<a
-							href=".#"
+							href="#"
 							class="serviceapp-menu-link serviceapp-menu-toggle flex relative items-center align-middle py-2.5 ps-6 pe-10 font-heading font-bold tracking-snug group"
 						>
 							<span
@@ -230,7 +230,7 @@
 						>
 							<li class="serviceapp-menu-item py-px group/sub1">
 								<a
-									href="./user-list-regular.html"
+									href="#"
 									class="serviceapp-menu-link flex relative items-center align-middle py-1.5 pe-10 ps-[calc(theme(spacing.6)+theme(spacing.9))] font-normal leading-5 text-sm tracking-normal normal-case"
 								>
 									<span

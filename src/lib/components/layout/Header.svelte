@@ -15,7 +15,7 @@
 </script>
 
 <div
-	class="nk-header fixed start-0 w-full h-16 top-0 z-[1021] transition-all duration-300 min-w-[320px]"
+	class="serviceapp-header fixed start-0 w-full h-16 top-0 z-[1021] transition-all duration-300 min-w-[320px]"
 >
 	<div
 		class="h-16 border-b bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-900 px-1.5 sm:px-5"

@@ -30,10 +30,10 @@
 	<div class="app-container">
 		<Sidebar />
 		<div
-			class="xl:ps-72 [&>.nk-header]:xl:start-72 [&>.nk-header]:xl:w-[calc(100%-theme(spacing.72))] peer-[&.is-compact:not(.has-hover)]:xl:ps-[74px] peer-[&.is-compact:not(.has-hover)]:[&>.nk-header]:xl:start-[74px] peer-[&.is-compact:not(.has-hover)]:[&>.nk-header]:xl:w-[calc(100%-74px)] flex flex-col min-h-screen transition-all duration-300"
+			class="xl:ps-72 [&>.serviceapp-header]:xl:start-72 [&>.serviceapp-header]:xl:w-[calc(100%-theme(spacing.72))] peer-[&.is-compact:not(.has-hover)]:xl:ps-[74px] peer-[&.is-compact:not(.has-hover)]:[&>.serviceapp-header]:xl:start-[74px] peer-[&.is-compact:not(.has-hover)]:[&>.serviceapp-header]:xl:w-[calc(100%-74px)] flex flex-col min-h-screen transition-all duration-300"
 		>
 			<Header />
-			<div id="pagecontent" class="nk-content mt-16 px-1.5 sm:px-5 py-6 sm:py-8">
+			<div id="pagecontent" class="serviceapp-content mt-16 px-1.5 sm:px-5 py-6 sm:py-8">
 				{@render children()}
 			</div>
 			<!-- content -->
