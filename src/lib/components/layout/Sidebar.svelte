@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 	import Logo from '../general/Logo.svelte';
 	import { slideDown, slideUp } from '$lib/utils/animation';
@@ -48,23 +49,28 @@
 			let toggle = document.querySelectorAll('.sidebar-compact-toggle');
 			let parent = document.querySelector('.serviceapp-sidebar');
 			let body = parent && parent.querySelector('.serviceapp-sidebar-body');
-			toggle &&
-				toggle.forEach((item) => {
-					item.addEventListener('click', function (e) {
-						e.preventDefault();
-						item.classList.toggle('compact-active');
-						parent.classList.toggle('is-compact');
-						!parent.classList.contains('is-compact') && parent.classList.remove('has-hover');
-					});
+			toggle.forEach((item) => {
+				item.addEventListener('click', function (e) {
+					e.preventDefault();
+					item.classList.toggle('compact-active');
+					parent.classList.toggle('is-compact');
+					if (!parent.classList.contains('is-compact')) {
+						parent.classList.remove('has-hover');
+					}
 				});
-			body &&
-				body.addEventListener('mouseenter', function (e) {
-					parent.classList.contains('is-compact') && parent.classList.add('has-hover');
+			});
+			if (body) {
+				body.addEventListener('mouseenter', function () {
+					if (parent.classList.contains('is-compact')) {
+						parent.classList.add('has-hover');
+					}
 				});
-			body &&
-				body.addEventListener('mouseleave', function (e) {
-					parent.classList.contains('is-compact') && parent.classList.remove('has-hover');
+				body.addEventListener('mouseleave', function () {
+					if (parent.classList.contains('is-compact')) {
+						parent.classList.remove('has-hover');
+					}
 				});
+			}
 		},
 
 		toggle: function () {
@@ -74,7 +80,9 @@
 				item.addEventListener('click', function (e) {
 					e.preventDefault();
 					item.classList.toggle('active');
-					parent && parent.classList.toggle('sidebar-visible');
+					if (parent) {
+						parent.classList.toggle('sidebar-visible');
+					}
 					document.body.classList.toggle('overflow-hidden');
 				});
 			});
@@ -87,7 +95,9 @@
 				toggle.forEach((item) => {
 					item.classList.remove('active');
 				});
-				parent && parent.classList.remove('sidebar-visible');
+				if (parent) {
+					parent.classList.remove('sidebar-visible');
+				}
 				document.body.classList.remove('overflow-hidden');
 			}
 		}
@@ -139,7 +149,7 @@
 		<div class="-ms-1 me-4">
 			<div class="hidden xl:block">
 				<a
-					href="#"
+					href="/"
 					class="sidebar-compact-toggle [&>*]:pointer-events-none inline-flex items-center isolate relative h-9 w-9 px-1.5 before:content-[''] before:absolute before:-z-[1] before:h-5 before:w-5 hover:before:h-10 hover:before:w-10 before:rounded-full before:opacity-0 hover:before:opacity-100 before:transition-all before:duration-300 before:-translate-x-1/2 before:-translate-y-1/2 before:top-1/2 before:left-1/2 before:bg-gray-200 dark:before:bg-gray-900"
 				>
 					<Icon class="text-2xl text-slate-600 dark:text-slate-300" icon="ic:round-menu" />
@@ -148,7 +158,7 @@
 
 			<div class="xl:hidden">
 				<a
-					href="#"
+					href="/"
 					class="sidebar-toggle [&>*]:pointer-events-none inline-flex items-center isolate relative h-9 w-9 px-1.5 before:content-[''] before:absolute before:-z-[1] before:h-5 before:w-5 hover:before:h-10 hover:before:w-10 before:rounded-full before:opacity-0 hover:before:opacity-100 before:transition-all before:duration-300 before:-translate-x-1/2 before:-translate-y-1/2 before:top-1/2 before:left-1/2 before:bg-gray-200 dark:before:bg-gray-900"
 				>
 					<Icon
@@ -180,10 +190,14 @@
 						<h6
 							class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 text-slate-400 dark:text-slate-300 whitespace-nowrap uppercase font-bold text-xs tracking-relaxed leading-tight"
 						>
-							Dashboards
+							Dashboard
 						</h6>
 					</li>
-					<li class="serviceapp-menu-item py-0.5 group/item">
+					<li
+						class="serviceapp-menu-item py-0.5 group/item {$page.url.pathname === '/dashboard'
+							? 'active current-page'
+							: ''}"
+					>
 						<a
 							href="/dashboard"
 							class="serviceapp-menu-link flex relative items-center align-middle py-2.5 ps-6 pe-10 font-heading font-bold tracking-snug group"
@@ -193,7 +207,7 @@
 							>
 								<Icon
 									class="text-2xl leading-none text-current transition-all duration-300"
-									icon="lucide:shopping-cart"
+									icon="lucide:layout-dashboard"
 								/>
 							</span>
 							<span
@@ -203,9 +217,81 @@
 						</a>
 					</li>
 
+					<li
+						class="serviceapp-menu-item py-0.5 has-sub group/item {['/profile'].includes(
+							$page.url.pathname
+						)
+							? 'active current-page show'
+							: ''}"
+					>
+						<a
+							href="javascript:void(0)"
+							class="serviceapp-menu-link serviceapp-menu-toggle flex relative items-center align-middle py-2.5 ps-6 pe-10 font-heading font-bold tracking-snug group"
+						>
+							<span
+								class="font-normal tracking-normal w-9 inline-flex flex-grow-0 flex-shrink-0 text-slate-400 group-[.active]/item:text-primary-500 group-hover:text-primary-500"
+							>
+								<Icon
+									icon="bx:bxs-user"
+									class="text-2xl leading-none text-current transition-all duration-300"
+								/>
+							</span>
+							<span
+								class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500"
+								>My Account</span
+							>
+							<Icon
+								icon="lucide:chevron-right"
+								class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 text-base leading-none text-slate-400 group-[.active]/item:text-primary-500 absolute end-5 top-1/2 -translate-y-1/2 rtl:-scale-x-100 group-[.active]/item:rotate-90 group-[.active]/item:rtl:-rotate-90 transition-all duration-300"
+							/>
+						</a>
+						<ul
+							class="serviceapp-menu-sub mb-1 hidden group-[&.is-compact:not(.has-hover)]/sidebar:!hidden"
+							style={['/profile'].includes($page.url.pathname) ? 'display: block' : ''}
+						>
+							<li
+								class="serviceapp-menu-item py-px group/sub1 {$page.url.pathname === '/profile'
+									? 'active current-page'
+									: ''}"
+							>
+								<a
+									href="/profile"
+									class="serviceapp-menu-link flex relative items-center align-middle py-1.5 pe-10 ps-[calc(theme(spacing.6)+theme(spacing.9))] font-normal leading-5 text-sm tracking-normal normal-case"
+								>
+									<span
+										class="text-slate-600 dark:text-slate-500 group-[.active]/sub1:text-primary-500 hover:text-primary-500 whitespace-nowrap flex-grow inline-block"
+										>View Profile</span
+									>
+								</a>
+							</li>
+							<li class="serviceapp-menu-item py-px group/sub1">
+								<a
+									href="/profile"
+									class="serviceapp-menu-link flex relative items-center align-middle py-1.5 pe-10 ps-[calc(theme(spacing.6)+theme(spacing.9))] font-normal leading-5 text-sm tracking-normal normal-case"
+								>
+									<span
+										class="text-slate-600 dark:text-slate-500 group-[.active]/sub1:text-primary-500 hover:text-primary-500 whitespace-nowrap flex-grow inline-block"
+										>Account Settings</span
+									>
+								</a>
+							</li>
+							<li class="serviceapp-menu-item py-px group/sub1">
+								<a
+									href="/profile"
+									class="serviceapp-menu-link flex relative items-center align-middle py-1.5 pe-10 ps-[calc(theme(spacing.6)+theme(spacing.9))] font-normal leading-5 text-sm tracking-normal normal-case"
+								>
+									<span
+										class="text-slate-600 dark:text-slate-500 group-[.active]/sub1:text-primary-500 hover:text-primary-500 whitespace-nowrap flex-grow inline-block"
+										>My Subscription</span
+									>
+								</a>
+							</li>
+						</ul>
+					</li>
+
 					<li class="serviceapp-menu-item py-0.5 has-sub group/item">
 						<a
-							href="#"
+							href="javascript:void(0)"
 							class="serviceapp-menu-link serviceapp-menu-toggle flex relative items-center align-middle py-2.5 ps-6 pe-10 font-heading font-bold tracking-snug group"
 						>
 							<span
@@ -230,7 +316,7 @@
 						>
 							<li class="serviceapp-menu-item py-px group/sub1">
 								<a
-									href="#"
+									href="/demo"
 									class="serviceapp-menu-link flex relative items-center align-middle py-1.5 pe-10 ps-[calc(theme(spacing.6)+theme(spacing.9))] font-normal leading-5 text-sm tracking-normal normal-case"
 								>
 									<span
