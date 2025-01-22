@@ -14,11 +14,13 @@ export const user = writable(null);
  */
 
 export function checkAuth() {
-	const token = localStorage.getItem(AUTH_TOKEN);
-	if (token) {
-		getUserDetails();
-		isLoggedIn.set(!!token);
-	}
+    const token = localStorage.getItem(AUTH_TOKEN);
+    if (token) {
+        isLoggedIn.set(true);
+        getUserDetails();
+    } else {
+        isLoggedIn.set(false);
+    }
 }
 
 /**
