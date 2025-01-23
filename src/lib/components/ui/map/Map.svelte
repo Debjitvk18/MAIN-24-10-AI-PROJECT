@@ -5,11 +5,11 @@
 	import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 	import * as turf from '@turf/turf';
 
-	import InstagramIcon from '$lib/assets/svg/social-icons/instagram.svg?raw';
-	import FacebookIcon from '$lib/assets/svg/social-icons/facebook.svg?raw';
-	import TwitterIcon from '$lib/assets/svg/social-icons/x.svg?raw';
-	import LinkedinIcon from '$lib/assets/svg/social-icons/linkedin.svg?raw';
-	import PanoidsIcon from '$lib/assets/svg/social-icons/map.svg?raw';
+	import InstagramIcon from '$lib/assets/svg/marker/insta-pin.svg?raw';
+	import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
+	import TwitterIcon from '$lib/assets/svg/marker/x-pin.svg?raw';
+	import LinkedinIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
+	import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
 
 	import FacebookPostImage from '$lib/assets/posts/facebook.jpg';
 	import InstagramPostImage from '$lib/assets/posts/instagram.jpg';
@@ -20,6 +20,18 @@
 	import LoadingButton from '$lib/components/form/buttons/LoadingButton.svelte';
 
 	import { showToast } from '$lib/stores/toastStore';
+	import { page } from '$app/stores';
+
+
+	let searchQuery: string = '';
+
+	const unsubscribe = page.subscribe(($page) => {
+		searchQuery = $page.url.searchParams.get('search') || '';
+	});
+
+	onDestroy(() => {
+		unsubscribe();
+	});
 
 	let map: mapboxgl.Map;
 	let mapContainer: HTMLElement;
@@ -509,6 +521,16 @@
 				// Show the sidebar once the circle and icons are added
 				showSidebar = true;
 			});
+
+		if (searchQuery) {
+			geocoder.query(searchQuery);
+			const activeSuggestion = document.querySelector('.suggestions');
+			if (activeSuggestion) {
+				setTimeout(() => {
+					activeSuggestion.style.display = 'none';
+				}, 500);
+			}	
+		}
 		});
 	});
 
@@ -567,7 +589,7 @@
 	<div class="flex h-full flex-1 relative">
 		<div class="h-full relative flex-1">
 			{#if showSidebar}
-				<div class="absolute top-0 md:pt-3 w-full p-2 md:px-3 z-100">
+				<div class="absolute top-0 md:pt-3 p-2 md:px-3 z-100 w-auto">
 					<div class="flex items-center gap-2 max-md:gap-1 md:justify-between">
 						<div class="flex gap-2 items-center">
 							<div class="h-full">

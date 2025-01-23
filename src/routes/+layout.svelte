@@ -15,7 +15,7 @@
 		checkAuth();
 		const unsubscribe = isLoggedIn.subscribe((value) => {
 			if (!value) {
-				$page.data.layout !== false ? (window.location.href = '/login') : '';
+				// $page.data.layout !== false ? (window.location.href = '/login') : '';
 			}
 		});
 
