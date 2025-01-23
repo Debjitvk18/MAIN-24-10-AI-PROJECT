@@ -9,7 +9,7 @@ export class ApiService {
 	 *
 	 * @returns {Promise<any>}
 	 */
-	async makeApiCall(endpoint, payload, method = 'GET', requestType = 'json') {
+	async makeApiCall(endpoint, payload = {}, method = 'GET', requestType = 'json') {
 		let headers;
 		let fetchOptions;
 		if (requestType !== 'formdata') {

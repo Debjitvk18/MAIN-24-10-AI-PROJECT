@@ -1,4 +1,6 @@
 <script>
+	import { isLoggedIn, logout } from '$lib/stores/authStore';
+
 	let mobileMenu = false;
 </script>
 
@@ -39,19 +41,26 @@
 			</button>
 		</div>
 		<div class="hidden lg:flex lg:gap-x-12">
-			<a href="#" class="text-sm/6 font-semibold text-gray-900">API's</a>
-			<a href="#" class="text-sm/6 font-semibold text-gray-900">Features</a>
-			<a href="#" class="text-sm/6 font-semibold text-gray-900">Marketplace</a>
-			<a href="#" class="text-sm/6 font-semibold text-gray-900">Company</a>
+			<a href="#" class="text-sm/6 font-semibold text-gray-900">Home</a>
+			<a href="#pricing" class="text-sm/6 font-semibold text-gray-900">Pricing</a>
+			<a href="#blog" class="text-sm/6 font-semibold text-gray-900">Blog</a>
+			<a href="#testimonials" class="text-sm/6 font-semibold text-gray-900">Testimonials</a>
+			<a href="/try-demo" class="text-sm/6 font-semibold text-gray-900">Try Demo</a>
 		</div>
 		<div class="hidden lg:flex lg:flex-1 lg:justify-end">
-			<a href="/login" class="text-sm/6 font-semibold text-gray-900"
-				>Log in </a
-			>
-			<span aria-hidden="true" class="mx-2">|</span>
-			<a href="/register" class="text-sm/6 font-semibold text-gray-900"
-			>Register</a
-		>
+			{#if $isLoggedIn}
+				<a href="/dashboard" class="text-sm/6 font-semibold text-gray-900">Dashboard</a>
+				<span aria-hidden="true" class="mx-2">|</span>
+				<a
+					href="javascript:void(0)"
+					on:click={logout()}
+					class="text-sm/6 font-semibold text-gray-900">Log out</a
+				>
+			{:else}
+				<a href="/login" class="text-sm/6 font-semibold text-gray-900">Log in </a>
+				<span aria-hidden="true" class="mx-2">|</span>
+				<a href="/register" class="text-sm/6 font-semibold text-gray-900">Register</a>
+			{/if}
 		</div>
 	</nav>
 	<!-- Mobile menu, show/hide based on menu open state. -->
@@ -100,29 +109,30 @@
 						<a
 							href="#"
 							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>API's
+							>Home
 						</a>
 						<a
-							href="#"
+							href="#pricing"
 							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Features</a
+							>Pricing</a
 						>
 						<a
-							href="#"
+							href="#blog"
 							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Marketplace</a
+							>Blog</a
 						>
 						<a
-							href="#"
-							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Company</a
-						>
+						href="#testimonials"
+						class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
+						>Testimonials</a
+					>
+						
 					</div>
 					<div class="py-6">
 						<a
-							href="#"
+							href="/try-demo"
 							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Log in</a
+							>Try Demo</a
 						>
 						<a
 							href="/register"

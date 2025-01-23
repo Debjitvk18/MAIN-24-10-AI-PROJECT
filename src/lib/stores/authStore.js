@@ -14,27 +14,31 @@ export const user = writable(null);
  */
 
 export function checkAuth() {
-	const token = localStorage.getItem(AUTH_TOKEN);
-	if (token) {
-		getUserDetails();
-		isLoggedIn.set(!!token);
-	}
+    const token = localStorage.getItem(AUTH_TOKEN);
+	const userData = localStorage.getItem(USER_KEY);
+    if (token && user) {
+        isLoggedIn.set(true);
+		user.set(JSON.parse(userData));
+    } else {
+		localStorage.removeItem(AUTH_TOKEN);
+		localStorage.removeItem(USER_KEY);
+		isLoggedIn.set(false);
+		user.set(null);
+    }
 }
 
 /**
- * @param {string} token
+ * Login the user.
+ * 
+ * @param {Object} data The login data.
+ * 
+ * @returns {Promise<void>}
  */
-export async function login(token) {
-	const userService = new UserService();
-	localStorage.setItem(AUTH_TOKEN, token);
-	goto('/dashboard');
+export async function login(data) {
+	localStorage.setItem(AUTH_TOKEN, data.access_token);
+	localStorage.setItem(USER_KEY, JSON.stringify(data.member));
 	isLoggedIn.set(true);
-	const user = await userService.getProfile();
-	if (user.success) {
-		await getUserData();
-	} else {
-		logout();
-	}
+	goto('/dashboard');
 }
 
 export async function getUserData() {
@@ -53,7 +57,7 @@ export function logout() {
 	localStorage.removeItem(USER_KEY);
 	isLoggedIn.set(false);
 	user.set(null);
-	goto('/');
+	goto('/login');
 }
 
 /**

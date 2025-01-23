@@ -16,6 +16,7 @@ export const TOAST_POSITION = {
 }
 
 Object.freeze(TOAST_TYPE);
+Object.freeze(TOAST_POSITION);
 
 export const toastMessage = writable('');
 export const toastType = writable('');
@@ -39,4 +40,13 @@ export const showToast = ({
 
 export const hideToast = () => {
     toastMessage.set('');
+}
+
+/**
+ * Trigger a success toast message.
+ * 
+ * @param {string} message The message to display.
+ */
+export const triggerSuccessToast = (message) => {
+    showToast({ message });
 }

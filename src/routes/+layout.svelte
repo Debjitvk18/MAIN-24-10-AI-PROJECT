@@ -1,13 +1,45 @@
 <script lang="ts">
 	import Header from '$lib/components/layout/Header.svelte';
 	import Toast from '$lib/components/ui/toast/Toast.svelte';
-	import { isLoggedIn } from '$lib/stores/authStore';
+	import { checkAuth, isLoggedIn } from '$lib/stores/authStore';
+	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 	import '../app.css';
+	import Sidebar from '$lib/components/layout/Sidebar.svelte';
+	import Footer from '$lib/components/layout/Footer.svelte';
 	let { children } = $props();
+
+	// const noLayoutRoutes = ['/', '/login', '/register']; // Add routes where you don't want to show the layout
+
+	onMount(() => {
+		checkAuth();
+		const unsubscribe = isLoggedIn.subscribe((value) => {
+			if (!value) {
+				// $page.data.layout !== false ? (window.location.href = '/login') : '';
+			}
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	});
 </script>
 
-{#if $isLoggedIn}
-<Header />
+<!-- {#if !noLayoutRoutes.includes($page.url.pathname)} -->
+{#if $page.data.layout !== false}
+	<div class="app-container">
+		<Sidebar />
+		<div
+			class="xl:ps-72 [&>.serviceapp-header]:xl:start-72 [&>.serviceapp-header]:xl:w-[calc(100%-theme(spacing.72))] peer-[&.is-compact:not(.has-hover)]:xl:ps-[74px] peer-[&.is-compact:not(.has-hover)]:[&>.serviceapp-header]:xl:start-[74px] peer-[&.is-compact:not(.has-hover)]:[&>.serviceapp-header]:xl:w-[calc(100%-74px)] flex flex-col min-h-screen transition-all duration-300"
+		>
+			<Header />
+			<div id="pagecontent" class="serviceapp-content mt-16 px-1.5 sm:px-5 py-6 sm:py-8">
+				{@render children()}
+			</div>
+			<!-- content -->
+			<Footer />
+		</div>
+	</div>
+{:else}
+	{@render children()}
 {/if}
-<Toast />
-{@render children()}
