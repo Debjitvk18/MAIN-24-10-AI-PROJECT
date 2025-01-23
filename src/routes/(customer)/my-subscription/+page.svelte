@@ -31,111 +31,51 @@
 						<div class="px-4 sm:px-0"></div>
 					</div>
 
-					<div class="px-4 py-5 bg-white sm:p-6 shadow sm:rounded-tl-md sm:rounded-tr-md">
-						<div class="mt-5 md:mt-0 md:col-span-2">
-							<h3 class="text-base font-semibold text-[#2C7BE5]">Weekly Subscription</h3>
-							<p class="mt-4 flex items-baseline gap-x-2">
-								<span class="text-5xl font-semibold tracking-tight text-gray-900">$30</span>
-								<span class="text-base text-gray-500">/weekly</span>
-							</p>
-							<ul role="list" class="mt-8 space-y-3 text-sm/6 text-gray-600 sm:mt-10">
-								<li class="flex gap-x-3">
-									<svg
-										class="h-6 w-5 flex-none text-[#2C7BE5]"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-										aria-hidden="true"
-										data-slot="icon"
-										><path
-											fill-rule="evenodd"
-											d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-											clip-rule="evenodd"
-										></path></svg
-									> Access to all panoramas and social media posts within a 1 km radius.
-								</li>
-								<li class="flex gap-x-3">
-									<svg
-										class="h-6 w-5 flex-none text-[#2C7BE5]"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-										aria-hidden="true"
-										data-slot="icon"
-										><path
-											fill-rule="evenodd"
-											d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-											clip-rule="evenodd"
-										></path></svg
-									> Export data in multiple formats: JSON, CSV, or ZIP (images).
-								</li>
-								<li class="flex gap-x-3">
-									<svg
-										class="h-6 w-5 flex-none text-[#2C7BE5]"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-										aria-hidden="true"
-										data-slot="icon"
-										><path
-											fill-rule="evenodd"
-											d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-											clip-rule="evenodd"
-										></path></svg
-									> Filter results by services like Facebook, Twitter, LinkedIn, and more.
-								</li>
-								<li class="flex gap-x-3">
-									<svg
-										class="h-6 w-5 flex-none text-[#2C7BE5]"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-										aria-hidden="true"
-										data-slot="icon"
-										><path
-											fill-rule="evenodd"
-											d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-											clip-rule="evenodd"
-										></path></svg
-									> Real-time data refresh with customizable intervals.
-								</li>
-								<li class="flex gap-x-3">
-									<svg
-										class="h-6 w-5 flex-none text-[#2C7BE5]"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-										aria-hidden="true"
-										data-slot="icon"
-										><path
-											fill-rule="evenodd"
-											d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-											clip-rule="evenodd"
-										></path></svg
-									> Personalized side panel to view and manage results.
-								</li>
-								<li class="flex gap-x-3">
-									<svg
-										class="h-6 w-5 flex-none text-[#2C7BE5]"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-										aria-hidden="true"
-										data-slot="icon"
-										><path
-											fill-rule="evenodd"
-											d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-											clip-rule="evenodd"
-										></path></svg
-									> Priority customer support for seamless user experience.
-								</li>
-							</ul>
-							<div
-								class="flex items-center justify-end px-4 py-3 bg-gray-50 text-right sm:px-6 sm:rounded-br-md"
-							>
-								<a
-									href="/pricing"
-									class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition ml-4"
+					{#if activPlan}
+						<div class="px-4 py-5 bg-white sm:p-6 shadow sm:rounded-tl-md sm:rounded-tr-md">
+							<div class="mt-5 md:mt-0 md:col-span-2">
+								<h3 class="text-base font-semibold text-[#2C7BE5]">{activPlan.title}</h3>
+								<p class="mt-4 flex items-baseline gap-x-2">
+									<span class="text-5xl font-semibold tracking-tight text-gray-900"
+										>{activPlan.currency_symbol}{activPlan.charge}</span
+									>
+									<span class="text-base text-gray-500">/{activPlan.billing_frequency}</span>
+								</p>
+								{#if activPlan.features}
+									<ul role="list" class="mt-8 space-y-3 text-sm/6 text-gray-600 sm:mt-10">
+										{#each activPlan.features as feature}
+											<li class="flex gap-x-3">
+												<svg
+													class="h-6 w-5 flex-none text-[#2C7BE5]"
+													viewBox="0 0 20 20"
+													fill="currentColor"
+													aria-hidden="true"
+													data-slot="icon"
+												>
+													<path
+														fill-rule="evenodd"
+														d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+														clip-rule="evenodd"
+													/>
+												</svg>
+												{feature}
+											</li>
+										{/each}
+									</ul>
+								{/if}
+								<div
+									class="flex items-center justify-end px-4 py-3 bg-gray-50 text-right sm:px-6 sm:rounded-br-md"
 								>
-									Change Plan
-								</a>
+									<a
+										href="/pricing"
+										class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition ml-4"
+									>
+										Change Plan
+									</a>
+								</div>
 							</div>
 						</div>
-					</div>
+					{/if}
 				</div>
 			</div>
 		</div>

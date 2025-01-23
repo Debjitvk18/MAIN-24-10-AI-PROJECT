@@ -9,6 +9,7 @@
 	import { UserService } from '$lib/services/user-service';
 	import Icon from '@iconify/svelte';
 	import Errors from '$lib/components/form/messages/Errors.svelte';
+	import { getUserData } from '$lib/stores/authStore';
 
 	let stripe = null;
 	let cardElement = null;
@@ -80,6 +81,9 @@
 			if (!subscriptionResponse.success) throw new Error(subscriptionResponse.error);
 
 			showThankYou = true;
+
+			// update user profile
+			getUserData();
 		} catch (error) {
 			errorMessage.push(error.message);
 		} finally {
