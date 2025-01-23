@@ -94,7 +94,7 @@
 		formData.append('name', name);
 		formData.append('email', email);
 		if (photoInput.files && photoInput.files[0]) {
-			formData.append('profile_photo_url', photoInput.files[0], photoInput.files[0].name);
+			formData.append('profile_photo_path', photoInput.files[0], photoInput.files[0].name);
 		}
 
 		try {
