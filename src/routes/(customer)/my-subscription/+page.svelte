@@ -1,3 +1,20 @@
+<script>
+	import { goto } from '$app/navigation';
+	import { user, isLoggedIn } from '$lib/stores/authStore';
+	import { onMount } from 'svelte';
+	let activPlan = null;
+
+	onMount(() => {
+		if ($isLoggedIn) {
+			activPlan = $user.subscription;
+
+			if (activPlan === null) {
+				goto('/pricing');
+			}
+		}
+	});
+</script>
+
 <main>
 	<div>
 		<div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">

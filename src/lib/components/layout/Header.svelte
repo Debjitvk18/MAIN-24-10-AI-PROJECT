@@ -6,6 +6,7 @@
 	import { toggleTheme, theme } from '$lib/stores/themeStore';
 	import { truncateString } from '$lib/utils/generalUtils';
 	import Logo from '../general/Logo.svelte';
+	import Toast from '../ui/toast/Toast.svelte';
 
 	$: currentTheme = $theme;
 
@@ -17,6 +18,7 @@
 <div
 	class="serviceapp-header fixed start-0 w-full h-16 top-0 z-[1021] transition-all duration-300 min-w-[320px]"
 >
+	<Toast />
 	<div
 		class="h-16 border-b bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-900 px-1.5 sm:px-5"
 	>
@@ -126,7 +128,7 @@
 									<li>
 										<a
 											class="relative px-7 py-2.5 flex items-center rounded-[inherit] text-sm leading-5 font-medium text-slate-600 dark:text-slate-400 hover:text-primary-600 hover:dark:text-primary-600 transition-all duration-300"
-											href="#"
+											href="my-subscription"
 										>
 											<Icon icon="bx:credit-card-alt" class="text-lg leading-none w-7" />
 											<span>My Subscription</span>

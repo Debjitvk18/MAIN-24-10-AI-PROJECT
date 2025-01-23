@@ -7,6 +7,7 @@
 	import Errors from '$lib/components/form/messages/Errors.svelte';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
+	import { triggerSuccessToast } from '$lib/stores/toastStore';
 
 	let photoInput: HTMLInputElement;
 	let photoPreview = '';
@@ -65,6 +66,7 @@
 				setTimeout(() => {
 					savedShown = false;
 				}, 1500);
+				triggerSuccessToast(data.message);
 			} else {
 				passwordErrorMessages = handleErrors(data);
 			}
@@ -102,6 +104,7 @@
 				setTimeout(() => {
 					shown = false;
 				}, 1500);
+				triggerSuccessToast(data.message);
 				await getUserData();
 			} else {
 				errorMessages = handleErrors(data);

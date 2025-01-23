@@ -20,7 +20,10 @@ export function checkAuth() {
         isLoggedIn.set(true);
 		user.set(JSON.parse(userData));
     } else {
-        logout();
+		localStorage.removeItem(AUTH_TOKEN);
+		localStorage.removeItem(USER_KEY);
+		isLoggedIn.set(false);
+		user.set(null);
     }
 }
 

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import '../../app.css';
 	import { checkAuth, isLoggedIn } from '$lib/stores/authStore';
+	import Toast from '$lib/components/ui/toast/Toast.svelte';
 	let { children } = $props();
 
 	onMount(() => {
@@ -18,4 +19,5 @@
 	});
 </script>
 
+<Toast />
 {@render children()}

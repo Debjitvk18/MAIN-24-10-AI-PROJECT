@@ -4,6 +4,7 @@
 	import LoadingButton from '$lib/components/form/buttons/LoadingButton.svelte';
 	import { login } from '$lib/stores/authStore';
 	import Errors from '$lib/components/form/messages/Errors.svelte';
+	import { triggerSuccessToast } from '$lib/stores/toastStore';
 
 	let email = '';
 	let password = '';

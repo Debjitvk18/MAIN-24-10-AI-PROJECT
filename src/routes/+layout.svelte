@@ -38,8 +38,6 @@
 			</div>
 			<!-- content -->
 			<Footer />
-
-			<Toast />
 		</div>
 	</div>
 {:else}

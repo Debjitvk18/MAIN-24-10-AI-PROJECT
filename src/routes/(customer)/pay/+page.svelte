@@ -4,7 +4,6 @@
 	import { onMount } from 'svelte';
 	import { PUBLIC_STRIPE_KEY } from '$env/static/public';
 	import { SubscriptionService } from '$lib/services/subscription-service';
-	import { goto } from '$app/navigation';
 	import Loader from '$lib/components/ui/spinners/Loader.svelte';
 	import { page } from '$app/stores';
 	import { UserService } from '$lib/services/user-service';
@@ -38,7 +37,7 @@
 			if (!userResponse.success)
 				throw new Error('Failed to fetch the plan details, please try again.');
 
-			if (planId === userResponse.member.subscription.id) {
+			if (planId === userResponse.member.is_subscribed && userResponse.member.subscription.id) {
 				throw new Error('Hurray! You are already using this plan. 🎉');
 			}
 

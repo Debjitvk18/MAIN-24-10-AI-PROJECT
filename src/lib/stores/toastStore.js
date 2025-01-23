@@ -41,3 +41,12 @@ export const showToast = ({
 export const hideToast = () => {
     toastMessage.set('');
 }
+
+/**
+ * Trigger a success toast message.
+ * 
+ * @param {string} message The message to display.
+ */
+export const triggerSuccessToast = (message) => {
+    showToast({ message });
+}
