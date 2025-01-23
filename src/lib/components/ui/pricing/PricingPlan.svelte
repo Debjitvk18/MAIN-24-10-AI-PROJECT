@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { isLoggedIn } from '$lib/stores/authStore';
+	import { isLoggedIn, user } from '$lib/stores/authStore';
 	export let plan;
+	const activePlanID = $user?.subscription?.id || 0;
 </script>
 
 <div
@@ -8,6 +9,12 @@
 		? 'relative rounded-3xl bg-gray-900 p-8 shadow-2xl ring-1 ring-gray-900/10 sm:p-10'
 		: 'rounded-3xl rounded-t-3xl bg-white/60 p-8 ring-1 ring-gray-900/10 sm:mx-8 sm:p-10 lg:mx-0 lg:rounded-bl-3xl'}
 >
+	{#if activePlanID === plan.id}
+		<span
+			class="relative inline-flex rounded-full px-2 border border-primary-600 bg-primary-600 text-white text-xxs text-center font-medium leading-4.5 tracking-snug whitespace-nowrap align-middle"
+			>Current Plan</span
+		>
+	{/if}
 	<h3
 		class={plan.is_recommended
 			? 'text-base/7 font-semibold text-[#2C7BE5]'
@@ -61,12 +68,14 @@
 			{/each}
 		</ul>
 	{/if}
+	<!-- {#if activePlanID !== plan.id} -->
 	<a
-		href={$isLoggedIn ? `/buy` : `/login`}
+		href={$isLoggedIn ? `/pay?plan=${plan.id}` : `/login`}
 		class={plan.is_recommended
 			? 'mt-8 block rounded-md bg-[#2C7BE5] px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-[#000000] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C7BE5] hover:ring-1 hover:ring-[#2C7BE5] sm:mt-10'
 			: 'mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold text-[#2C7BE5] ring-1 ring-inset ring-indigo-200 hover:text-[#FFFFFF] hover:bg-[#2C7BE5] hover:ring-[#2C7BE5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C7BE5] sm:mt-10'}
 	>
 		{$isLoggedIn ? `Get started today` : `Sign up`}
 	</a>
+	<!-- {/if} -->
 </div>

@@ -32,4 +32,14 @@ export class SubscriptionService {
     async createSubscription(payload) {
         return this.apiService.makeApiCall('create-subscription', payload, 'post');
     }
+
+    /**
+     * Get Plan Details.
+     * 
+     * @param {string} planId 
+     * @returns {Promise<any>}
+     */
+    async getPlanDetails(planId) {
+        return this.apiService.makeApiCall(`pricing-plans/${planId}`);
+    }
 }

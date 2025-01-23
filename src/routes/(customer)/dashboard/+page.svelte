@@ -1,18 +1,29 @@
-<script lang="ts">
-	import NoSubscription from '$lib/components/general/subscription/NoSubscription.svelte';
+<script>
+	import SubscriptionNotice from '$lib/components/general/subscription/SubscriptionNotice.svelte';
+	import BoxCard from '$lib/components/ui/card/BoxCard.svelte';
+	import { user } from '$lib/stores/authStore';
 </script>
 
-<main>
-	<div class="py-12">
+<div class="container max-w-none">
+	<div class="flex justify-between items-center pb-5 md:pb-7 relative">
 		<div>
-			<div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-				<div>
-					<h2 class="text-3xl font-bold text-gray-800 mb-6">Welcome to your Dashboard</h2>
-					<p class="text-gray-600 mt-2">Dashboard contents are coming soon...</p>
-				</div>
-
-				<NoSubscription />
-			</div>
+			<h3
+				class="font-heading font-bold text-2xl lg:text-3xl leading-tighter tracking-tight text-slate-700 dark:text-white mb-2"
+			>
+				Hello {$user?.name},
+			</h3>
+			<p class="text-slate-400">Welcome to ServiceApp!</p>
 		</div>
 	</div>
-</main>
+
+	<!-- Subscription Notice -->
+	<SubscriptionNotice />
+
+	<!-- block head -->
+	<div class="grid grid-flow-dense grid-cols-12 gap-7">
+		<BoxCard title="Total Requests" value="54" />
+		<BoxCard title="Saved Search" value="5" />
+		<BoxCard title="Active Subscription" value="N/A" />
+		<BoxCard title="Last Login" value="3 days ago" />
+	</div>
+</div>

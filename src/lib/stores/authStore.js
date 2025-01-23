@@ -32,7 +32,7 @@ export function checkAuth() {
  * @returns {Promise<void>}
  */
 export async function login(data) {
-	localStorage.setItem(AUTH_TOKEN, data.token);
+	localStorage.setItem(AUTH_TOKEN, data.access_token);
 	localStorage.setItem(USER_KEY, JSON.stringify(data.member));
 	isLoggedIn.set(true);
 	goto('/dashboard');

@@ -5,6 +5,14 @@
 	import Logo from '../general/Logo.svelte';
 	import { slideDown, slideUp } from '$lib/utils/animation';
 
+	let config = {
+		win: { height: 0, width: 0 }
+	};
+
+	onMount(() => {
+		config.win = { height: window.innerHeight, width: window.innerWidth };
+	});
+
 	// Menu functions.
 	let Menu = {
 		load: (elm, subparent) => {
