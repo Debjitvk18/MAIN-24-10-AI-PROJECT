@@ -190,7 +190,7 @@
 						<h6
 							class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 text-slate-400 dark:text-slate-300 whitespace-nowrap uppercase font-bold text-xs tracking-relaxed leading-tight"
 						>
-							Dashboard
+							General
 						</h6>
 					</li>
 					<li
@@ -216,116 +216,61 @@
 							>
 						</a>
 					</li>
-
 					<li
-						class="serviceapp-menu-item py-0.5 has-sub group/item {['/profile'].includes(
-							$page.url.pathname
-						)
-							? 'active current-page show'
+						class="relative first:pt-1 pt-10 pb-2 px-6 before:absolute before:h-px before:w-full before:start-0 before:top-1/2 before:bg-gray-200 dark:before:bg-gray-900 first:before:hidden before:opacity-0 group-[&.is-compact:not(.has-hover)]/sidebar:before:opacity-100"
+					>
+						<h6
+							class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 text-slate-400 dark:text-slate-300 whitespace-nowrap uppercase font-bold text-xs tracking-relaxed leading-tight"
+						>
+							Services
+						</h6>
+					</li>
+					<li
+						class="serviceapp-menu-item py-0.5 group/item {$page.url.pathname === '/my-requests'
+							? 'active current-page'
 							: ''}"
 					>
 						<a
-							href="javascript:void(0)"
-							class="serviceapp-menu-link serviceapp-menu-toggle flex relative items-center align-middle py-2.5 ps-6 pe-10 font-heading font-bold tracking-snug group"
+							href="/my-requests"
+							class="serviceapp-menu-link flex relative items-center align-middle py-2.5 ps-6 pe-10 font-heading font-bold tracking-snug group"
 						>
 							<span
 								class="font-normal tracking-normal w-9 inline-flex flex-grow-0 flex-shrink-0 text-slate-400 group-[.active]/item:text-primary-500 group-hover:text-primary-500"
 							>
 								<Icon
-									icon="bx:bxs-user"
 									class="text-2xl leading-none text-current transition-all duration-300"
+									icon="material-symbols:map-search-outline"
 								/>
 							</span>
 							<span
 								class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500"
-								>My Account</span
+								>My Requests</span
 							>
-							<Icon
-								icon="lucide:chevron-right"
-								class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 text-base leading-none text-slate-400 group-[.active]/item:text-primary-500 absolute end-5 top-1/2 -translate-y-1/2 rtl:-scale-x-100 group-[.active]/item:rotate-90 group-[.active]/item:rtl:-rotate-90 transition-all duration-300"
-							/>
 						</a>
-						<ul
-							class="serviceapp-menu-sub mb-1 hidden group-[&.is-compact:not(.has-hover)]/sidebar:!hidden"
-							style={['/profile'].includes($page.url.pathname) ? 'display: block' : ''}
-						>
-							<li
-								class="serviceapp-menu-item py-px group/sub1 {$page.url.pathname === '/profile'
-									? 'active current-page'
-									: ''}"
-							>
-								<a
-									href="/profile"
-									class="serviceapp-menu-link flex relative items-center align-middle py-1.5 pe-10 ps-[calc(theme(spacing.6)+theme(spacing.9))] font-normal leading-5 text-sm tracking-normal normal-case"
-								>
-									<span
-										class="text-slate-600 dark:text-slate-500 group-[.active]/sub1:text-primary-500 hover:text-primary-500 whitespace-nowrap flex-grow inline-block"
-										>View Profile</span
-									>
-								</a>
-							</li>
-							<li class="serviceapp-menu-item py-px group/sub1">
-								<a
-									href="/profile"
-									class="serviceapp-menu-link flex relative items-center align-middle py-1.5 pe-10 ps-[calc(theme(spacing.6)+theme(spacing.9))] font-normal leading-5 text-sm tracking-normal normal-case"
-								>
-									<span
-										class="text-slate-600 dark:text-slate-500 group-[.active]/sub1:text-primary-500 hover:text-primary-500 whitespace-nowrap flex-grow inline-block"
-										>Account Settings</span
-									>
-								</a>
-							</li>
-							<li class="serviceapp-menu-item py-px group/sub1">
-								<a
-									href="/profile"
-									class="serviceapp-menu-link flex relative items-center align-middle py-1.5 pe-10 ps-[calc(theme(spacing.6)+theme(spacing.9))] font-normal leading-5 text-sm tracking-normal normal-case"
-								>
-									<span
-										class="text-slate-600 dark:text-slate-500 group-[.active]/sub1:text-primary-500 hover:text-primary-500 whitespace-nowrap flex-grow inline-block"
-										>My Subscription</span
-									>
-								</a>
-							</li>
-						</ul>
 					</li>
 
-					<li class="serviceapp-menu-item py-0.5 has-sub group/item">
+					<li
+						class="serviceapp-menu-item py-0.5 group/item {$page.url.pathname === '/contact-support'
+							? 'active current-page'
+							: ''}"
+					>
 						<a
-							href="javascript:void(0)"
-							class="serviceapp-menu-link serviceapp-menu-toggle flex relative items-center align-middle py-2.5 ps-6 pe-10 font-heading font-bold tracking-snug group"
+							href="/contact-support"
+							class="serviceapp-menu-link flex relative items-center align-middle py-2.5 ps-6 pe-10 font-heading font-bold tracking-snug group"
 						>
 							<span
 								class="font-normal tracking-normal w-9 inline-flex flex-grow-0 flex-shrink-0 text-slate-400 group-[.active]/item:text-primary-500 group-hover:text-primary-500"
 							>
 								<Icon
 									class="text-2xl leading-none text-current transition-all duration-300"
-									icon="lucide:star"
+									icon="hugeicons:customer-support"
 								/>
 							</span>
 							<span
 								class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500"
-								>Demo Menu</span
+								>Contact Support</span
 							>
-							<Icon
-								icon="lucide:chevron-right"
-								class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 text-base leading-none text-slate-400 group-[.active]/item:text-primary-500 absolute end-5 top-1/2 -translate-y-1/2 rtl:-scale-x-100 group-[.active]/item:rotate-90 group-[.active]/item:rtl:-rotate-90 transition-all duration-300"
-							/>
 						</a>
-						<ul
-							class="serviceapp-menu-sub mb-1 hidden group-[&.is-compact:not(.has-hover)]/sidebar:!hidden"
-						>
-							<li class="serviceapp-menu-item py-px group/sub1">
-								<a
-									href="/demo"
-									class="serviceapp-menu-link flex relative items-center align-middle py-1.5 pe-10 ps-[calc(theme(spacing.6)+theme(spacing.9))] font-normal leading-5 text-sm tracking-normal normal-case"
-								>
-									<span
-										class="text-slate-600 dark:text-slate-500 group-[.active]/sub1:text-primary-500 hover:text-primary-500 whitespace-nowrap flex-grow inline-block"
-										>Sub Demo Menu</span
-									>
-								</a>
-							</li>
-						</ul>
 					</li>
 				</ul>
 			</div>

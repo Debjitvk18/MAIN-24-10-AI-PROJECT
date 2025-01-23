@@ -15,28 +15,27 @@ export const user = writable(null);
 
 export function checkAuth() {
     const token = localStorage.getItem(AUTH_TOKEN);
-    if (token) {
+	const userData = localStorage.getItem(USER_KEY);
+    if (token && user) {
         isLoggedIn.set(true);
-        getUserDetails();
+		user.set(JSON.parse(userData));
     } else {
-        isLoggedIn.set(false);
+        logout();
     }
 }
 
 /**
- * @param {string} token
+ * Login the user.
+ * 
+ * @param {Object} data The login data.
+ * 
+ * @returns {Promise<void>}
  */
-export async function login(token) {
-	const userService = new UserService();
-	localStorage.setItem(AUTH_TOKEN, token);
-	goto('/dashboard');
+export async function login(data) {
+	localStorage.setItem(AUTH_TOKEN, data.token);
+	localStorage.setItem(USER_KEY, JSON.stringify(data.member));
 	isLoggedIn.set(true);
-	const user = await userService.getProfile();
-	if (user.success) {
-		await getUserData();
-	} else {
-		logout();
-	}
+	goto('/dashboard');
 }
 
 export async function getUserData() {

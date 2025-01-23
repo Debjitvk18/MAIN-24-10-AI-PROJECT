@@ -4,7 +4,7 @@
 	import LoadingButton from '$lib/components/form/buttons/LoadingButton.svelte';
 	import { login } from '$lib/stores/authStore';
 	import Errors from '$lib/components/form/messages/Errors.svelte';
-	
+
 	let email = '';
 	let password = '';
 	let errorMessages: string[] = [];
@@ -19,7 +19,7 @@
 		try {
 			const data = await authService.login({ email, password });
 			if (data.success) {
-				login(data.access_token);
+				login(data);
 			} else {
 				handleErrors(data);
 			}
@@ -50,8 +50,6 @@
 				<Logo />
 			</a>
 		</div>
-
-
 
 		<div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
 			<Errors {errorMessages} />
