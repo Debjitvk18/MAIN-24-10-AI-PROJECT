@@ -14,4 +14,14 @@ export class MapService {
     async saveResults(payload) {
         return this.apiService.makeApiCall('map/save-results', payload, 'POST');
     }
+
+    /**
+     * Load map results.
+     *
+     * @param {Object} payload
+     * @returns {Promise<any>}
+     */
+    async getMapResults(payload) {
+        return this.apiService.makeApiCall('map/search', payload, 'POST');
+    }
 }

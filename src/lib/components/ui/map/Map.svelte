@@ -17,11 +17,18 @@
 	import TwitterPostImage from '$lib/assets/posts/twitter.jpg';
 	import Modal from '../modal/Modal.svelte';
 	import { MapService } from '$lib/services/map-service';
+	import { EventSourcingService } from '$lib/services/event-sourcing-service';
 	import LoadingButton from '$lib/components/form/buttons/LoadingButton.svelte';
 
 	import { showToast } from '$lib/stores/toastStore';
 	import { page } from '$app/stores';
 
+	// loading overlay
+	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
+	import { API_BASE_URL } from '$lib/constants/constants';
+	import { truncateString } from '$lib/utils/generalUtils';
+	let showLoadingOverlay = false;
+	let overlayLoadingText = 'Loading';
 
 	let searchQuery: string = '';
 
@@ -104,306 +111,11 @@
 		}
 	}
 
-	const socialMediaJson = [
-		{
-			type: 'facebook',
-			count: 5,
-			icon: FacebookIcon,
-			posts: [
-				{
-					id: 1,
-					title: 'Post 1',
-					description: 'Description 1',
-					image: FacebookPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 2,
-					title: 'Post 2',
-					description: 'Description 2',
-					image: FacebookPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 3,
-					title: 'Post 3',
-					description: 'Description 3',
-					image: FacebookPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 4,
-					title: 'Post 4',
-					description: 'Description 4',
-					image: FacebookPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 5,
-					title: 'Post 5',
-					description: 'Description 5',
-					image: FacebookPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				}
-			]
-		},
-		{
-			type: 'linkedin',
-			count: 2,
-			icon: LinkedinIcon,
-			posts: [
-				{
-					id: 1,
-					title: 'Post 1',
-					description: 'Description 1',
-					image: LinkedinPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 2,
-					title: 'Post 2',
-					description: 'Description 2',
-					image: LinkedinPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				}
-			]
-		},
-		{
-			type: 'instagram',
-			count: 8,
-			icon: InstagramIcon,
-			posts: [
-				{
-					id: 1,
-					title: 'Post 1',
-					description: 'Description 1',
-					image: InstagramPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 2,
-					title: 'Post 2',
-					description: 'Description 2',
-					image: InstagramPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 3,
-					title: 'Post 3',
-					description: 'Description 3',
-					image: InstagramPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 4,
-					title: 'Post 4',
-					description: 'Description 4',
-					image: InstagramPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 5,
-					title: 'Post 5',
-					description: 'Description 5',
-					image: InstagramPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 6,
-					title: 'Post 6',
-					description: 'Description 6',
-					image: InstagramPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 7,
-					title: 'Post 7',
-					description: 'Description 7',
-					image: InstagramPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 8,
-					title: 'Post 8',
-					description: 'Description 8',
-					image: InstagramPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				}
-			]
-		},
-		{
-			type: 'twitter',
-			count: 1,
-			icon: TwitterIcon,
-			posts: [
-				{
-					id: 1,
-					title: 'Post 1',
-					description: 'Description 1',
-					image: TwitterPostImage,
-					lat: 35.6586,
-					lng: 139.7454
-				}
-			]
-		},
-		{
-			type: 'panoids',
-			count: 15,
-			icon: PanoidsIcon,
-			posts: [
-				{
-					id: 1,
-					title: 'Post 1',
-					description: 'Description 1',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 2,
-					title: 'Post 2',
-					description: 'Description 2',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 3,
-					title: 'Post 3',
-					description: 'Description 3',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 4,
-					title: 'Post 4',
-					description: 'Description 4',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 5,
-					title: 'Post 5',
-					description: 'Description 5',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 6,
-					title: 'Post 6',
-					description: 'Description 6',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 7,
-					title: 'Post 7',
-					description: 'Description 7',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 8,
-					title: 'Post 8',
-					description: 'Description 8',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 9,
-					title: 'Post 9',
-					description: 'Description 9',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 10,
-					title: 'Post 10',
-					description: 'Description 10',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 11,
-					title: 'Post 11',
-					description: 'Description 11',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 12,
-					title: 'Post 12',
-					description: 'Description 12',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 13,
-					title: 'Post 13',
-					description: 'Description 13',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 14,
-					title: 'Post 14',
-					description: 'Description 14',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				},
-				{
-					id: 15,
-					title: 'Post 15',
-					description: 'Description 15',
-					image: '',
-					lat: 35.6586,
-					lng: 139.7454
-				}
-			]
-		}
-	];
-
-	// get the social media icons
-	const socialMediaIcons = socialMediaJson.reduce((acc, { type, icon }) => {
-		acc[type] = icon;
-		return acc;
-	}, {});
-
-	// get the social media data
-	const socialMediaData = socialMediaJson.map(({ type, count }) => ({ type, count }));
-
-	// Visibility state for social media types
-	let visibility: { [key: string]: boolean } = socialMediaData.reduce((acc, { type }) => {
-		acc[type] = true;
-		return acc;
-	}, {});
+	var socialMediaJson = [];
+	var socialMediaIcons;
+	var socialMediaData;
+	var circle;
+	var visibility: { [key: string]: boolean };
 
 	// Markers for social media types
 	let markers: { [key: string]: mapboxgl.Marker[] } = {};
@@ -463,74 +175,159 @@
 				}
 			});
 
-			geocoder.on('result', (event: any) => {
+			geocoder.on('result', async (event: any) => {
+				// Show loading overlay
+				showLoadingOverlay = true;
+
+				// Get the coordinates of the search result
 				const coordinates = event.result.geometry.coordinates;
-				map.getSource('single-point').setData(event.result.geometry);
+				const address = event.result.place_name;
+				const lat = coordinates[1];
+				const lng = coordinates[0];
 
-				const circle = turf.circle(coordinates, 1, { units: 'kilometers' });
-				map.getSource('circle').setData(circle);
+				setTimeout(() => {
+					overlayLoadingText = 'Getting Address coordinates';
+				}, 1000);
 
-				// Clear existing markers
-				Object.values(markers)
-					.flat()
-					.forEach((marker) => marker.remove());
-				markers = {};
+				// Set the map's center to the search result coordinates
+				setTimeout(() => {
+					overlayLoadingText = 'Setting map to address';
+					const singlePointSource = map.getSource('single-point');
+					if (singlePointSource) {
+						singlePointSource.setData(event.result.geometry);
+					}
+					map.flyTo({ center: coordinates });
+				}, 2000);
 
-				// Add social media markers
-				socialMediaData.forEach(({ type, count }) => {
-					let pointsAdded = 0;
-					const markersForType = [];
-
-					while (pointsAdded < count) {
-						const randomPoints = turf.randomPoint(count - pointsAdded, { bbox: turf.bbox(circle) });
-						randomPoints.features.forEach((feature) => {
-							if (turf.booleanPointInPolygon(feature, circle) && pointsAdded < count) {
-								const coords = feature.geometry.coordinates;
-								const el = document.createElement('div');
-								el.className = 'social-marker';
-								el.innerHTML = socialMediaIcons[type];
-								el.style.fontSize = '20px';
-
-								const marker = new mapboxgl.Marker(el).setLngLat(coords).addTo(map);
-
-								// Hide marker if the type is not visible
-								if (!visibility[type]) marker.getElement().style.display = 'none';
-
-								markersForType.push(marker);
-								pointsAdded++;
-							}
-						});
+				// create 1km radius circle around the search result
+				setTimeout(() => {
+					overlayLoadingText = 'Creating radius circle to find the social media posts';
+					circle = turf.circle(coordinates, 1, { units: 'kilometers' });
+					const circleSource = map.getSource('circle');
+					if (circleSource) {
+						circleSource.setData(circle);
 					}
 
-					markers[type] = markersForType;
-				});
+					// Clear existing markers
+					Object.values(markers)
+						.flat()
+						.forEach((marker) => marker.remove());
+				}, 3000);
 
-				// set map zoom to fit the circle
-				const bounds = circle.geometry.coordinates[0].reduce(
-					(bounds, coord) => {
-						return bounds.extend(coord);
-					},
-					new mapboxgl.LngLatBounds(
-						circle.geometry.coordinates[0][0],
-						circle.geometry.coordinates[0][0]
-					)
-				);
+				// make api call to get social media posts
+				setTimeout(async () => {
+					overlayLoadingText = 'Fetching social media posts';
+					const mapService = new MapService();
 
-				map.fitBounds(bounds, { padding: 20 });
+					const response = await mapService.getMapResults({
+						address,
+						latitude: lat,
+						longitude: lng
+					});
+					if (!response.success) {
+						// hide loader
+						showLoadingOverlay = false;
+						return false;
+					}
 
-				// Show the sidebar once the circle and icons are added
-				showSidebar = true;
+					const source = new EventSource(`${API_BASE_URL}map/search-sse/${response.search_id}`);
+
+					// streeview.
+					source.addEventListener('streetview', function (e) {
+						const data = JSON.parse(e.data);
+
+						const posts = data.panoids.map((panoid) => {
+							return {
+								id: panoid.panoid,
+								title: `panoid - ${panoid.panoid}`,
+								description: `description - ${panoid.panoid}`,
+								image: '',
+								lat: panoid.lat,
+								lng: panoid.lon
+							};
+						});
+
+						const panoidsData = {
+							type: 'panoids',
+							count: posts.length,
+							icon: PanoidsIcon,
+							posts: posts
+						};
+
+						socialMediaJson.push(panoidsData);
+					});
+
+					// twitter.
+					source.addEventListener('x-twitter', function (e) {
+						const data = JSON.parse(e.data);
+						const posts = data.tweets.map((tweetObj) => {
+							const tweet = tweetObj.tweet;
+							const user = tweet.user_details;
+							const place = tweet.place ?? null;
+							let lat = null;
+							let lng = null;
+							if (place) {
+								lat = place.bounding_box.coordinates[0][0][1];
+								lng = place.bounding_box.coordinates[0][0][0];
+							}
+
+							return {
+								id: tweetObj.entryId,
+								title: tweet.full_text,
+								description: tweet.full_text,
+								image: user.profile_image_url_https,
+								lat,
+								lng
+							};
+						});
+
+						const twitterData = {
+							type: 'twitter',
+							count: posts.length,
+							icon: TwitterIcon,
+							posts: posts
+						};
+
+						socialMediaJson.push(twitterData);
+					});
+
+					// streetview error.
+					source.addEventListener('streetview_error', function (e) {
+						const data = JSON.parse(e.data);
+					});
+
+					// Twitter error.
+					source.addEventListener('x-twitter_error', function (e) {
+						const data = JSON.parse(e.data);
+					});
+
+					// Error.
+					source.addEventListener('error', function (e) {
+						const data = JSON.parse(e.data);
+						source.close();
+						overlayLoadingText = 'Something went wrong, please try again';
+					});
+
+					// Done.
+					source.addEventListener('done', function (e) {
+						const data = JSON.parse(e.data);
+						source.close();
+
+						// socialMediaJson
+						displaySocialMediaPosts();
+					});
+				}, 4000);
 			});
 
-		if (searchQuery) {
-			geocoder.query(searchQuery);
-			const activeSuggestion = document.querySelector('.suggestions');
-			if (activeSuggestion) {
-				setTimeout(() => {
-					activeSuggestion.style.display = 'none';
-				}, 500);
-			}	
-		}
+			if (searchQuery) {
+				geocoder.query(searchQuery);
+				const activeSuggestion = document.querySelector('.suggestions');
+				if (activeSuggestion) {
+					setTimeout(() => {
+						activeSuggestion.style.display = 'none';
+					}, 500);
+				}
+			}
 		});
 	});
 
@@ -539,6 +336,83 @@
 			map.remove();
 		}
 	});
+
+	function displaySocialMediaPosts() {
+		socialMediaIcons = socialMediaJson.reduce((acc, { type, icon }) => {
+			acc[type] = icon;
+			return acc;
+		}, {});
+
+		// get the social media data
+		socialMediaData = socialMediaJson.map(({ type, count }) => ({ type, count }));
+
+		// Visibility state for social media types
+		visibility = socialMediaData.reduce((acc, { type }) => {
+			acc[type] = true;
+			return acc;
+		}, {});
+
+		markers = {};
+		// Add social media markers
+		socialMediaData.forEach(({ type, count }) => {
+			let pointsAdded = 0;
+			const markersForType = [];
+
+			overlayLoadingText = 'Setting up the social icons on map';
+			while (pointsAdded < count) {
+				const randomPoints = turf.randomPoint(count - pointsAdded, { bbox: turf.bbox(circle) });
+				randomPoints.features.forEach((feature) => {
+					if (turf.booleanPointInPolygon(feature, circle) && pointsAdded < count) {
+						const coords = feature.geometry.coordinates;
+						const el = document.createElement('div');
+						el.className = 'social-marker';
+						el.innerHTML = socialMediaIcons[type];
+						el.style.fontSize = '20px';
+
+						const marker = new mapboxgl.Marker(el).setLngLat(coords).addTo(map);
+
+						// Hide marker if the type is not visible
+						if (!visibility[type]) marker.getElement().style.display = 'none';
+
+						markersForType.push(marker);
+						pointsAdded++;
+					}
+				});
+			}
+
+			markers[type] = markersForType;
+		});
+
+		// finalizing the map
+		setTimeout(() => {
+			overlayLoadingText = 'Finalizing the map';
+			// set map zoom to fit the circle
+			const bounds = circle.geometry.coordinates[0].reduce(
+				(bounds, coord) => {
+					return bounds.extend(coord);
+				},
+				new mapboxgl.LngLatBounds(
+					circle.geometry.coordinates[0][0],
+					circle.geometry.coordinates[0][0]
+				)
+			);
+
+			map.fitBounds(bounds, { padding: 20 });
+		}, 2000);
+
+		// hide the loading overlay
+		setTimeout(() => {
+			overlayLoadingText = 'Almost done';
+		}, 3000);
+
+		// hide the loading overlay
+		setTimeout(() => {
+			overlayLoadingText = 'Almost done';
+			showLoadingOverlay = false;
+			// Show the sidebar once the circle and icons are added
+			showSidebar = true;
+		}, 4000);
+	}
 
 	function toggleVisibility(type: string) {
 		// Update the visibility object
@@ -585,6 +459,7 @@
 	/>
 </svelte:head>
 
+<LoadingOverlay isLoading={showLoadingOverlay} loadingText={overlayLoadingText} />
 <div class="h-screen flex flex-col">
 	<div class="flex h-full flex-1 relative">
 		<div class="h-full relative flex-1">
@@ -594,13 +469,13 @@
 						<div class="flex gap-2 items-center">
 							<div class="h-full">
 								<div class="flex gap-1">
-									<button
+									<!-- <button
 										class="rounded-lg block disabled:cursor-not-allowed transition-all duration-100 ease-in px-3 py-1.5 font-500 flex items-center justify-center gap-2 bg-black hover:bg-black disabled:bg-zinc-600 text-white max-md:size-9"
 										on:click={() => (showSaveModal = !showSaveModal)}
 									>
 										<div class="md:hidden i-lucide-plus p-3"></div>
 										<span>Save Results</span></button
-									>
+									> -->
 								</div>
 								<Modal
 									title="Save your results"
@@ -652,7 +527,7 @@
 													>
 												</div>
 											{/if}
-											<div class="flex items-center justify-end mt-4">
+											<!-- <div class="flex items-center justify-end mt-4">
 												{#if isLoading}
 													<LoadingButton buttonText="Saving..." />
 												{:else}
@@ -662,7 +537,7 @@
 														>Save results</button
 													>
 												{/if}
-											</div>
+											</div> -->
 										</form>
 									</svelte:fragment>
 								</Modal>
@@ -678,7 +553,7 @@
 			<div class="h-full">
 				<div class="bg-neutral-900 w-96 p-4 pt-0 h-full overflow-y-auto">
 					<div class="sticky top-0">
-						<div class="bg-neutral-800 rounded-lg p-3 flex justify-between gap-5 w-full">
+						<div class="bg-neutral-800 rounded-lg p-3 flex justify-start gap-5 w-full">
 							{#each Object.keys(socialMediaIcons) as type}
 								<button
 									on:click={() => toggleVisibility(type)}
@@ -704,7 +579,7 @@
 								{#each socialMediaJson as socialMedia}
 									{#each socialMedia.posts as post, index}
 										<div
-											class="flex items-center border-b border-b-slate-800 p-4 hover:bg-neutral-800 rounded-lg {visibility[
+											class="flex items-start border-b border-b-slate-800 p-4 hover:bg-neutral-800 rounded-lg {visibility[
 												socialMedia.type
 											]
 												? ''
@@ -715,12 +590,14 @@
 										>
 											<img
 												src={post.image}
-												alt={post.title}
+												alt="Panorama"
 												class="w-12 h-12 object-cover rounded-md shadow"
 											/>
 											<div class="ml-4">
-												<h2 class="text-lg font-bold text-white">{post.title}</h2>
-												<p class="text-sm text-white">{post.description}</p>
+												<h2 class="text-lg font-bold text-white">
+													{truncateString(post.title, 50)}
+												</h2>
+												<p class="text-sm text-white">{truncateString(post.description, 250)}</p>
 												<p class="text-sm text-white">Lat: {post.lat}, Lng: {post.lng}</p>
 											</div>
 										</div>
