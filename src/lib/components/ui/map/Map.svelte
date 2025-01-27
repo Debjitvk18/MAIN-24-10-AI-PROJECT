@@ -17,7 +17,6 @@
 	import TwitterPostImage from '$lib/assets/posts/twitter.jpg';
 	import Modal from '../modal/Modal.svelte';
 	import { MapService } from '$lib/services/map-service';
-	import { EventSourcingService } from '$lib/services/event-sourcing-service';
 	import LoadingButton from '$lib/components/form/buttons/LoadingButton.svelte';
 
 	import { showToast } from '$lib/stores/toastStore';
@@ -243,7 +242,8 @@
 								description: `description - ${panoid.panoid}`,
 								image: '',
 								lat: panoid.lat,
-								lng: panoid.lon
+								lng: panoid.lon,
+								url: panoid?.url ?? '#'
 							};
 						});
 
@@ -277,7 +277,8 @@
 								description: tweet.full_text,
 								image: user.profile_image_url_https,
 								lat,
-								lng
+								lng,
+								url: tweet?.url ?? '#'
 							};
 						});
 
@@ -588,23 +589,25 @@
 											on:mouseleave={() => highlightMarker(socialMedia.type, index, false)}
 											on:mouseleave={() => highlightMarker(socialMedia.type, index, false)}
 										>
-											<img
-												src={post.image}
-												alt="Panorama"
-												class="w-12 h-12 object-cover rounded-md shadow"
-											/>
-											<div class="ml-4">
-												<h2 class="text-lg font-bold text-white">
-													{truncateString(post.title, 50)}
-												</h2>
-												<p class="text-sm text-white">{truncateString(post.description, 250)}</p>
-												<p class="text-sm text-white">Lat: {post.lat}, Lng: {post.lng}</p>
-											</div>
+											<a href={post.url} target="_blank" class="flex items-start">
+												<img
+													src={post.image}
+													alt="Panorama"
+													class="w-12 h-12 object-cover rounded-md shadow"
+												/>
+												<div class="ml-4">
+													<h2 class="text-lg font-bold text-white">
+														{truncateString(post.title, 50)}
+													</h2>
+													<p class="text-sm text-white">{truncateString(post.description, 250)}</p>
+													<p class="text-sm text-white">Lat: {post.lat}, Lng: {post.lng}</p>
+												</div>
+											</a>
 										</div>
 									{/each}
 								{/each}
 							</div>
-							<div class="max-md:col-span-5 col-span-2">
+							<div class="max-md:col-span-5 col-span-2 mt-5">
 								<div class="flex gap-2">
 									<div class="bg-white rounded-lg">
 										<a
