@@ -24,7 +24,7 @@
 
 	// loading overlay
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
-	import { API_BASE_URL } from '$lib/constants/constants';
+	import { API_BASE_URL, PANOID_BASE_URL } from '$lib/constants/constants';
 	import { truncateString } from '$lib/utils/generalUtils';
 	let showLoadingOverlay = false;
 	let overlayLoadingText = 'Loading';
@@ -243,7 +243,7 @@
 								image: '',
 								lat: panoid.lat,
 								lng: panoid.lon,
-								url: panoid?.url ?? '#'
+								url: `${PANOID_BASE_URL}${panoid.panoid}`
 							};
 						});
 
