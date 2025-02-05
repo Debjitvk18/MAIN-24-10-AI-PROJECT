@@ -2,6 +2,7 @@ import { goto } from '$app/navigation';
 import { AUTH_TOKEN, USER_KEY } from '$lib/constants/constants';
 import { UserService } from '$lib/services/user-service';
 import { writable } from 'svelte/store';
+import { resetMode } from "mode-watcher";
 
 export const isLoggedIn = writable(false);
 export const user = writable(null);
@@ -55,6 +56,7 @@ export async function getUserData() {
 export function logout() {
 	localStorage.removeItem(AUTH_TOKEN);
 	localStorage.removeItem(USER_KEY);
+	resetMode();
 	isLoggedIn.set(false);
 	user.set(null);
 	goto('/login');
