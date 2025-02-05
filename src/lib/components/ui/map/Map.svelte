@@ -22,10 +22,19 @@
 	import { showToast } from '$lib/stores/toastStore';
 	import { page } from '$app/stores';
 
+	import * as Tabs from '$lib/components/ui/tabs';
+	import Icon from '@iconify/svelte';
+
 	// loading overlay
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
-	import { API_BASE_URL, PANOID_BASE_URL } from '$lib/constants/constants';
-	import { truncateString } from '$lib/utils/generalUtils';
+	import { API_BASE_URL, MAPBOX_THEMES, PANOID_BASE_URL } from '$lib/constants/constants';
+	import {
+		getDataFromURL,
+		putDataInURL,
+		toggleFullScreen,
+		truncateString
+	} from '$lib/utils/generalUtils';
+	import MapArea from '$lib/components/general/map-results/MapArea.svelte';
 	let showLoadingOverlay = false;
 	let overlayLoadingText = 'Loading';
 
@@ -119,6 +128,103 @@
 	// Markers for social media types
 	let markers: { [key: string]: mapboxgl.Marker[] } = {};
 
+	/**
+	 * Add a control to switch between map styles.
+	 */
+	function createStyleSwitcherControl() {
+		class StyleSwitcherControl {
+			onAdd(map) {
+				this.map = map;
+				this.container = document.createElement('div');
+				this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group cyberglobes-map-control';
+
+				const themeFromUrl = getDataFromURL('theme');
+				const select = this.createStyleSelector(themeFromUrl);
+				this.container.appendChild(select);
+				return this.container;
+			}
+
+			// Create Style Switch Dropdown
+			createStyleSelector(themeFromUrl) {
+				const select = document.createElement('select');
+				select.className = 'style-switcher p-3 shadow-md rounded-md bg-white dark:bg-gray-950';
+
+				MAPBOX_THEMES.forEach(({ style, name }) => {
+					const option = document.createElement('option');
+					option.value = style;
+					option.textContent = name;
+					option.selected = `mapbox://styles/mapbox/${themeFromUrl}` === style;
+					select.appendChild(option);
+
+					if (option.selected) {
+						map.setStyle(style);
+					}
+				});
+
+				select.addEventListener('change', this.handleStyleChange.bind(this));
+				return select;
+			}
+
+			// Handle theme change
+			handleStyleChange(event) {
+				let selectedStyle = event.target.value;
+				map.setStyle(selectedStyle);
+
+				// Extract theme name and update URL
+				const theme = selectedStyle.replace('mapbox://styles/mapbox/', '');
+				putDataInURL('theme', theme);
+			}
+
+			// Reset when map removed!
+			onRemove() {
+				this.container.parentNode.removeChild(this.container);
+				this.map = undefined;
+			}
+		}
+
+		return new StyleSwitcherControl();
+	}
+
+	/**
+	 * Add a control to toggle full screen control.
+	 */
+	function createFullScreenControl() {
+		class FullScreenControl {
+			onAdd(map) {
+				this.map = map;
+				this.container = document.createElement('div');
+				this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group cyberglobes-map-control';
+				const button = this.createFullScreenButton();
+				this.container.appendChild(button);
+				return this.container;
+			}
+
+			createFullScreenButton() {
+				const button = document.createElement('button');
+				button.className =
+					'mapboxgl-ctrl-icon mapboxgl-ctrl-fullscreen cyberglobes-map-control-btn';
+				button.type = 'button';
+				button.title = 'Toggle Fullscreen';
+				button.style.padding = '2px';
+				button.innerHTML =
+					'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9V6a2 2 0 0 1 2-2h3m11 11v3a2 2 0 0 1-2 2h-3m0-16h3a2 2 0 0 1 2 2v3M9 20H6a2 2 0 0 1-2-2v-3"/></svg>';
+
+				button.onclick = () => {
+					toggleFullScreen('map-container');
+				};
+
+				return button;
+			}
+
+			onRemove() {
+				this.container.parentNode.removeChild(this.container);
+				this.map = undefined;
+			}
+		}
+
+		return new FullScreenControl();
+	}
+
 	onMount(() => {
 		mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
 		map = new mapboxgl.Map({
@@ -136,6 +242,18 @@
 		});
 
 		map.addControl(geocoder);
+
+		// add control to switch between map and satellite view
+		map.addControl(
+			new mapboxgl.NavigationControl({
+				showCompass: false,
+				showZoom: true
+			}),
+			'top-right'
+		);
+
+		map.addControl(createStyleSwitcherControl(), 'top-left');
+		map.addControl(createFullScreenControl(), 'top-right');
 
 		map.on('load', () => {
 			map.addSource('single-point', {
@@ -461,146 +579,70 @@
 </svelte:head>
 
 <LoadingOverlay isLoading={showLoadingOverlay} loadingText={overlayLoadingText} />
-<div class="h-screen flex flex-col">
+<div class="h-screen flex flex-col" id="map-container">
 	<div class="flex h-full flex-1 relative">
-		<div class="h-full relative flex-1">
-			{#if showSidebar}
-				<div class="absolute top-0 md:pt-3 p-2 md:px-3 z-100 w-auto">
-					<div class="flex items-center gap-2 max-md:gap-1 md:justify-between">
-						<div class="flex gap-2 items-center">
-							<div class="h-full">
-								<div class="flex gap-1">
+		{#if showSidebar}
+			<div class="h-full">
+				<!-- Sidebar -->
+				<div class="dark:bg-neutral-900 w-96 p-4 pt-0 h-full overflow-y-auto">
+					<div class="sticky top-0">
+						<!-- Tabs -->
+						<div class="dark:bg-neutral-800 rounded-lg p-3 flex justify-start gap-5 w-full">
+							<div class="flex overflow-x-auto">
+								{#each Object.keys(socialMediaIcons) as type}
+									<div class="flex-none px-3 py-6 first:pl-6 last:pr-6">
+										<button
+											on:click={() => toggleVisibility(type)}
+											class="flex flex-col items-center justify-center gap-3 relative rounded p-1 bg-white dark:hover:bg-neutral-500 shadow"
+										>
+											<span class="h-18 w-18 rounded-full" title={type}
+												>{@html socialMediaIcons[type]}</span
+											>
+											<strong class="text-xs font-medium text-gray-900 dark:text-gray-200"
+												>{type}</strong
+											>
+											<span
+												class="absolute bg-gray-900 text-gray-100 px-2 py-1 text-xs font-bold rounded-full -top-3 -right-3"
+											>
+												{socialMediaData.find((data) => data.type === type).count}
+											</span>
+										</button>
+									</div>
 									<!-- <button
-										class="rounded-lg block disabled:cursor-not-allowed transition-all duration-100 ease-in px-3 py-1.5 font-500 flex items-center justify-center gap-2 bg-black hover:bg-black disabled:bg-zinc-600 text-white max-md:size-9"
-										on:click={() => (showSaveModal = !showSaveModal)}
+										on:click={() => toggleVisibility(type)}
+										class="relative rounded p-1 flex items-center justify-center gap-1 bg-white dark:hover:bg-neutral-500 shadow"
 									>
-										<div class="md:hidden i-lucide-plus p-3"></div>
-										<span>Save Results</span></button
-									> -->
-								</div>
-								<Modal
-									title="Save your results"
-									open={showSaveModal}
-									on:close={() => (showSaveModal = false)}
-								>
-									<svelte:fragment slot="body">
-										<form on:submit={handleSaveResults}>
-											<div>
-												<label class="block font-medium text-sm text-gray-700" for="Title"
-													>Title</label
-												>
-												<input
-													class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full"
-													id="title"
-													type="text"
-													required
-													bind:value={saveResultsFormData.title}
-												/>
-											</div>
-											<div class="mt-4">
-												<label
-													class="block font-medium text-sm text-gray-700"
-													for="refresh_frequency">Refresh Frequency</label
-												>
-												<select
-													id="refresh_frequency"
-													name="refresh_frequency"
-													class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full"
-													bind:value={saveResultsFormData.refreshFrequency}
-												>
-													<option value="No Refresh">No Refresh</option>
-													<option value="Daily">Daily</option>
-													<option value="Monthly">Monthly</option>
-												</select>
-											</div>
-											{#if showAutoUpdateEmail()}
-												<div class="block mt-4">
-													<label for="auto_update_email" class="flex items-center"
-														><input
-															type="checkbox"
-															class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-															id="auto_update_email"
-															name="auto_update_email"
-															bind:checked={saveResultsFormData.autoUpdateEmail}
-														/>
-														<span class="ml-2 text-sm text-gray-600">Email me when auto-update</span
-														></label
-													>
-												</div>
-											{/if}
-											<!-- <div class="flex items-center justify-end mt-4">
-												{#if isLoading}
-													<LoadingButton buttonText="Saving..." />
-												{:else}
-													<button
-														type="submit"
-														class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition ml-4"
-														>Save results</button
-													>
-												{/if}
-											</div> -->
-										</form>
-									</svelte:fragment>
-								</Modal>
+										<span title={type}>{@html socialMediaIcons[type]}</span>
+										<span
+											class="absolute bg-blue-200 text-black px-2 py-1 text-xs font-bold rounded-full -top-3 -right-3"
+										>
+											{socialMediaData.find((data) => data.type === type).count}
+										</span>
+									</button> -->
+								{/each}
 							</div>
 						</div>
 					</div>
-				</div>
-			{/if}
-			<div bind:this={mapContainer} id="map"></div>
-		</div>
-
-		{#if showSidebar}
-			<div class="h-full">
-				<div class="bg-neutral-900 w-96 p-4 pt-0 h-full overflow-y-auto">
-					<div class="sticky top-0">
-						<div class="bg-neutral-800 rounded-lg p-3 flex justify-start gap-5 w-full">
-							{#each Object.keys(socialMediaIcons) as type}
-								<button
-									on:click={() => toggleVisibility(type)}
-									class="relative rounded p-1 flex items-center justify-center gap-1 bg-white dark:hover:bg-neutral-500 shadow {visibility[
-										type
-									]
-										? ''
-										: 'bg-neutral-500'}"
-								>
-									<span title={type}>{@html socialMediaIcons[type]}</span>
-									<span
-										class="absolute bg-blue-200 text-black px-2 py-1 text-xs font-bold rounded-full -top-3 -right-3"
-									>
-										{socialMediaData.find((data) => data.type === type).count}
-									</span>
-								</button>
-							{/each}
-						</div>
-					</div>
+					<!-- Content -->
 					<div>
 						<div class="pb-5 h-full">
 							<div class="max-w-md mx-auto">
 								{#each socialMediaJson as socialMedia}
 									{#each socialMedia.posts as post, index}
 										<div
-											class="flex items-start border-b border-b-slate-800 p-4 hover:bg-neutral-800 rounded-lg {visibility[
-												socialMedia.type
-											]
-												? ''
-												: 'hidden'}"
+											class="bg-white p-4 rounded-lg shadow-md mt-4 hover:bg-gray-100"
 											on:mouseover={() => highlightMarker(socialMedia.type, index)}
 											on:mouseleave={() => highlightMarker(socialMedia.type, index, false)}
 											on:mouseleave={() => highlightMarker(socialMedia.type, index, false)}
 										>
-											<a href={post.url} target="_blank" class="flex items-start">
-												<img
-													src={post.image}
-													alt="Panorama"
-													class="w-12 h-12 object-cover rounded-md shadow"
-												/>
-												<div class="ml-4">
-													<h2 class="text-lg font-bold text-white">
-														{truncateString(post.title, 50)}
-													</h2>
-													<p class="text-sm text-white">{truncateString(post.description, 250)}</p>
-													<p class="text-sm text-white">Lat: {post.lat}, Lng: {post.lng}</p>
+											<a href={post.url} target="_blank" class="flex items-center gap-4">
+												<img class="h-12 w-12 rounded-full" src={post.image} alt="" />
+												<div class="flex flex-col">
+													<strong class="text-sm font-medium text-gray-900 dark:text-gray-200"
+														>{truncateString(post.title, 50)}</strong
+													><span class="text-sm font-medium text-gray-500 dark:text-gray-400"
+														>{truncateString(post.description, 250)}</span
+													>
 												</div>
 											</a>
 										</div>
@@ -623,6 +665,49 @@
 				</div>
 			</div>
 		{/if}
+
+		<div class="h-full relative flex-1">
+			{#if showSidebar}
+				<p
+					class="bg-yellow-400 py-1.5 text-center text-sm font-medium text-black dark:bg-yellow-700 dark:text-white"
+				>
+					You're viewing outdated data —
+					<a
+						href="https://next.shadcn-svelte.com"
+						target="_blank"
+						class="inline-flex items-center font-semibold underline-offset-2 hover:underline"
+						>click here for the latest update!
+						<Icon icon="bx:bxs-external-link" class="text-lg leading-none ms-1" />
+					</a>
+				</p>
+
+				<div class="top-4 left-4">
+					<button>
+						<Icon icon="bx:bxs-save" class="text-lg leading-none w-7" />
+					</button>
+				</div>
+			{/if}
+			<!-- Map overlay -->
+			<div class="absolute top-0 md:pt-3 p-2 md:px-3 z-100 w-auto" style="display: none;">
+				<div class="flex items-center gap-2 max-md:gap-1 md:justify-between">
+					<div class="flex gap-2 items-center">
+						<div class="h-full">
+							<div class="flex gap-1">
+								<button
+									class="rounded-lg block disabled:cursor-not-allowed transition-all duration-100 ease-in px-3 py-1.5 font-500 flex items-center justify-center gap-2 bg-black hover:bg-black disabled:bg-zinc-600 text-white max-md:size-9"
+								>
+									<div class="md:hidden i-lucide-plus p-3"></div>
+									<span>Save Results</span></button
+								>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Map Area -->
+			<div bind:this={mapContainer} id="map"></div>
+		</div>
 	</div>
 </div>
 
@@ -680,5 +765,13 @@
 		100% {
 			transform: translateY(0); /* Return to original position */
 		}
+	}
+
+	.style-switcher {
+		background: white;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		padding: 5px;
+		font-size: 14px;
 	}
 </style>
