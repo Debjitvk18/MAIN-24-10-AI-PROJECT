@@ -1,64 +1,58 @@
 <script lang="ts">
-	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
-	import { onMount, onDestroy } from 'svelte';
+	// Svelte
+	import { onDestroy, onMount } from 'svelte';
+	import { page } from '$app/stores';
+
+	// Mapbox
 	import mapboxgl from 'mapbox-gl';
 	import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 	import * as turf from '@turf/turf';
 
-	import InstagramIcon from '$lib/assets/svg/marker/insta-pin.svg?raw';
-	import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
-	import TwitterIcon from '$lib/assets/svg/marker/x-pin.svg?raw';
-	import LinkedinIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
-	import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
+	// Environment variables
+	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 
-	import FacebookPostImage from '$lib/assets/posts/facebook.jpg';
-	import InstagramPostImage from '$lib/assets/posts/instagram.jpg';
-	import LinkedinPostImage from '$lib/assets/posts/linkedin.webp';
-	import TwitterPostImage from '$lib/assets/posts/twitter.jpg';
-	import Modal from '../modal/Modal.svelte';
+	// Services
 	import { MapService } from '$lib/services/map-service';
-	import LoadingButton from '$lib/components/form/buttons/LoadingButton.svelte';
 
-	import { showToast } from '$lib/stores/toastStore';
-	import { page } from '$app/stores';
-
-	import * as Tabs from '$lib/components/ui/tabs';
-	import Icon from '@iconify/svelte';
-
-	// loading overlay
-	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
+	// Constants
 	import { API_BASE_URL, MAPBOX_THEMES, PANOID_BASE_URL } from '$lib/constants/constants';
+
+	// Utility functions
 	import {
 		getDataFromURL,
 		putDataInURL,
 		toggleFullScreen,
 		truncateString
 	} from '$lib/utils/generalUtils';
-	import MapArea from '$lib/components/general/map-results/MapArea.svelte';
-	import { coordinateFeature, COORDINATES_REGEXP, highlightMarker, parseCoordinates } from '$lib/utils/mapUtils';
+	import { highlightMarker, parseCoordinates } from '$lib/utils/mapUtils';
+
+	// SVG icons
+	import TwitterIcon from '$lib/assets/svg/marker/x-pin.svg?raw';
+	import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
+
+	// UI Components
+	import { showToast } from '$lib/stores/toastStore';
+	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
+
+	// Icon Component
+	import Icon from '@iconify/svelte';
+
+	// Default Data...
 	let showLoadingOverlay = false;
 	let overlayLoadingText = 'Loading';
-
 	let searchQuery: string = '';
-
-	const unsubscribe = page.subscribe(($page) => {
-		searchQuery = $page.url.searchParams.get('search') || '';
-	});
-
-	onDestroy(() => {
-		unsubscribe();
-	});
-
+	let socialMediaJson = [];
+	let socialMediaIcons;
+	let socialMediaData;
+	let circle;
+	let visibility: { [key: string]: boolean };
 	let map: mapboxgl.Map;
 	let mapContainer: HTMLElement;
 	let showSidebar = false;
 	let isLoading = false; // loader
 	let errorMessages: string[] = []; // validation errors
-
 	const mapService = new MapService();
-
-	// show save report modal?
-	let showSaveModal = false;
+	let showSaveModal = false; // show save report modal?
 
 	// save results form data
 	let saveResultsFormData = {
@@ -67,7 +61,30 @@
 		autoUpdateEmail: false
 	};
 
-	// if refreshFrequency is not 'No Refresh', show autoUpdateEmail checkbox
+	// Markers for social media types
+	let markers: { [key: string]: mapboxgl.Marker[] } = {};
+
+
+	/**
+	 * A variable that holds the unsubscribe function returned by the subscription to the `page` store.
+	 * The subscription listens to changes in the `$page` object, particularly to retrieve the `search`
+	 * query parameter from the URL's `searchParams`. This value is assigned to the `searchQuery` variable.
+	 *
+	 * Calling the `unsubscribe` function stops the subscription and prevents further updates to the
+	 * `$page` object.
+	 */
+	const unsubscribe = page.subscribe(($page) => {
+		searchQuery = $page.url.searchParams.get('search') || '';
+	});
+
+	/**
+	 * Determines if the "Auto Update Email" functionality should be shown
+	 * based on the refresh frequency setting in the form data. If the refresh
+	 * frequency is not set to 'No Refresh', it returns true. Otherwise, it disables
+	 * the auto update email option and returns false.
+	 *
+	 * @return {boolean} Returns true if the refresh frequency is not 'No Refresh', otherwise false.
+	 */
 	function showAutoUpdateEmail() {
 		if (saveResultsFormData.refreshFrequency !== 'No Refresh') {
 			return true;
@@ -77,7 +94,13 @@
 		return false;
 	}
 
-	// api call to save results
+	/**
+	 * Handles the saving of results when triggered by a form event. Prevents the default action of the event,
+	 * sends a request to save the results, and manages the UI state and notifications based on the response.
+	 *
+	 * @param {Event} event The event triggered by the user interaction, typically a form submission.
+	 * @return {Promise<void>} A promise that resolves when the save operation completes, either successfully or with errors.
+	 */
 	async function handleSaveResults(event: Event) {
 		event.preventDefault();
 		isLoading = true;
@@ -108,6 +131,12 @@
 		}
 	}
 
+	/**
+	 * Processes and formats error messages from a given response object.
+	 *
+	 * @param {object} data - The data containing error messages or information.
+	 * @returns {void} This function does not return a value; it manipulates the errorMessages array directly.
+	 */
 	function handleErrors(data: any) {
 		errorMessages = [];
 
@@ -120,17 +149,16 @@
 		}
 	}
 
-	var socialMediaJson = [];
-	var socialMediaIcons;
-	var socialMediaData;
-	var circle;
-	var visibility: { [key: string]: boolean };
-
-	// Markers for social media types
-	let markers: { [key: string]: mapboxgl.Marker[] } = {};
-
 	/**
-	 * Add a control to switch between map styles.
+	 * Creates a custom style switcher control for a Mapbox map, allowing users
+	 * to dynamically switch map styles from a dropdown menu.
+	 *
+	 * This control includes a dropdown selector populated with available themes
+	 * and applies the selected style to the map. The control also updates the
+	 * URL with the chosen theme for persistence and resets when removed from the map.
+	 *
+	 * @return {Object} A new instance of the StyleSwitcherControl class, which can
+	 *         be added to a Mapbox map as a control to switch map styles.
 	 */
 	function createStyleSwitcherControl() {
 		class StyleSwitcherControl {
@@ -187,7 +215,13 @@
 	}
 
 	/**
-	 * Add a control to toggle full screen control.
+	 * Creates a full-screen control for a Mapbox map.
+	 *
+	 * The full-screen control allows the user to toggle full-screen mode
+	 * for the specified map container. It includes a button with an SVG icon
+	 * that triggers the full-screen functionality when clicked.
+	 *
+	 * @return {Object} An instance of FullScreenControl, which can be added to a Mapbox map.
 	 */
 	function createFullScreenControl() {
 		class FullScreenControl {
@@ -241,7 +275,7 @@
 			reverseGeocode: true,
 			mapboxgl: mapboxgl,
 			marker: false,
-			placeholder: 'Search by lat, lng or address...',
+			placeholder: 'Search by lat, lng or address...'
 		});
 
 		map.addControl(geocoder);
@@ -353,7 +387,7 @@
 					const source = new EventSource(`${API_BASE_URL}map/search-sse/${response.search_id}`);
 
 					// streeview.
-					source.addEventListener('streetview', function (e) {
+					source.addEventListener('streetview', function(e) {
 						const data = JSON.parse(e.data);
 
 						const posts = data.panoids.map((panoid) => {
@@ -379,7 +413,7 @@
 					});
 
 					// twitter.
-					source.addEventListener('x-twitter', function (e) {
+					source.addEventListener('x-twitter', function(e) {
 						const data = JSON.parse(e.data);
 						const posts = data.tweets.map((tweetObj) => {
 							const tweet = tweetObj.tweet;
@@ -414,24 +448,24 @@
 					});
 
 					// streetview error.
-					source.addEventListener('streetview_error', function (e) {
+					source.addEventListener('streetview_error', function(e) {
 						const data = JSON.parse(e.data);
 					});
 
 					// Twitter error.
-					source.addEventListener('x-twitter_error', function (e) {
+					source.addEventListener('x-twitter_error', function(e) {
 						const data = JSON.parse(e.data);
 					});
 
 					// Error.
-					source.addEventListener('error', function (e) {
+					source.addEventListener('error', function(e) {
 						const data = JSON.parse(e.data);
 						source.close();
 						overlayLoadingText = 'Something went wrong, please try again';
 					});
 
 					// Done.
-					source.addEventListener('done', function (e) {
+					source.addEventListener('done', function(e) {
 						const data = JSON.parse(e.data);
 						source.close();
 
@@ -457,8 +491,17 @@
 		if (map) {
 			map.remove();
 		}
+
+		unsubscribe();
 	});
 
+	/**
+	 * Displays social media posts on a map by positioning markers based on specified data types and counts.
+	 * The method initializes marker visibility, adds random points within a defined polygon, and updates the map state accordingly.
+	 * Includes asynchronous steps to finalize map view and update the user interface.
+	 *
+	 * @return {void} Does not return a value; performs operations to display social media posts on a map.
+	 */
 	function displaySocialMediaPosts() {
 		socialMediaIcons = socialMediaJson.reduce((acc, { type, icon }) => {
 			acc[type] = icon;
@@ -536,6 +579,12 @@
 		}, 4000);
 	}
 
+	/**
+	 * Toggles the visibility of markers for a specified type.
+	 *
+	 * @param {string} type - The type of markers whose visibility needs to be toggled.
+	 * @return {void} This function does not return a value.
+	 */
 	function toggleVisibility(type: string) {
 		// Update the visibility object
 		visibility = { ...visibility, [type]: !visibility[type] };
@@ -573,10 +622,10 @@
 											class="flex flex-col items-center justify-center gap-3 relative rounded p-1 bg-white dark:hover:bg-neutral-500 shadow"
 										>
 											<span class="h-18 w-18 rounded-full" title={type}
-												>{@html socialMediaIcons[type]}</span
+											>{@html socialMediaIcons[type]}</span
 											>
 											<strong class="text-xs font-medium text-gray-900 dark:text-gray-200"
-												>{type}</strong
+											>{type}</strong
 											>
 											<span
 												class="absolute bg-gray-900 text-gray-100 px-2 py-1 text-xs font-bold rounded-full -top-3 -right-3"
@@ -616,10 +665,10 @@
 												<img class="h-12 w-12 rounded-full" src={post.image} alt="" />
 												<div class="flex flex-col">
 													<strong class="text-sm font-medium text-gray-900 dark:text-gray-200"
-														>{truncateString(post.title, 50)}</strong
+													>{truncateString(post.title, 50)}</strong
 													><span class="text-sm font-medium text-gray-500 dark:text-gray-400"
-														>{truncateString(post.description, 250)}</span
-													>
+												>{truncateString(post.description, 250)}</span
+												>
 												</div>
 											</a>
 										</div>
@@ -632,7 +681,7 @@
 										<a
 											href="/login"
 											class="rounded-lg px-4 py-2 bg-gray-200 hover:bg-gray-300 duration-300"
-											>Login to explore more</a
+										>Login to explore more</a
 										>
 									</div>
 								</div>
@@ -653,7 +702,7 @@
 						href="https://next.shadcn-svelte.com"
 						target="_blank"
 						class="inline-flex items-center font-semibold underline-offset-2 hover:underline"
-						>click here for the latest update!
+					>click here for the latest update!
 						<Icon icon="bx:bxs-external-link" class="text-lg leading-none ms-1" />
 					</a>
 				</p>
@@ -689,66 +738,70 @@
 </div>
 
 <style>
-	#map {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-	}
-	.sidebar {
-		background-color: rgb(35 55 75 / 90%);
-		color: #fff;
-		padding: 10px;
-		font-family: monospace;
-		z-index: 1;
-		position: absolute;
-		top: 10px;
-		left: 10px;
-		border-radius: 4px;
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-	}
-	.social-marker {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: white;
-		border-radius: 50%;
-		width: 30px;
-		height: 30px;
-		text-align: center;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-	}
-	.icon {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-	}
-	.icon svg {
-		fill: white !important;
-	}
+    #map {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+    }
 
-	.bounce-animation {
-		animation: bounce 0.6s ease forwards;
-	}
+    .sidebar {
+        background-color: rgb(35 55 75 / 90%);
+        color: #fff;
+        padding: 10px;
+        font-family: monospace;
+        z-index: 1;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        border-radius: 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
 
-	@keyframes bounce {
-		0% {
-			transform: translateY(0);
-		}
-		50% {
-			transform: translateY(-10px); /* Move up by 10px */
-		}
-		100% {
-			transform: translateY(0); /* Return to original position */
-		}
-	}
+    .social-marker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
 
-	.style-switcher {
-		background: white;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		padding: 5px;
-		font-size: 14px;
-	}
+    .icon {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .icon svg {
+        fill: white !important;
+    }
+
+    .bounce-animation {
+        animation: bounce 0.6s ease forwards;
+    }
+
+    @keyframes bounce {
+        0% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px); /* Move up by 10px */
+        }
+        100% {
+            transform: translateY(0); /* Return to original position */
+        }
+    }
+
+    .style-switcher {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 5px;
+        font-size: 14px;
+    }
 </style>
