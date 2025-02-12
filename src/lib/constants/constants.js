@@ -25,3 +25,6 @@ export const MAPBOX_THEMES = [
 	{ name: 'Mapbox Navigation Day', style: 'mapbox://styles/mapbox/navigation-day-v1' },
 	{ name: 'Mapbox Navigation Night', style: 'mapbox://styles/mapbox/navigation-night-v1' }
 ];
+
+export const MARKER_HIGHLIGHT_COLOR = '#448ee4';
+export const MARKER_DEFAULT_COLOR = 'black';

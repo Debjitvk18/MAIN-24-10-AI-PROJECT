@@ -35,6 +35,7 @@
 		truncateString
 	} from '$lib/utils/generalUtils';
 	import MapArea from '$lib/components/general/map-results/MapArea.svelte';
+	import { highlightMarker } from '$lib/utils/mapUtils';
 	let showLoadingOverlay = false;
 	let overlayLoadingText = 'Loading';
 
@@ -542,32 +543,6 @@
 			marker.getElement().style.display = visibility[type] ? 'block' : 'none';
 		});
 	}
-
-	function highlightMarker(type: string, id: string, highlight: boolean = true) {
-		const marker = markers[type][id];
-		if (!marker) return;
-		const markerElement = marker.getElement();
-		const targetLngLat = [marker.getLngLat().lng, marker.getLngLat().lat];
-
-		// Find the SVG element inside the marker
-		const svgElement = markerElement.querySelector('svg');
-
-		if (svgElement) {
-			if (highlight) {
-				// Highlight the marker by changing its scale and style
-				svgElement.style.transition = 'transform 0.5s ease-out';
-				svgElement.style.transform = 'scale(1.5)';
-				// change svg fill color to custom color
-				svgElement.style.fill = '#448ee4';
-			} else {
-				// Reset the marker's scale and style
-				svgElement.style.transform = 'scale(1)';
-				// change svg fill color to white
-				svgElement.style.fill = 'black';
-			}
-		}
-		marker.setLngLat(targetLngLat);
-	}
 </script>
 
 <svelte:head>
@@ -631,9 +606,9 @@
 									{#each socialMedia.posts as post, index}
 										<div
 											class="bg-white p-4 rounded-lg shadow-md mt-4 hover:bg-gray-100"
-											on:mouseover={() => highlightMarker(socialMedia.type, index)}
-											on:mouseleave={() => highlightMarker(socialMedia.type, index, false)}
-											on:mouseleave={() => highlightMarker(socialMedia.type, index, false)}
+											on:mouseover={() => highlightMarker(markers[socialMedia.type]?.[index])}
+											on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[index], false)}
+											on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[index], false)}
 										>
 											<a href={post.url} target="_blank" class="flex items-center gap-4">
 												<img class="h-12 w-12 rounded-full" src={post.image} alt="" />
