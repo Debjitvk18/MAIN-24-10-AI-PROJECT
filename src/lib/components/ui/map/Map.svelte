@@ -54,6 +54,8 @@
 	const mapService = new MapService();
 	let showSaveModal = false; // show save report modal?
 
+	let mapMarker = null; // set by onclick on map
+
 	// save results form data
 	let saveResultsFormData = {
 		title: '',
@@ -272,13 +274,26 @@
 		const geocoder = new MapboxGeocoder({
 			accessToken: mapboxgl.accessToken,
 			localGeocoder: parseCoordinates,
-			reverseGeocode: true,
 			mapboxgl: mapboxgl,
 			marker: false,
-			placeholder: 'Search by lat, lng or address...'
+			placeholder: 'Search by lng,lat or address...'
 		});
 
 		map.addControl(geocoder);
+
+		map.on('click', (e) => {
+			if(mapMarker) mapMarker.remove();
+
+			// Add a marker at the clicked location
+			mapMarker = new mapboxgl.Marker()
+				.setLngLat(e.lngLat)
+				.addTo(map);
+
+
+			const lngLat = e.lngLat;
+			geocoder.setInput(lngLat.lng + ',' + lngLat.lat);
+			geocoder.query([lngLat.lng, lngLat.lat].join(','));
+		});
 
 		// add control to switch between map and satellite view
 		map.addControl(
@@ -332,6 +347,7 @@
 			geocoder.on('result', async (event: any) => {
 				// Show loading overlay
 				showLoadingOverlay = true;
+				if(mapMarker) mapMarker.remove(); // Remove clicked map marker
 
 				// Get the coordinates of the search result
 				const coordinates = event.result.geometry.coordinates;
