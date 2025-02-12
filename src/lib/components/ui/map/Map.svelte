@@ -35,7 +35,7 @@
 		truncateString
 	} from '$lib/utils/generalUtils';
 	import MapArea from '$lib/components/general/map-results/MapArea.svelte';
-	import { highlightMarker } from '$lib/utils/mapUtils';
+	import { coordinateFeature, COORDINATES_REGEXP, highlightMarker, parseCoordinates } from '$lib/utils/mapUtils';
 	let showLoadingOverlay = false;
 	let overlayLoadingText = 'Loading';
 
@@ -237,9 +237,11 @@
 
 		const geocoder = new MapboxGeocoder({
 			accessToken: mapboxgl.accessToken,
+			localGeocoder: parseCoordinates,
+			reverseGeocode: true,
 			mapboxgl: mapboxgl,
 			marker: false,
-			placeholder: 'Search for an address'
+			placeholder: 'Search by lat, lng or address...',
 		});
 
 		map.addControl(geocoder);
