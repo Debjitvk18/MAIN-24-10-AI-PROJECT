@@ -18,12 +18,7 @@
 	import { API_BASE_URL, MAPBOX_THEMES, PANOID_BASE_URL } from '$lib/constants/constants';
 
 	// Utility functions
-	import {
-		getDataFromURL,
-		putDataInURL,
-		toggleFullScreen,
-		truncateString
-	} from '$lib/utils/generalUtils';
+	import { getDataFromURL, putDataInURL, toggleFullScreen, truncateString } from '$lib/utils/generalUtils';
 	import { highlightMarker, parseCoordinates } from '$lib/utils/mapUtils';
 
 	// SVG icons
@@ -35,7 +30,8 @@
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
 
 	// Icon Component
-	import Icon from '@iconify/svelte';
+	import MapTopbar from '$lib/components/ui/map/MapTopbar.svelte';
+	import MapSidebar from '$lib/components/ui/map/MapSidebar.svelte';
 
 	// Default Data...
 	let showLoadingOverlay = false;
@@ -49,10 +45,16 @@
 	let map: mapboxgl.Map;
 	let mapContainer: HTMLElement;
 	let showSidebar = false;
-	let isLoading = false; // loader
 	let errorMessages: string[] = []; // validation errors
 	const mapService = new MapService();
-	let showSaveModal = false; // show save report modal?
+
+	/**
+	 * A boolean variable that indicates the visibility state of a sidebar component.
+	 *
+	 * When set to `true`, the sidebar is visible to the user.
+	 * When set to `false`, the sidebar is hidden.
+	 */
+	let isSidebarVisible = true;
 
 	let mapMarker = null; // set by onclick on map
 
@@ -282,7 +284,7 @@
 		map.addControl(geocoder);
 
 		map.on('click', (e) => {
-			if(mapMarker) mapMarker.remove();
+			if (mapMarker) mapMarker.remove();
 
 			// Add a marker at the clicked location
 			mapMarker = new mapboxgl.Marker()
@@ -347,7 +349,7 @@
 			geocoder.on('result', async (event: any) => {
 				// Show loading overlay
 				showLoadingOverlay = true;
-				if(mapMarker) mapMarker.remove(); // Remove clicked map marker
+				if (mapMarker) mapMarker.remove(); // Remove clicked map marker
 
 				// Get the coordinates of the search result
 				const coordinates = event.result.geometry.coordinates;
@@ -615,6 +617,18 @@
 			marker.getElement().style.display = visibility[type] ? 'block' : 'none';
 		});
 	}
+
+	/**
+	 * Toggles the visibility of the sidebar and adjusts the map size accordingly.
+	 *
+	 * @return {void} Does not return a value.
+	 */
+	function toggleSidebar() {
+		isSidebarVisible = !isSidebarVisible;
+		setTimeout(() => {
+			map.resize();
+		}, 100);
+	}
 </script>
 
 <svelte:head>
@@ -626,8 +640,15 @@
 </svelte:head>
 
 <LoadingOverlay isLoading={showLoadingOverlay} loadingText={overlayLoadingText} />
-<div class="h-screen flex flex-col" id="map-container">
+<div class={`h-screen flex flex-col ${isSidebarVisible ? 'sidebar-visible' : ''}`} id="map-container">
+	<!-- Topbar -->
+	<MapTopbar isSidebarVisible={isSidebarVisible} toggleSidebarVisibility={toggleSidebar} />
 	<div class="flex h-full flex-1 relative">
+
+		<!-- Sidebar -->
+		<div class="sidebar {isSidebarVisible ? 'visible' : ''}">
+			<MapSidebar isSidebarVisible={isSidebarVisible} />
+		</div>
 		{#if showSidebar}
 			<div class="h-full">
 				<!-- Sidebar -->
@@ -714,44 +735,6 @@
 		{/if}
 
 		<div class="h-full relative flex-1">
-			{#if showSidebar}
-				<p
-					class="bg-yellow-400 py-1.5 text-center text-sm font-medium text-black dark:bg-yellow-700 dark:text-white"
-				>
-					You're viewing outdated data —
-					<a
-						href="https://next.shadcn-svelte.com"
-						target="_blank"
-						class="inline-flex items-center font-semibold underline-offset-2 hover:underline"
-					>click here for the latest update!
-						<Icon icon="bx:bxs-external-link" class="text-lg leading-none ms-1" />
-					</a>
-				</p>
-
-				<div class="top-4 left-4">
-					<button>
-						<Icon icon="bx:bxs-save" class="text-lg leading-none w-7" />
-					</button>
-				</div>
-			{/if}
-			<!-- Map overlay -->
-			<div class="absolute top-0 md:pt-3 p-2 md:px-3 z-100 w-auto" style="display: none;">
-				<div class="flex items-center gap-2 max-md:gap-1 md:justify-between">
-					<div class="flex gap-2 items-center">
-						<div class="h-full">
-							<div class="flex gap-1">
-								<button
-									class="rounded-lg block disabled:cursor-not-allowed transition-all duration-100 ease-in px-3 py-1.5 font-500 flex items-center justify-center gap-2 bg-black hover:bg-black disabled:bg-zinc-600 text-white max-md:size-9"
-								>
-									<div class="md:hidden i-lucide-plus p-3"></div>
-									<span>Save Results</span></button
-								>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
 			<!-- Map Area -->
 			<div bind:this={mapContainer} id="map"></div>
 		</div>
@@ -759,27 +742,6 @@
 </div>
 
 <style>
-    #map {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-    }
-
-    .sidebar {
-        background-color: rgb(35 55 75 / 90%);
-        color: #fff;
-        padding: 10px;
-        font-family: monospace;
-        z-index: 1;
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        border-radius: 4px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
     .social-marker {
         display: flex;
         align-items: center;
@@ -825,4 +787,35 @@
         padding: 5px;
         font-size: 14px;
     }
+
+    .sidebar {
+        width: 24rem;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background-color: #f9f9f9;
+        transition: transform 0.3s ease;
+        transform: translateX(-100%);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        z-index: 1;
+        position: absolute;
+        border-radius: 4px;
+    }
+
+    .sidebar.visible {
+        transform: translateX(0);
+    }
+
+    #map {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        transition: margin-left 0.3s ease;
+    }
+
+    .sidebar-visible #map {
+        width: calc(100% - 24rem);
+        margin-left: 24rem; /* Same width as the sidebar */
+    }
+
 </style>
