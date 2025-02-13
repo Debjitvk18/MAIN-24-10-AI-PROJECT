@@ -355,6 +355,11 @@
 				const lat = coordinates[1];
 				const lng = coordinates[0];
 
+				// pass values in the url
+				putDataInURL('search', address);
+				putDataInURL('lat', lat);
+				putDataInURL('long', lng);
+
 				setTimeout(() => {
 					overlayLoadingText = 'Getting Address coordinates';
 				}, 1000);
