@@ -19,6 +19,7 @@
 		"@eslint/compat": "^1.2.3",
 		"@eslint/js": "^9.17.0",
 		"@iconify/svelte": "^4.2.0",
+		"@internationalized/date": "^3.7.0",
 		"@playwright/test": "^1.45.3",
 		"@stripe/stripe-js": "^4.10.0",
 		"@sveltejs/adapter-node": "^5.2.9",
