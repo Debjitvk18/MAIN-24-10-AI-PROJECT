@@ -3,6 +3,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import Icon from '@iconify/svelte';
+	import * as Table from "$lib/components/ui/table";
 
 	export let searches = null;
 	export let loading;
@@ -22,30 +23,35 @@
 			</div>
 		{/each}
 	{:else if searches && searches.length > 0}
-		{#each searches as search}
-			<div class="flex items-center">
-				<div class="ml-4 space-y-1">
-					<p class="text-sm font-medium leading-none">{search.address}</p>
-					<p class="text-muted-foreground text-sm">
-						{search.request_params.latitude}, {search.request_params.longitude}
-					</p>
-				</div>
-				<div class="ml-auto font-medium">{search.request_origin}</div>
-				<div class="ml-auto font-medium">
-					<Badge variant="outline">-{search.api_credits} credits</Badge>
-				</div>
-				<div class="ml-auto font-medium">
-					<DropdownMenu.Root>
-						<DropdownMenu.Trigger><Icon icon="pepicons-pop:dots-y" /></DropdownMenu.Trigger>
-						<DropdownMenu.Content>
-							<DropdownMenu.Group>
-								<DropdownMenu.Item>View</DropdownMenu.Item>
-							</DropdownMenu.Group>
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
-				</div>
-			</div>
-		{/each}
+		<Table.Root>
+			<Table.Caption><a class="text-primary" href="/my-requests">View all</a></Table.Caption>
+			<Table.Body>
+				{#each searches as search}
+					<Table.Row>
+						<Table.Cell class="font-medium">
+							{search.address} <br>
+							{search.request_params.latitude}, {search.request_params.longitude}
+						</Table.Cell>
+						<Table.Cell>{search.request_origin}</Table.Cell>
+						<Table.Cell class="text-right">
+							<Badge variant="outline" class="w-max">-{search.api_credits} credits</Badge>
+						</Table.Cell>
+						<Table.Cell class="text-right">
+							<DropdownMenu.Root>
+								<DropdownMenu.Trigger>
+									<Icon icon="pepicons-pop:dots-y" />
+								</DropdownMenu.Trigger>
+								<DropdownMenu.Content>
+									<DropdownMenu.Group>
+										<DropdownMenu.Item>View</DropdownMenu.Item>
+									</DropdownMenu.Group>
+								</DropdownMenu.Content>
+							</DropdownMenu.Root>
+						</Table.Cell>
+					</Table.Row>
+				{/each}
+			</Table.Body>
+		</Table.Root>
 	{:else}
 		<p class="text-center text-gray-500">No data found</p>
 	{/if}

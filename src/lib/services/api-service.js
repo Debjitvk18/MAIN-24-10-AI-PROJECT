@@ -9,14 +9,16 @@ export class ApiService {
 	 *
 	 * @returns {Promise<any>}
 	 */
-	async makeApiCall(endpoint, payload = {}, method = 'GET', requestType = 'json') {
+	async makeApiCall(endpoint, payload = {}, method = 'GET', requestType = 'json', access_token = false) {
 		let headers;
 		let fetchOptions;
+		let userToken = access_token || localStorage.getItem(AUTH_TOKEN)
+		
 		if (requestType !== 'formdata') {
 			headers = {
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN)}`
+				Authorization: `Bearer ${userToken}`
 			};
 
 			fetchOptions = {
@@ -31,7 +33,7 @@ export class ApiService {
 			};
 		}
 
-		const token = localStorage.getItem(AUTH_TOKEN);
+		const token = userToken;
 		if (token) {
 			headers.Authorization = `Bearer ${token}`;
 		}

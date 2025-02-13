@@ -3,6 +3,7 @@ import { AUTH_TOKEN, USER_KEY } from '$lib/constants/constants';
 import { UserService } from '$lib/services/user-service';
 import { writable } from 'svelte/store';
 import { resetMode } from "mode-watcher";
+import { setCookie, deleteCookie } from '$lib/utils/cookies';
 
 export const isLoggedIn = writable(false);
 export const user = writable(null);
@@ -38,6 +39,7 @@ export function checkAuth() {
 export async function login(data) {
 	localStorage.setItem(AUTH_TOKEN, data.access_token);
 	localStorage.setItem(USER_KEY, JSON.stringify(data.member));
+	setCookie(AUTH_TOKEN, data.access_token, 60)
 	isLoggedIn.set(true);
 	goto('/dashboard');
 }
@@ -56,6 +58,7 @@ export async function getUserData() {
 export function logout() {
 	localStorage.removeItem(AUTH_TOKEN);
 	localStorage.removeItem(USER_KEY);
+	deleteCookie(AUTH_TOKEN)
 	resetMode();
 	isLoggedIn.set(false);
 	user.set(null);
