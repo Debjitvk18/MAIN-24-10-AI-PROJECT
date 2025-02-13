@@ -1,8 +1,8 @@
 <script>
 	import Icon from '@iconify/svelte';
-	import { Button } from '$lib/components/ui/button/index.ts';
 	import { Label } from '$lib/components/ui/label/index.ts';
 	import { Switch } from '$lib/components/ui/switch/index.ts';
+	import MapFilters from '$lib/components/ui/map/MapFilters.svelte';
 
 	export let isSidebarVisible; // prop
 	export let toggleSidebarVisibility; // function to toggle sidebar visibility
@@ -58,11 +58,7 @@
 			</div>
 
 			<!-- Filters -->
-			<Button
-				class="py-2.5 px-5 me-2 text-sm text-gray-500 hover:text-black bg-white hover:bg-gray-100 border rounded-lg border-gray-300 hover:border-black inline-flex items-center">
-				<Icon class="w-6 h-6 me-2" icon="mage:filter" />
-				Filters
-			</Button>
+			<MapFilters	/>
 		</div>
 	</div>
 </div>
