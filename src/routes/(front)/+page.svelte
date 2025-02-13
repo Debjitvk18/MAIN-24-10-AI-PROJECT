@@ -10,7 +10,10 @@
 	import TwitterIcon from '$lib/assets/svg/marker/x-mark.svg?raw';
 	import InstaIcon from '$lib/assets/svg/marker/insta-mark.svg?raw';
 	import LinkedinIcon from '$lib/assets/svg/marker/linkedin-mark.svg?raw';
+	import MapBg from '$lib/assets/svg/map/map-view.svg';
 	import Cta from '$lib/components/ui/home/Cta.svelte';
+	import * as Tabs from "$lib/components/ui/tabs";
+	import Icon from '@iconify/svelte';
 
 	const accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
 
@@ -50,111 +53,130 @@
 	}
 	let chart;
 
-	// Attach the event listener when the component is mounted
-	onMount(() => {
-		const script = document.createElement('script');
-		script.src = 'https://cdn.jsdelivr.net/npm/apexcharts';
-		script.onload = () => {
-			const options = {
-				chart: {
-					height: '120px',
-					maxWidth: '100%',
-					type: 'area',
-					fontFamily: 'Inter, sans-serif',
-					dropShadow: {
-						enabled: false
-					},
-					toolbar: {
-						show: false
-					}
-				},
-				tooltip: {
-					enabled: true,
-					x: {
-						show: false
-					}
-				},
-				fill: {
-					type: 'gradient',
-					gradient: {
-						opacityFrom: 0.55,
-						opacityTo: 0,
-						shade: '#1C64F2',
-						gradientToColors: ['#1C64F2']
-					}
-				},
-				dataLabels: {
+	onMount(async () => {
+	if (typeof window !== 'undefined') {
+		const { default: ApexCharts } = await import('apexcharts');
+
+		const options = {
+			chart: {
+				height: '120px',
+				maxWidth: '100%',
+				type: 'area',
+				fontFamily: 'Inter, sans-serif',
+				dropShadow: {
 					enabled: false
 				},
-				stroke: {
-					width: 6
-				},
-				grid: {
-					show: false,
-					strokeDashArray: 4,
-					padding: {
-						left: 2,
-						right: 2,
-						top: 0
-					}
-				},
-				series: [
-					{
-						name: 'New users',
-						data: [6500, 6418, 6456, 6526, 6356, 6456],
-						color: '#1A56DB'
-					}
-				],
-				xaxis: {
-					categories: [
-						'01 February',
-						'02 February',
-						'03 February',
-						'04 February',
-						'05 February',
-						'06 February',
-						'07 February'
-					],
-					labels: {
-						show: false
-					},
-					axisBorder: {
-						show: false
-					},
-					axisTicks: {
-						show: false
-					}
-				},
-				yaxis: {
+				toolbar: {
 					show: false
 				}
-			};
-			// Initialize ApexCharts after the script is loaded
-			chart = new ApexCharts(document.querySelector('#chart'), options);
-
-			chart.render();
+			},
+			tooltip: {
+				enabled: true,
+				x: {
+					show: false
+				}
+			},
+			fill: {
+				type: 'gradient',
+				gradient: {
+					opacityFrom: 0.55,
+					opacityTo: 0,
+					shade: '#1C64F2',
+					gradientToColors: ['#1C64F2']
+				}
+			},
+			dataLabels: {
+				enabled: false
+			},
+			stroke: {
+				width: 6
+			},
+			grid: {
+				show: false,
+				strokeDashArray: 4,
+				padding: {
+					left: 2,
+					right: 2,
+					top: 0
+				}
+			},
+			series: [
+				{
+					name: 'New users',
+					data: [6500, 6418, 6456, 6526, 6356, 6456],
+					color: '#1A56DB'
+				}
+			],
+			xaxis: {
+				categories: [
+					'01 February',
+					'02 February',
+					'03 February',
+					'04 February',
+					'05 February',
+					'06 February',
+					'07 February'
+				],
+				labels: {
+					show: false
+				},
+				axisBorder: {
+					show: false
+				},
+				axisTicks: {
+					show: false
+				}
+			},
+			yaxis: {
+				show: false
+			}
 		};
 
-		// Append the script to the body
-		document.body.appendChild(script);
+		chart = new ApexCharts(document.querySelector('#chart'), options);
+		chart.render();
 
 		document.addEventListener('click', handleClickOutside);
+	}
 
-		return () => {
-			document.removeEventListener('click', handleClickOutside);
-		};
-	});
+	return () => {
+		document.removeEventListener('click', handleClickOutside);
+		if (chart) chart.destroy(); 
+	};
+});
+
+let file = null;
+  let isDragging = false;
+
+  function handleDrop(event) {
+    event.preventDefault();
+    isDragging = false;
+    
+    const droppedFile = event.dataTransfer.files[0];
+    if (droppedFile && (droppedFile.type === "image/png" || droppedFile.type === "image/jpeg")) {
+      file = droppedFile;
+    }
+  }
+
+  function handleDragOver(event) {
+    event.preventDefault();
+    isDragging = true;
+  }
+
+  function handleDragLeave() {
+    isDragging = false;
+  }
+
+  function handleFileSelect(event) {
+    file = event.target.files[0];
+  }
 </script>
 
 <section class="bg-white bg-gradient-to-b from-blue-50 to-blue-100">
-	<div
-		style="background-image: url('https://cdn.prod.website-files.com/62d4feaf5d3ddb3f0f9c5515/64f684aeba3db4524c842bb1_Property%20Map.svg');
-	 background-size: cover; background-position: bottom;"
-	>
+	<div class="bg-cover bg-bottom" style="background-image: url('{MapBg}');">
 		<div class="relative bg-gray-200 rounded-lg">
 			<!-- Marker 1 -->
 			<div
-				class="hidden sm:block absolute bottom-1/4 left-1/4 transform -translate-x-1/2 -translate-y-1/2 group poi-1"
+				class="hidden lg:block absolute bottom-1/4 left-1/4 transform -translate-x-1/2 -translate-y-1/2 group poi-1"
 			>
 				<div
 					class="w-10 h-10 cursor-pointer group-hover:animate-bounce transition-all duration-200 ease-in-out"
@@ -174,7 +196,7 @@
 
 			<!-- Marker 2 -->
 			<div
-				class="hidden sm:block absolute bottom-1/3 left-3/4 transform -translate-x-1/2 -translate-y-1/2 group poi-2"
+				class="hidden lg:block absolute bottom-1/3 left-3/4 transform -translate-x-1/2 -translate-y-1/2 group poi-2"
 			>
 				<div
 					class="w-10 h-10 cursor-pointer group-hover:animate-bounce transition-all duration-200 ease-in-out"
@@ -193,7 +215,7 @@
 
 			<!-- Marker 3 -->
 			<div
-				class="hidden sm:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-3"
+				class="hidden lg:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-3"
 			>
 				<div class="w-10 h-10 group-hover:animate-bounce transition-all duration-200 ease-in-out">
 					<!-- Location 3 Popup -->
@@ -209,7 +231,7 @@
 
 			<!-- Marker 4 -->
 			<div
-				class="hidden sm:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-4"
+				class="hidden lg:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-4"
 			>
 				<div class="w-10 h-10 group-hover:animate-bounce transition-all duration-200 ease-in-out">
 					<!-- Location 7 Popup -->
@@ -227,86 +249,115 @@
 		<div
 			class="grid max-w-screen-xl px-4 py-8 mx-auto lg:gap-8 gap-8 xl:gap-0 lg:py-[100px] lg:grid-cols-12"
 		>
-			<!-- Left Content -->
-			<div class="mr-auto place-self-center lg:col-span-6">
-				<h1
-					class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl"
-				>
-					Lorem Ipsum The standard chunk of
-				</h1>
-				<p
-					class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600"
-				>
-					Contrary to popular belief, Lorem Ipsum is not simply
-				</p>
-				<form class="max-w-md">
-					<label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only"
-						>Search</label
-					>
-
-					<div class="relative w-full">
-						<input
-							type="search"
-							id="location-input"
-							on:input={getLocationSuggestions}
-							bind:value={query}
-							autocomplete="off"
-							class="block p-4 pr-14 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-0 placeholder-gray-500"
-							placeholder="Search for city or address"
-							required
-						/>
-						<button
-							disabled
-							type="submit"
-							class="absolute right-0 top-0 bottom-0 p-4 text-sm font-medium text-white bg-[#2C7BE5] rounded-r-lg border-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
+			<div class="place-self-center lg:col-span-6 h-auto md:h-[350px] lg:h-[350px]">
+				<Tabs.Root value="address">
+					<Tabs.List class="mb-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+						<Tabs.Trigger
+						  value="address"
+						  class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out
+								 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
 						>
-							<svg
-								class="w-5 h-5"
-								aria-hidden="true"
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 20 20"
-							>
-								<path
-									stroke="currentColor"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-								/>
-							</svg>
-							<span class="sr-only">Search</span>
-						</button>
-					</div>
-
-					{#if showSuggestions && suggestions.length > 0}
-						<ul class="bg-white border border-gray-100 w-full z-2" bind:this={suggestionListRef}>
-							{#each suggestions as suggestion (suggestion.id)}
+						  Search by Address
+						</Tabs.Trigger>
+						
+						<Tabs.Trigger
+						  value="image"
+						  class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out
+								 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+						>
+						  Search by Image
+						</Tabs.Trigger>
+					  </Tabs.List>
+					  
+					<Tabs.Content value="address">
+						<h1
+							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl">
+							Lorem Ipsum The standard chunk of
+						</h1>
+						<p class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600">
+							Contrary to popular belief, Lorem Ipsum is not simply
+						</p>
+						<form class="max-w-md">
+							<label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only">Search</label>
+			
+							<div class="relative w-full">
+								<input type="search" id="location-input" on:input={getLocationSuggestions} bind:value={query}
+									autocomplete="off"
+									class="block p-4 pr-14 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-0 placeholder-gray-500"
+									placeholder="Search for city or address" required />
+								<button disabled type="submit"
+									class="absolute right-0 top-0 bottom-0 p-4 text-sm font-medium text-white bg-[#2C7BE5] rounded-r-lg border-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+									<svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+										viewBox="0 0 20 20">
+										<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+											d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+									</svg>
+									<span class="sr-only">Search</span>
+								</button>
+							</div>
+			
+							{#if showSuggestions && suggestions.length > 0}
+							<ul class="bg-white border border-gray-100 w-full z-2" bind:this={suggestionListRef}>
+								{#each suggestions as suggestion (suggestion.id)}
 								<li
-									class="pl-8 pr-2 py-1 border-gray-100 relative cursor-pointer hover:bg-yellow-50 hover:text-gray-900"
-								>
+									class="pl-8 pr-2 py-1 border-gray-100 relative cursor-pointer hover:bg-yellow-50 hover:text-gray-900">
 									<a
-										href={`/try-demo?search=${encodeURIComponent(suggestion.place_name)}&lat=${suggestion.center[1]}&long=${suggestion.center[0]}`}
-									>
-										<svg
-											class="absolute w-4 h-4 left-2 top-2"
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-										>
-											<path
-												fill-rule="evenodd"
+										href={`/try-demo?search=${encodeURIComponent(suggestion.place_name)}&lat=${suggestion.center[1]}&long=${suggestion.center[0]}`}>
+										<svg class="absolute w-4 h-4 left-2 top-2" xmlns="http://www.w3.org/2000/svg"
+											viewBox="0 0 20 20" fill="currentColor">
+											<path fill-rule="evenodd"
 												d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
-												clip-rule="evenodd"
-											/>
+												clip-rule="evenodd" />
 										</svg>
 										{suggestion.place_name}
 									</a>
 								</li>
-							{/each}
-						</ul>
-					{/if}
-				</form>
+								{/each}
+							</ul>
+							{/if}
+						</form>
+					</Tabs.Content>
+					<Tabs.Content value="image">
+						<h1
+							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl">
+							Sample text for placeholder usage
+						</h1>
+						<p class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600">
+							Contrary to popular belief, Lorem Ipsum is not simply
+						</p>
+						<form class="max-w-md">
+							<div 
+							  class="flex items-center justify-center w-full"
+							  on:drop={handleDrop}
+							  on:dragover={handleDragOver}
+							  on:dragleave={handleDragLeave}
+							>
+							  <label 
+								for="dropzone-file" 
+								class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 
+									   dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600 
+									   transition-all duration-300"
+								class:border-blue-500={isDragging}  
+							  >
+								<div class="flex flex-col items-center justify-center pt-5 pb-6">
+								  <Icon icon="icon-park-outline:upload-one" class="w-8 h-8 mb-4 text-primary dark:text-gray-400" />
+								  <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
+									<span class="font-semibold">Click to upload</span> or drag and drop
+								  </p>
+								  <p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG</p>
+								</div>
+								<input 
+								  id="dropzone-file" 
+								  accept="image/png, image/jpeg" 
+								  type="file" 
+								  class="hidden" 
+								  on:change={handleFileSelect}
+								/>
+							  </label>
+							</div>
+						  </form>
+					</Tabs.Content>
+				</Tabs.Root>
 			</div>
 
 			<div
@@ -319,7 +370,7 @@
 						<h4 class="text-sm font-semibold">
 							Lorem Ipsum <span class="text-gray-500">Jan 2023 to Dec 2023</span>
 						</h4>
-						<div id="chart"></div>
+						<div id="chart" class="h-[135px]"></div>
 						<div class="flex justify-between mt-4 text-sm">
 							<div>
 								<p class="font-bold text-gray-800">1.2M</p>
