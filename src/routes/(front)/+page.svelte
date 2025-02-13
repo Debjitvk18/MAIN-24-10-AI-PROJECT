@@ -51,124 +51,125 @@
 			showSuggestions = false;
 		}
 	}
+
 	let chart;
 
 	onMount(async () => {
-	if (typeof window !== 'undefined') {
-		const { default: ApexCharts } = await import('apexcharts');
+		if (typeof window !== 'undefined') {
+			const { default: ApexCharts } = await import('apexcharts');
 
-		const options = {
-			chart: {
-				height: '120px',
-				maxWidth: '100%',
-				type: 'area',
-				fontFamily: 'Inter, sans-serif',
-				dropShadow: {
+			const options = {
+				chart: {
+					height: '120px',
+					maxWidth: '100%',
+					type: 'area',
+					fontFamily: 'Inter, sans-serif',
+					dropShadow: {
+						enabled: false
+					},
+					toolbar: {
+						show: false
+					}
+				},
+				tooltip: {
+					enabled: true,
+					x: {
+						show: false
+					}
+				},
+				fill: {
+					type: 'gradient',
+					gradient: {
+						opacityFrom: 0.55,
+						opacityTo: 0,
+						shade: '#1C64F2',
+						gradientToColors: ['#1C64F2']
+					}
+				},
+				dataLabels: {
 					enabled: false
 				},
-				toolbar: {
-					show: false
-				}
-			},
-			tooltip: {
-				enabled: true,
-				x: {
-					show: false
-				}
-			},
-			fill: {
-				type: 'gradient',
-				gradient: {
-					opacityFrom: 0.55,
-					opacityTo: 0,
-					shade: '#1C64F2',
-					gradientToColors: ['#1C64F2']
-				}
-			},
-			dataLabels: {
-				enabled: false
-			},
-			stroke: {
-				width: 6
-			},
-			grid: {
-				show: false,
-				strokeDashArray: 4,
-				padding: {
-					left: 2,
-					right: 2,
-					top: 0
-				}
-			},
-			series: [
-				{
-					name: 'New users',
-					data: [6500, 6418, 6456, 6526, 6356, 6456],
-					color: '#1A56DB'
-				}
-			],
-			xaxis: {
-				categories: [
-					'01 February',
-					'02 February',
-					'03 February',
-					'04 February',
-					'05 February',
-					'06 February',
-					'07 February'
+				stroke: {
+					width: 6
+				},
+				grid: {
+					show: false,
+					strokeDashArray: 4,
+					padding: {
+						left: 2,
+						right: 2,
+						top: 0
+					}
+				},
+				series: [
+					{
+						name: 'New users',
+						data: [6500, 6418, 6456, 6526, 6356, 6456],
+						color: '#1A56DB'
+					}
 				],
-				labels: {
-					show: false
+				xaxis: {
+					categories: [
+						'01 February',
+						'02 February',
+						'03 February',
+						'04 February',
+						'05 February',
+						'06 February',
+						'07 February'
+					],
+					labels: {
+						show: false
+					},
+					axisBorder: {
+						show: false
+					},
+					axisTicks: {
+						show: false
+					}
 				},
-				axisBorder: {
-					show: false
-				},
-				axisTicks: {
+				yaxis: {
 					show: false
 				}
-			},
-			yaxis: {
-				show: false
-			}
+			};
+
+			chart = new ApexCharts(document.querySelector('#chart'), options);
+			chart.render();
+
+			document.addEventListener('click', handleClickOutside);
+		}
+
+		return () => {
+			document.removeEventListener('click', handleClickOutside);
+			if (chart) chart.destroy();
 		};
+	});
 
-		chart = new ApexCharts(document.querySelector('#chart'), options);
-		chart.render();
+	let file = null;
+	let isDragging = false;
 
-		document.addEventListener('click', handleClickOutside);
+	function handleDrop(event) {
+		event.preventDefault();
+		isDragging = false;
+
+		const droppedFile = event.dataTransfer.files[0];
+		if (droppedFile && (droppedFile.type === 'image/png' || droppedFile.type === 'image/jpeg')) {
+			file = droppedFile;
+		}
 	}
 
-	return () => {
-		document.removeEventListener('click', handleClickOutside);
-		if (chart) chart.destroy(); 
-	};
-});
+	function handleDragOver(event) {
+		event.preventDefault();
+		isDragging = true;
+	}
 
-let file = null;
-  let isDragging = false;
+	function handleDragLeave() {
+		isDragging = false;
+	}
 
-  function handleDrop(event) {
-    event.preventDefault();
-    isDragging = false;
-    
-    const droppedFile = event.dataTransfer.files[0];
-    if (droppedFile && (droppedFile.type === "image/png" || droppedFile.type === "image/jpeg")) {
-      file = droppedFile;
-    }
-  }
-
-  function handleDragOver(event) {
-    event.preventDefault();
-    isDragging = true;
-  }
-
-  function handleDragLeave() {
-    isDragging = false;
-  }
-
-  function handleFileSelect(event) {
-    file = event.target.files[0];
-  }
+	function handleFileSelect(event) {
+		file = event.target.files[0];
+	}
 </script>
 
 <section class="bg-white bg-gradient-to-b from-blue-50 to-blue-100">
@@ -253,109 +254,147 @@ let file = null;
 				<Tabs.Root value="address">
 					<Tabs.List class="mb-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
 						<Tabs.Trigger
-						  value="address"
-						  class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out
-								 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+							value="address"
+							class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
 						>
-						  Search by Address
+							Search by Address
 						</Tabs.Trigger>
-						
+
 						<Tabs.Trigger
-						  value="image"
-						  class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out
-								 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
-						>
-						  Search by Image
+							value="image"
+							class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md">
+							Search by Image
 						</Tabs.Trigger>
-					  </Tabs.List>
-					  
+					</Tabs.List>
+
 					<Tabs.Content value="address">
 						<h1
-							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl">
+							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl"
+						>
 							Lorem Ipsum The standard chunk of
 						</h1>
-						<p class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600">
+						<p
+							class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600"
+						>
 							Contrary to popular belief, Lorem Ipsum is not simply
 						</p>
 						<form class="max-w-md">
-							<label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only">Search</label>
-			
+							<label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only">
+								Search
+							</label>
+
 							<div class="relative w-full">
-								<input type="search" id="location-input" on:input={getLocationSuggestions} bind:value={query}
+								<input
+									type="search"
+									id="location-input"
+									on:input={getLocationSuggestions}
+									bind:value={query}
 									autocomplete="off"
 									class="block p-4 pr-14 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-0 placeholder-gray-500"
-									placeholder="Search for city or address" required />
-								<button disabled type="submit"
-									class="absolute right-0 top-0 bottom-0 p-4 text-sm font-medium text-white bg-[#2C7BE5] rounded-r-lg border-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
-									<svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
-										viewBox="0 0 20 20">
-										<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-											d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+									placeholder="Search for city or address"
+									required
+								/>
+								<button
+									disabled
+									type="submit"
+									class="absolute right-0 top-0 bottom-0 p-4 text-sm font-medium text-white bg-[#2C7BE5] rounded-r-lg border-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
+								>
+									<svg
+										class="w-5 h-5"
+										aria-hidden="true"
+										xmlns="http://www.w3.org/2000/svg"
+										fill="none"
+										viewBox="0 0 20 20"
+									>
+										<path
+											stroke="currentColor"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+										/>
 									</svg>
 									<span class="sr-only">Search</span>
 								</button>
 							</div>
-			
+
 							{#if showSuggestions && suggestions.length > 0}
-							<ul class="bg-white border border-gray-100 w-full z-2" bind:this={suggestionListRef}>
-								{#each suggestions as suggestion (suggestion.id)}
-								<li
-									class="pl-8 pr-2 py-1 border-gray-100 relative cursor-pointer hover:bg-yellow-50 hover:text-gray-900">
-									<a
-										href={`/try-demo?search=${encodeURIComponent(suggestion.place_name)}&lat=${suggestion.center[1]}&long=${suggestion.center[0]}`}>
-										<svg class="absolute w-4 h-4 left-2 top-2" xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20" fill="currentColor">
-											<path fill-rule="evenodd"
-												d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
-												clip-rule="evenodd" />
-										</svg>
-										{suggestion.place_name}
-									</a>
-								</li>
-								{/each}
-							</ul>
+								<ul
+									class="bg-white border border-gray-100 w-full z-2"
+									bind:this={suggestionListRef}
+								>
+									{#each suggestions as suggestion (suggestion.id)}
+										<li
+											class="pl-8 pr-2 py-1 border-gray-100 relative cursor-pointer hover:bg-yellow-50 hover:text-gray-900"
+										>
+											<a
+												href={`/try-demo?search=${encodeURIComponent(suggestion.place_name)}&lat=${suggestion.center[1]}&long=${suggestion.center[0]}`}
+											>
+												<svg
+													class="absolute w-4 h-4 left-2 top-2"
+													xmlns="http://www.w3.org/2000/svg"
+													viewBox="0 0 20 20"
+													fill="currentColor"
+												>
+													<path
+														fill-rule="evenodd"
+														d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
+														clip-rule="evenodd"
+													/>
+												</svg>
+												{suggestion.place_name}
+											</a>
+										</li>
+									{/each}
+								</ul>
 							{/if}
 						</form>
 					</Tabs.Content>
 					<Tabs.Content value="image">
 						<h1
-							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl">
+							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl"
+						>
 							Sample text for placeholder usage
 						</h1>
-						<p class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600">
+						<p
+							class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600"
+						>
 							Contrary to popular belief, Lorem Ipsum is not simply
 						</p>
 						<form class="max-w-md">
-							<div 
-							  class="flex items-center justify-center w-full"
-							  on:drop={handleDrop}
-							  on:dragover={handleDragOver}
-							  on:dragleave={handleDragLeave}
+							<div
+								class="flex items-center justify-center w-full"
+								on:drop={handleDrop}
+								on:dragover={handleDragOver}
+								on:dragleave={handleDragLeave}
 							>
-							  <label 
-								for="dropzone-file" 
-								class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 
-									   dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600 
+								<label
+									for="dropzone-file"
+									class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50
+									   dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600
 									   transition-all duration-300"
-								class:border-blue-500={isDragging}  
-							  >
-								<div class="flex flex-col items-center justify-center pt-5 pb-6">
-								  <Icon icon="icon-park-outline:upload-one" class="w-8 h-8 mb-4 text-primary dark:text-gray-400" />
-								  <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
-									<span class="font-semibold">Click to upload</span> or drag and drop
-								  </p>
-								  <p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG</p>
-								</div>
-								<input 
-								  id="dropzone-file" 
-								  accept="image/png, image/jpeg" 
-								  type="file" 
-								  class="hidden" 
-								  on:change={handleFileSelect}
-								/>
-							  </label>
+									class:border-blue-500={isDragging}
+								>
+									<div class="flex flex-col items-center justify-center pt-5 pb-6">
+										<Icon
+											icon="icon-park-outline:upload-one"
+											class="w-8 h-8 mb-4 text-primary dark:text-gray-400"
+										/>
+										<p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
+											<span class="font-semibold">Click to upload</span> or drag and drop
+										</p>
+										<p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG</p>
+									</div>
+									<input
+										id="dropzone-file"
+										accept="image/png, image/jpeg"
+										type="file"
+										class="hidden"
+										on:change={handleFileSelect}
+									/>
+								</label>
 							</div>
-						  </form>
+						</form>
 					</Tabs.Content>
 				</Tabs.Root>
 			</div>
@@ -449,19 +488,26 @@ let file = null;
 					xmlns="http://www.w3.org/2000/svg"
 				>
 					<g clip-path="url(#clip0_3753_27919)"
-						><path
+					>
+						<path
 							d="M150.059 16.1144V13.4753H146.783V9.37378L146.673 9.40894L143.596 10.3464H143.538V13.4519H138.682V11.7175C138.682 10.9207 138.869 10.2996 139.221 9.8894C139.572 9.47925 140.088 9.27417 140.721 9.27417C141.189 9.27417 141.682 9.39136 142.15 9.60229L142.268 9.64917V6.88237L142.221 6.85894C141.775 6.70073 141.166 6.6187 140.416 6.6187C139.467 6.6187 138.6 6.82964 137.838 7.24448C137.076 7.64292 136.479 8.24058 136.068 8.99058C135.646 9.74058 135.436 10.6078 135.436 11.557V13.4554H133.162V16.0921H135.447V27.2015H138.717V16.0921H143.577V23.1468C143.577 26.0531 144.943 27.5296 147.655 27.5296C148.1 27.5296 148.569 27.4734 149.038 27.3773C149.524 27.2718 149.858 27.1664 150.045 27.0609L150.092 27.0374V24.3773L149.96 24.4664C149.784 24.5835 149.561 24.6855 149.304 24.7558C149.046 24.8261 148.823 24.873 148.657 24.873C148.024 24.873 147.555 24.7089 147.267 24.3726C146.969 24.0386 146.821 23.4468 146.821 22.6148V16.1226H150.079L150.072 16.1062L150.059 16.1144ZM125.813 24.88C124.626 24.88 123.689 24.4851 123.024 23.7082C122.364 22.9289 122.028 21.8167 122.028 20.4035C122.028 18.9457 122.364 17.8019 123.028 17.0097C123.689 16.2222 124.617 15.8214 125.789 15.8214C126.925 15.8214 127.816 16.2035 128.472 16.9582C129.129 17.7175 129.457 18.8496 129.457 20.3238C129.457 21.8167 129.152 22.964 128.543 23.7304C127.933 24.4921 127.019 24.8789 125.824 24.8789L125.813 24.88ZM125.964 13.1449C123.703 13.1449 121.9 13.8082 120.616 15.1183C119.339 16.4308 118.685 18.2425 118.685 20.5089C118.685 22.6652 119.318 24.3937 120.575 25.6535C121.829 26.9191 123.536 27.5753 125.646 27.5753C127.839 27.5753 129.607 26.8957 130.886 25.5773C132.175 24.2507 132.815 22.4531 132.815 20.2417C132.815 18.055 132.206 16.3089 130.999 15.0621C129.792 13.8035 128.1 13.1683 125.96 13.1683L125.964 13.1449ZM113.397 13.1683C111.85 13.1683 110.58 13.5621 109.6 14.3402C108.625 15.123 108.124 16.1449 108.124 17.3871C108.124 18.0363 108.234 18.6058 108.447 19.098C108.658 19.5832 108.986 20.0121 109.425 20.373C109.858 20.7246 110.526 21.0996 111.417 21.4839C112.167 21.7886 112.718 22.0464 113.074 22.2574C113.425 22.4531 113.674 22.6558 113.8 22.8515C113.941 23.039 114.011 23.3085 114.011 23.625C114.011 24.5554 113.322 25.0031 111.902 25.0031C111.372 25.0031 110.77 24.8929 110.111 24.675C109.447 24.4593 108.83 24.1476 108.275 23.7468L108.134 23.6531V26.7937L108.181 26.8171C108.65 27.0281 109.228 27.2156 109.916 27.3562C110.601 27.5085 111.228 27.5789 111.767 27.5789C113.443 27.5789 114.791 27.1804 115.775 26.4023C116.759 25.6148 117.263 24.5625 117.263 23.2804C117.263 22.3546 116.994 21.5578 116.461 20.9191C115.933 20.2792 115.019 19.6957 113.738 19.18C112.727 18.7699 112.074 18.43 111.793 18.1722C111.535 17.9191 111.414 17.5628 111.414 17.1128C111.414 16.7144 111.579 16.3933 111.912 16.1355C112.248 15.8718 112.716 15.7406 113.302 15.7406C113.847 15.7406 114.404 15.8226 114.966 15.9925C115.517 16.166 116.004 16.391 116.408 16.6675L116.545 16.7613V13.7613L116.498 13.7378C116.117 13.5738 115.623 13.4367 115.021 13.3277C114.424 13.214 113.881 13.1636 113.41 13.1636L113.397 13.1683ZM99.582 24.8941C98.3984 24.8941 97.4609 24.5027 96.8047 23.7222C96.1367 22.9488 95.8027 21.8355 95.8027 20.4175C95.8027 18.9644 96.1379 17.816 96.8035 17.0273C97.4598 16.2398 98.3902 15.839 99.5574 15.839C100.694 15.839 101.596 16.221 102.247 16.9757C102.894 17.7375 103.231 18.8695 103.231 20.3437C103.231 21.8343 102.915 22.9804 102.305 23.748C101.708 24.5097 100.794 24.8964 99.5867 24.8964L99.582 24.8941ZM99.7508 13.166C97.4773 13.166 95.6727 13.8269 94.3953 15.1371C93.1098 16.4496 92.4617 18.2601 92.4617 20.5277C92.4617 22.6839 93.0945 24.4113 94.3402 25.6722C95.5965 26.9378 97.3004 27.5941 99.4086 27.5941C101.612 27.5941 103.37 26.9144 104.659 25.5902C105.941 24.2613 106.592 22.4636 106.592 20.2523C106.592 18.0644 105.983 16.3183 104.787 15.0726C103.58 13.8128 101.886 13.1777 99.7484 13.1777L99.7508 13.166ZM87.5164 15.8824V13.4917H84.282V27.2378H87.5164V20.2066C87.5164 19.0113 87.7859 18.0269 88.3215 17.2828C88.8488 16.5421 89.552 16.1812 90.4074 16.1812C90.7004 16.1812 91.0285 16.2281 91.3895 16.3218C91.741 16.4156 91.9941 16.5093 92.1395 16.6265L92.2801 16.7203V13.4625L92.2285 13.439C91.9238 13.3031 91.502 13.2375 90.9629 13.2375C90.1543 13.2375 89.4277 13.5 88.8043 14.0109C88.2535 14.4656 87.8586 15.0843 87.5562 15.8578H87.4977L87.527 15.8812L87.5164 15.8824ZM78.4695 13.1636C76.9812 13.1636 75.657 13.4742 74.532 14.1011C73.3977 14.7339 72.5281 15.6246 71.9305 16.773C71.3445 17.9097 71.0398 19.2398 71.0398 20.7222C71.0398 22.023 71.3352 23.2113 71.907 24.2636C72.4859 25.3183 73.3016 26.1386 74.3328 26.7128C75.357 27.2789 76.5477 27.5683 77.8648 27.5683C79.4023 27.5683 80.7125 27.2636 81.7672 26.6542L81.8141 26.6308V23.6636L81.6734 23.7609C81.1965 24.1124 80.6656 24.3878 80.0914 24.5871C79.5195 24.7863 78.9992 24.8871 78.5445 24.8871C77.2719 24.8871 76.2547 24.4886 75.5141 23.7093C74.7641 22.9124 74.3891 21.8109 74.3891 20.4281C74.3891 19.0218 74.7875 17.8968 75.5562 17.0765C76.3297 16.2328 77.3469 15.8109 78.5914 15.8109C79.6461 15.8109 80.6855 16.1742 81.6652 16.8773L81.8059 16.971V13.8539L81.7672 13.8304C81.398 13.6195 80.8965 13.4554 80.2672 13.3218C79.6508 13.1929 79.0437 13.1296 78.4648 13.1296L78.4695 13.1636ZM68.8203 13.4578H65.5906V27.2156H68.825V13.4578H68.8203ZM67.2266 7.61011C66.6945 7.61011 66.2305 7.79058 65.8484 8.14917C65.4664 8.51011 65.2719 8.96245 65.2719 9.49683C65.2719 10.0242 65.4676 10.4695 65.8461 10.821C66.2211 11.1726 66.6898 11.346 67.2289 11.346C67.768 11.346 68.2367 11.1703 68.6176 10.8187C69.002 10.4671 69.1965 10.0218 69.1965 9.49448C69.1965 8.97886 69.009 8.53355 68.634 8.15855C68.259 7.80698 67.7902 7.61948 67.2277 7.61948L67.2266 7.61011ZM59.1535 12.4593V27.2249H62.4582V8.05425H57.8879L52.0953 22.3019L46.4586 8.0519H41.7078V27.2378H44.8133V12.4781H44.9188L50.8719 27.2414H53.2098L59.0691 12.4792H59.1805L59.1629 12.4722L59.1535 12.4593ZM16.884 18.4242H32.0949V33.648H16.8605L16.8816 18.4347L16.884 18.4242ZM0.0828125 18.4335H15.2914V33.648H0.078125L0.0828125 18.4347V18.4335ZM16.8852 1.63237H32.0961V16.8433H16.8758L16.8852 1.62769V1.63237ZM0.0828125 1.63003H15.2914V16.8433H0.078125L0.0828125 1.62769V1.63003Z"
 							fill="currentColor"
-						/></g
-					><defs
-						><clipPath id="clip0_3753_27919"
-							><rect
+						/>
+					</g
+					>
+					<defs
+					>
+						<clipPath id="clip0_3753_27919"
+						>
+							<rect
 								width="150"
 								height="32.8125"
 								fill="white"
 								transform="translate(0.0820312 0.835449)"
-							/></clipPath
-						></defs
+							/>
+						</clipPath
+						>
+					</defs
 					>
 				</svg>
 			</a>
@@ -621,35 +667,37 @@ let file = null;
 <Cta />
 
 <style>
-	.poi-1 {
-		left: 64%;
-		top: 218px;
-	}
+    .poi-1 {
+        left: 64%;
+        top: 218px;
+    }
 
-	.poi-2 {
-		top: 461px;
-		left: 49%;
-	}
+    .poi-2 {
+        top: 461px;
+        left: 49%;
+    }
 
-	.poi-3 {
-		left: 47%;
-		top: 309px;
-	}
-	.poi-4 {
-		top: 160px;
-		left: 55%;
-	}
-	@keyframes bounce {
-		0%,
-		100% {
-			transform: translateY(0);
-		}
-		50% {
-			transform: translateY(-10px);
-		}
-	}
+    .poi-3 {
+        left: 47%;
+        top: 309px;
+    }
 
-	.group-hover\:animate-bounce:hover {
-		animation: bounce 0.6s ease-out;
-	}
+    .poi-4 {
+        top: 160px;
+        left: 55%;
+    }
+
+    @keyframes bounce {
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .group-hover\:animate-bounce:hover {
+        animation: bounce 0.6s ease-out;
+    }
 </style>
