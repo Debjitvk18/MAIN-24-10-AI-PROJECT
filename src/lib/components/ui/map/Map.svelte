@@ -57,7 +57,7 @@
 	 * When set to `true`, the sidebar is visible to the user.
 	 * When set to `false`, the sidebar is hidden.
 	 */
-	let isSidebarVisible = true;
+	let isSidebarVisible = false;
 
 	let mapMarker = null; // set by onclick on map
 
@@ -402,7 +402,7 @@
 				setTimeout(async () => {
 					overlayLoadingText = 'Fetching social media posts';
 					const mapService = new MapService();
-					let search_id; 
+					let search_id;
 					if (!reqId) {
 						const response = await mapService.getMapResults({
 							address,
@@ -414,8 +414,8 @@
 							showLoadingOverlay = false;
 							return false;
 						}
-						search_id = response.search_id
-					} else{
+						search_id = response.search_id;
+					} else {
 						search_id = reqId;
 						putDataInURL('req_id', '');
 					}
@@ -525,35 +525,35 @@
 				const lat = reqLate;
 				const lng = reqLong;
 				const coordinatesString = `${lng},${lat}`;
-				
+
 				// Set input and trigger search
 				geocoder.setInput(coordinatesString);
 				geocoder.query(coordinatesString);
 
-				let isQueryExecuted = false; 
+				let isQueryExecuted = false;
 
 				const handleResults = (event) => {
 					if (!isQueryExecuted && event.features.length > 0) {
-						console.log("Suggestions:", event.features);
-						const firstSuggestion = event.features[0]; 
+						console.log('Suggestions:', event.features);
+						const firstSuggestion = event.features[0];
 
-						geocoder.setInput(firstSuggestion.place_name); 
-						geocoder.query(firstSuggestion.place_name); 
+						geocoder.setInput(firstSuggestion.place_name);
+						geocoder.query(firstSuggestion.place_name);
 
-						isQueryExecuted = true; 
-						geocoder.off('results', handleResults); 
+						isQueryExecuted = true;
+						geocoder.off('results', handleResults);
 					}
 				};
 
-			geocoder.off('results', handleResults);
-			geocoder.on('results', handleResults);
+				geocoder.off('results', handleResults);
+				geocoder.on('results', handleResults);
 
-			let activeSuggestion = document.querySelector('.suggestions');
+				let activeSuggestion = document.querySelector('.suggestions');
 				if (activeSuggestion) {
 					setTimeout(() => {
 						activeSuggestion.style.display = 'none';
 					}, 500);
-			}
+				}
 			}
 
 		});
@@ -648,6 +648,7 @@
 			showLoadingOverlay = false;
 			// Show the sidebar once the circle and icons are added
 			showSidebar = true;
+			isSidebarVisible = true;
 		}, 4000);
 	}
 
@@ -691,95 +692,25 @@
 <LoadingOverlay isLoading={showLoadingOverlay} loadingText={overlayLoadingText} />
 <div class={`h-screen flex flex-col ${isSidebarVisible ? 'sidebar-visible' : ''}`} id="map-container">
 	<!-- Topbar -->
-	<MapTopbar isSidebarVisible={isSidebarVisible} toggleSidebarVisibility={toggleSidebar} />
-	<div class="flex h-full flex-1 relative">
+	<MapTopbar
+		isSidebarVisible={isSidebarVisible}
+		showSidebar={showSidebar}
+		socialMediaIcons={socialMediaIcons}
+		toggleSidebarVisibility={toggleSidebar}
+		toggleVisibility={toggleVisibility}
+		visibility={visibility}
+	/>
 
-		<!-- Sidebar -->
-		<div class="sidebar {isSidebarVisible ? 'visible' : ''}">
-			<MapSidebar isSidebarVisible={isSidebarVisible} />
-		</div>
+	<div class="flex h-full flex-1 relative">
 		{#if showSidebar}
-			<div class="h-full">
-				<!-- Sidebar -->
-				<div class="dark:bg-neutral-900 w-96 p-4 pt-0 h-full overflow-y-auto">
-					<div class="sticky top-0">
-						<!-- Tabs -->
-						<div class="dark:bg-neutral-800 rounded-lg p-3 flex justify-start gap-5 w-full">
-							<div class="flex overflow-x-auto">
-								{#each Object.keys(socialMediaIcons) as type}
-									<div class="flex-none px-3 py-6 first:pl-6 last:pr-6">
-										<button
-											on:click={() => toggleVisibility(type)}
-											class="flex flex-col items-center justify-center gap-3 relative rounded p-1 bg-white dark:hover:bg-neutral-500 shadow"
-										>
-											<span class="h-18 w-18 rounded-full" title={type}
-											>{@html socialMediaIcons[type]}</span
-											>
-											<strong class="text-xs font-medium text-gray-900 dark:text-gray-200"
-											>{type}</strong
-											>
-											<span
-												class="absolute bg-gray-900 text-gray-100 px-2 py-1 text-xs font-bold rounded-full -top-3 -right-3"
-											>
-												{socialMediaData.find((data) => data.type === type).count}
-											</span>
-										</button>
-									</div>
-									<!-- <button
-										on:click={() => toggleVisibility(type)}
-										class="relative rounded p-1 flex items-center justify-center gap-1 bg-white dark:hover:bg-neutral-500 shadow"
-									>
-										<span title={type}>{@html socialMediaIcons[type]}</span>
-										<span
-											class="absolute bg-blue-200 text-black px-2 py-1 text-xs font-bold rounded-full -top-3 -right-3"
-										>
-											{socialMediaData.find((data) => data.type === type).count}
-										</span>
-									</button> -->
-								{/each}
-							</div>
-						</div>
-					</div>
-					<!-- Content -->
-					<div>
-						<div class="pb-5 h-full">
-							<div class="max-w-md mx-auto">
-								{#each socialMediaJson as socialMedia}
-									{#each socialMedia.posts as post, index}
-										<div
-											class="bg-white p-4 rounded-lg shadow-md mt-4 hover:bg-gray-100"
-											on:mouseover={() => highlightMarker(markers[socialMedia.type]?.[index])}
-											on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[index], false)}
-											on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[index], false)}
-										>
-											<a href={post.url} target="_blank" class="flex items-center gap-4">
-												<img class="h-12 w-12 rounded-full" src={post.image} alt="" />
-												<div class="flex flex-col">
-													<strong class="text-sm font-medium text-gray-900 dark:text-gray-200"
-													>{truncateString(post.title, 50)}</strong
-													><span class="text-sm font-medium text-gray-500 dark:text-gray-400"
-												>{truncateString(post.description, 250)}</span
-												>
-												</div>
-											</a>
-										</div>
-									{/each}
-								{/each}
-							</div>
-							<div class="max-md:col-span-5 col-span-2 mt-5">
-								<div class="flex gap-2">
-									<div class="bg-white rounded-lg">
-										<a
-											href="/login"
-											class="rounded-lg px-4 py-2 bg-gray-200 hover:bg-gray-300 duration-300"
-										>Login to explore more</a
-										>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
+			<!-- Sidebar -->
+			<div class="sidebar {isSidebarVisible ? 'visible' : ''}">
+				<MapSidebar
+					isSidebarVisible={isSidebarVisible}
+					socialMediaData={socialMediaJson}
+					markers={markers}
+					visibility={visibility}
+				/>
 			</div>
 		{/if}
 
