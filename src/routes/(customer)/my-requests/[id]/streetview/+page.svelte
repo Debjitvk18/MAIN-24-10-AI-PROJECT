@@ -62,9 +62,10 @@
 
 			streetViews = [...(res?.response?.response?.data || [])];
 			meta = { ...(res.response?.response || {}) };
-			loader = false;
 		} catch (err) {
 			console.error('Pagination Error:', err);
+		} finally {
+			loader = false;
 		}
 	}
 

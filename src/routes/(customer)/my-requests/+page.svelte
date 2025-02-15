@@ -7,6 +7,8 @@
 	import { ApiService } from '$lib/services/api-service';
 	import { formatDate } from '$lib/utils/generalUtils';
 	import { page } from '$app/stores';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import Icon from '@iconify/svelte';
 
 	export let data;
 	let meta = data?.searchRequests?.meta || {};
@@ -84,6 +86,30 @@
 		fetchSearchRequests();
 	}
 
+
+    function generateUrl(request) {
+        const { id, request_params } = request;
+        const { latitude, longitude, radius, features, start_date, end_date } = request_params;
+
+        let params = new URLSearchParams({
+            request_id: id,
+            lat: latitude,
+            long: longitude,
+            radius
+        });
+
+        // Append features as array format
+        if (features?.length) {
+            features.forEach(feature => params.append("features[]", feature));
+        }
+
+        // Add optional parameters if they are not null
+        if (start_date) params.append("start_date", start_date);
+        if (end_date) params.append("end_date", end_date);
+
+        return `/try-demo/?${params.toString()}`;
+    }
+
 </script>
 
 <div class="container max-w-100">
@@ -107,11 +133,13 @@
 								<Table.Head>Credits</Table.Head>
 								<Table.Head>Status</Table.Head>
 								<Table.Head>Date</Table.Head>
+								<Table.Head>Action</Table.Head>
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
 							{#each searchRequests as request}
-								<Table.Row class="cursor-pointer" on:click={()=> {goto(`my-requests/${request.id}`)}}>
+							{console.log(request, 'here')}
+								<Table.Row>
 									<Table.Cell class="font-medium">{request.address || 'N/A'}</Table.Cell>
 									<Table.Cell
 										>{request.request_params.latitude}, {request.request_params
@@ -130,6 +158,29 @@
 										{/if}
 									</Table.Cell>
 									<Table.Cell>{formatDate(request.created_at)}</Table.Cell>
+
+									<Table.Cell class="text-right">
+										<DropdownMenu.Root>
+											<DropdownMenu.Trigger>
+												<Icon icon="pepicons-pop:dots-y" />
+											</DropdownMenu.Trigger>
+											<DropdownMenu.Content>
+												<DropdownMenu.Group>
+													<DropdownMenu.Item>
+														<a href={`my-requests/${request.id}`}>View</a>
+													</DropdownMenu.Item>
+													{#if request.is_completed}
+													<DropdownMenu.Item>
+														<a href={generateUrl(request)} target="_blank" >
+															Load on map
+														</a>
+													</DropdownMenu.Item>
+													{/if}
+												</DropdownMenu.Group>
+											</DropdownMenu.Content>
+										</DropdownMenu.Root>
+									</Table.Cell>
+
 								</Table.Row>
 							{/each}
 						</Table.Body>

@@ -2,6 +2,7 @@
 	// Svelte
 	import { onDestroy, onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { ApiService } from '$lib/services/api-service';
 
 	// Mapbox
 	import mapboxgl from 'mapbox-gl';
@@ -50,6 +51,7 @@
 	let reqId: number;
 	let reqLate: number;
 	let reqLong: number;
+	let request_id: number;
 
 	/**
 	 * A boolean variable that indicates the visibility state of a sidebar component.
@@ -85,6 +87,7 @@
 		reqId = $page.url.searchParams.get('req_id') || '';
 		reqLate = $page.url.searchParams.get('lat') || '';
 		reqLong = $page.url.searchParams.get('long') || '';
+		request_id = $page.url.searchParams.get('request_id') || '';
 
 	});
 
@@ -271,6 +274,64 @@
 		return new FullScreenControl();
 	}
 
+	function twitterView(data)
+	{
+		const posts = data.tweets.map((tweetObj) => {
+		const tweet = tweetObj.tweet;
+		const user = tweet.user_details;
+		const place = tweet.place ?? null;
+		let lat = null;
+		let lng = null;
+		if (place) {
+			lat = place.bounding_box.coordinates[0][0][1];
+			lng = place.bounding_box.coordinates[0][0][0];
+		}
+
+		return {
+			id: tweetObj.entryId,
+			title: tweet.full_text,
+			description: tweet.full_text,
+			image: user.profile_image_url_https,
+			lat,
+			lng,
+			url: tweet?.url ?? '#'
+		};
+	});
+
+	const twitterData = {
+		type: 'twitter',
+		count: posts.length,
+		icon: TwitterIcon,
+		posts: posts
+	};
+
+	socialMediaJson.push(twitterData);
+	}
+
+	function panoidView(data)
+	{
+		const posts = data.panoids.map((panoid) => {
+		return {
+				id: panoid.panoid,
+				title: `panoid - ${panoid.panoid}`,
+				description: `description - ${panoid.panoid}`,
+				image: '',
+				lat: panoid.lat,
+				lng: panoid.lon,
+				url: `${PANOID_BASE_URL}${panoid.panoid}`
+			};
+		});
+
+		const panoidsData = {
+			type: 'panoids',
+			count: posts.length,
+			icon: PanoidsIcon,
+			posts: posts
+		};
+
+		socialMediaJson.push(panoidsData);
+	}
+
 	onMount(() => {
 		mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
 		map = new mapboxgl.Map({
@@ -399,6 +460,7 @@
 				}, 3000);
 
 				// make api call to get social media posts
+			  if (!request_id) {
 				setTimeout(async () => {
 					overlayLoadingText = 'Fetching social media posts';
 					const mapService = new MapService();
@@ -425,62 +487,14 @@
 					// streeview.
 					source.addEventListener('streetview', function(e) {
 						const data = JSON.parse(e.data);
-
-						const posts = data.panoids.map((panoid) => {
-							return {
-								id: panoid.panoid,
-								title: `panoid - ${panoid.panoid}`,
-								description: `description - ${panoid.panoid}`,
-								image: '',
-								lat: panoid.lat,
-								lng: panoid.lon,
-								url: `${PANOID_BASE_URL}${panoid.panoid}`
-							};
-						});
-
-						const panoidsData = {
-							type: 'panoids',
-							count: posts.length,
-							icon: PanoidsIcon,
-							posts: posts
-						};
-
-						socialMediaJson.push(panoidsData);
+						panoidView(data);
 					});
 
 					// twitter.
 					source.addEventListener('x-twitter', function(e) {
 						const data = JSON.parse(e.data);
-						const posts = data.tweets.map((tweetObj) => {
-							const tweet = tweetObj.tweet;
-							const user = tweet.user_details;
-							const place = tweet.place ?? null;
-							let lat = null;
-							let lng = null;
-							if (place) {
-								lat = place.bounding_box.coordinates[0][0][1];
-								lng = place.bounding_box.coordinates[0][0][0];
-							}
-
-							return {
-								id: tweetObj.entryId,
-								title: tweet.full_text,
-								description: tweet.full_text,
-								image: user.profile_image_url_https,
-								lat,
-								lng,
-								url: tweet?.url ?? '#'
-							};
-						});
-
-						const twitterData = {
-							type: 'twitter',
-							count: posts.length,
-							icon: TwitterIcon,
-							posts: posts
-						};
-
-						socialMediaJson.push(twitterData);
+						console.log(data, 'here')
+						twitterView(data);
 					});
 
 					// streetview error.
@@ -509,6 +523,33 @@
 						displaySocialMediaPosts();
 					});
 				}, 4000);
+
+			  } else{
+					try {
+						let apiService = new ApiService();
+						const res = await apiService.makeApiCall(`search-requests/${request_id}`);
+						if (res.success) {
+							// twitter.
+							const data = res;
+							if (data.responses && data.responses["x-twitter"]?.response) {
+								const tweetsData = data.responses["x-twitter"].response; 
+								twitterView(tweetsData)
+								setTimeout( async () => {
+									showLoadingOverlay = false;
+									await displaySocialMediaPosts();
+								}, 4000);
+							}
+							// panoids.
+							if (data.responses && data.responses["streetview"]?.response) {
+								const panoidsData = data.responses["streetview"].response; 
+								panoidView(panoidsData);
+							}
+						}
+
+					} catch (error) {
+						console.error('Error in load function:', error.message);
+					}
+			  }
 			});
 
 			if (searchQuery) {
@@ -521,7 +562,7 @@
 				}
 			}
 
-			if (reqId && reqLate && reqLong) {
+			if ((reqId || request_id) && reqLate && reqLong) {
 				const lat = reqLate;
 				const lng = reqLong;
 				const coordinatesString = `${lng},${lat}`;
@@ -555,6 +596,10 @@
 					}, 500);
 			}
 			}
+
+			// if(request_id) {
+			// 	console.log("Request", request_id)
+			// }
 
 		});
 	});
@@ -598,6 +643,7 @@
 			overlayLoadingText = 'Setting up the social icons on map';
 			while (pointsAdded < count) {
 				const randomPoints = turf.randomPoint(count - pointsAdded, { bbox: turf.bbox(circle) });
+				console.log(turf.bbox(circle), 'randomPoints')
 				randomPoints.features.forEach((feature) => {
 					if (turf.booleanPointInPolygon(feature, circle) && pointsAdded < count) {
 						const coords = feature.geometry.coordinates;

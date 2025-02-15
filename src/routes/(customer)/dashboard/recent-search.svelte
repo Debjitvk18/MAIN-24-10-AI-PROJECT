@@ -43,7 +43,9 @@
 								</DropdownMenu.Trigger>
 								<DropdownMenu.Content>
 									<DropdownMenu.Group>
-										<DropdownMenu.Item>View</DropdownMenu.Item>
+										<DropdownMenu.Item>
+											<a href="my-requests/{search.id}">View</a>
+										</DropdownMenu.Item>
 									</DropdownMenu.Group>
 								</DropdownMenu.Content>
 							</DropdownMenu.Root>

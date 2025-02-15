@@ -1,5 +1,6 @@
 <script>
 	import { isLoggedIn, logout } from '$lib/stores/authStore';
+	import Logo from '../general/Logo.svelte';
 
 	let mobileMenu = false;
 </script>
@@ -7,13 +8,9 @@
 <header class="bg-white">
 	<nav class="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
 		<div class="flex lg:flex-1">
-			<a href="#" class="-m-1.5 p-1.5">
+			<a href="/" class="-m-1.5 p-1.5">
 				<span class="sr-only">Your Company</span>
-				<img
-					class="h-8 w-auto"
-					src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600"
-					alt=""
-				/>
+				<Logo />
 			</a>
 		</div>
 		<div class="flex lg:hidden">
@@ -41,10 +38,10 @@
 			</button>
 		</div>
 		<div class="hidden lg:flex lg:gap-x-12">
-			<a href="#" class="text-sm/6 font-semibold text-gray-900">Home</a>
-			<a href="#pricing" class="text-sm/6 font-semibold text-gray-900">Pricing</a>
-			<a href="#blog" class="text-sm/6 font-semibold text-gray-900">Blog</a>
-			<a href="#testimonials" class="text-sm/6 font-semibold text-gray-900">Testimonials</a>
+			<a href="/" class="text-sm/6 font-semibold text-gray-900">Home</a>
+			<a href="/" class="text-sm/6 font-semibold text-gray-900">Pricing</a>
+			<a href="/" class="text-sm/6 font-semibold text-gray-900">Blog</a>
+			<a href="/" class="text-sm/6 font-semibold text-gray-900">Testimonials</a>
 			<a href="/try-demo" class="text-sm/6 font-semibold text-gray-900">Try Demo</a>
 		</div>
 		<div class="hidden lg:flex lg:flex-1 lg:justify-end">
@@ -76,13 +73,9 @@
 			class="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10"
 		>
 			<div class="flex items-center justify-between">
-				<a href="#" class="-m-1.5 p-1.5">
+				<a href="/" class="-m-1.5 p-1.5">
 					<span class="sr-only">Your Company</span>
-					<img
-						class="h-8 w-auto"
-						src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600"
-						alt=""
-					/>
+					<Logo />
 				</a>
 				<button
 					type="button"
@@ -107,22 +100,22 @@
 				<div class="-my-6 divide-y divide-gray-500/10">
 					<div class="space-y-2 py-6">
 						<a
-							href="#"
+							href="/"
 							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
 							>Home
 						</a>
 						<a
-							href="#pricing"
+							href="/"
 							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
 							>Pricing</a
 						>
 						<a
-							href="#blog"
+							href="/"
 							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
 							>Blog</a
 						>
 						<a
-						href="#testimonials"
+						href="/"
 						class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
 						>Testimonials</a
 					>
