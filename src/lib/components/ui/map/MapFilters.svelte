@@ -72,8 +72,9 @@
 	});
 
 
-	let radiusValue = 5;
-	let resolutionValue = 1;
+	// Radius and Resolution slider
+	let radiusValue = $state([1]);
+	let resolutionValue = $state([5]);
 
 	// apply filters
 	let errorMessages = $state<string | null>(null);
@@ -115,8 +116,8 @@
 			address: place_name,
 			latitude: latitude,
 			longitude: longitude,
-			radius: radiusValue,
-			resolution: resolutionValue,
+			radius: radiusValue[0],
+			resolution: resolutionValue[0],
 			start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
 			end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
 			features: selectedSource
@@ -136,7 +137,6 @@
 		}
 	}
 </script>
-
 <Sheet.Root>
 	<Sheet.Trigger>
 		<Button
@@ -221,20 +221,17 @@
 						<div class="flex items-center justify-between">
 							<Label for="radius">Search Radius</Label>
 							<span
-								class="text-muted-foreground hover:border-border w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
-										{radiusValue} KM
+								class="text-muted-foreground hover:border-border w-24 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
+										{radiusValue[0]} KM
 							</span>
 						</div>
 						<Slider
-							aria-label="Radius"
-							bind:radiusValue
-							class="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
+							bind:value={radiusValue}
+							ariaLabel="Radius"
 							id="radius"
 							max={50}
 							min={1}
-							on:change={() => console.log('change')}
-							step={1}
-						/>
+							step={1} />
 					</div>
 
 					<div class="grid gap-2 pt-2">
@@ -242,18 +239,16 @@
 							<Label for="resolution">Search Resolution</Label>
 							<span
 								class="text-muted-foreground hover:border-border w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
-								{resolutionValue}
+								{resolutionValue[0]}
 							</span>
 						</div>
 						<Slider
-							aria-label="Resolution"
-							bind:resolutionValue
-							class="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
+							bind:value={resolutionValue}
+							ariaLabel="Resolution"
 							id="resolution"
 							max={100}
 							min={5}
-							step={5}
-						/>
+							step={5} />
 					</div>
 				</Card.Content>
 			</Card.Root>
