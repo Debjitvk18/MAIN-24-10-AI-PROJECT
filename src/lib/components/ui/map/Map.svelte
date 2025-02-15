@@ -534,16 +534,17 @@
 							if (data.responses && data.responses["x-twitter"]?.response) {
 								const tweetsData = data.responses["x-twitter"].response; 
 								twitterView(tweetsData)
-								setTimeout( async () => {
-									showLoadingOverlay = false;
-									await displaySocialMediaPosts();
-								}, 4000);
 							}
 							// panoids.
 							if (data.responses && data.responses["streetview"]?.response) {
 								const panoidsData = data.responses["streetview"].response; 
 								panoidView(panoidsData);
 							}
+
+							setTimeout( async () => {
+								showLoadingOverlay = false;
+								await displaySocialMediaPosts();
+							}, 4000);
 						}
 
 					} catch (error) {
