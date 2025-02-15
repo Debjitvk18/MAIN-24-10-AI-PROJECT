@@ -20,6 +20,9 @@
 	import { Slider } from '$lib/components/ui/slider';
 	import { MapService } from '$lib/services/map-service';
 	import AlertError from '$lib/components/form/messages/AlertError.svelte';
+	import MapSearchBox from '$lib/components/ui/map/MapSearchBox.svelte';
+	import { getDataFromURL } from '$lib/utils/generalUtils';
+	import { onMount } from 'svelte';
 
 	const df = new DateFormatter('en-US', {
 		dateStyle: 'medium'
@@ -74,18 +77,44 @@
 
 	// apply filters
 	let errorMessages = $state<string | null>(null);
+	let selectedLocation = null;
+
+	onMount(() => {
+		// check if data present in the url
+		const selectedLocationFromURL = getDataFromURL('search');
+		const selectedLatitudeFromURL = getDataFromURL('lat');
+		const selectedLongitudeFromURL = getDataFromURL('long');
+		if (selectedLocationFromURL && selectedLatitudeFromURL && selectedLongitudeFromURL) {
+			selectedLocation = {
+				place_name: selectedLocationFromURL,
+				latitude: selectedLatitudeFromURL,
+				longitude: selectedLongitudeFromURL
+			};
+		}
+	});
+
+	function handleLocationSelect(event) {
+		selectedLocation = event.detail;
+	}
 
 	async function applyFilters() {
+		if(!selectedLocation) {
+			errorMessages = { address: ['Please select a location to continue.'] };
+			return;
+		}
+
 		// validate, at-least one data source is selected.
 		if (!Array.isArray(selectedSource) || selectedSource.length === 0) {
 			errorMessages = { features: ['Please select at least one data source to continue.'] };
 			return;
 		}
 
+		const { place_name, latitude, longitude } = selectedLocation;
+
 		const payload = {
-			address: '',
-			latitude: 0,
-			longitude: 0,
+			address: place_name,
+			latitude: latitude,
+			longitude: longitude,
 			radius: radiusValue,
 			resolution: resolutionValue,
 			start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
@@ -95,7 +124,6 @@
 
 		try {
 			const response = await mapService.getMapResults(payload);
-			console.log('Filters applied successfully:', response);
 			if (!response.success) {
 				errorMessages = response.errors ?? null;
 			} else {
@@ -128,6 +156,24 @@
 		<AlertError errors={errorMessages} />
 
 		<div class="flex-1 overflow-y-auto border-t border-b border-gray-200 py-2">
+			<!-- Address Search -->
+			<Card.Root class="mb-4 mt-2">
+				<Card.Header>
+					<Card.Title>Search Address</Card.Title>
+					<Card.Description>Search by entering some address.</Card.Description>
+				</Card.Header>
+				<Card.Content>
+					<div class="space-y-4">
+						<MapSearchBox
+							on:select={handleLocationSelect}
+							redirectOnSelect={false}
+							showSearchButton={false}
+							query={getDataFromURL('search')	}
+						/>
+					</div>
+				</Card.Content>
+			</Card.Root>
+
 			<!-- Social Media Selector -->
 			<Card.Root class="mb-4 mt-2">
 				<Card.Header>
