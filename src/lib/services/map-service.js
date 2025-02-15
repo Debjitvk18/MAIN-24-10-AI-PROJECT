@@ -28,8 +28,9 @@ export class MapService {
 
 	/**
 	 * Perform reverse geocoding using Mapbox Geocoding API.
-	 *
 	 * @returns The place name or null if not available
+	 * @param {number} lng
+	 * @param {number} lat
 	 */
 	async reverseGeocode(lng, lat) {
 		const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${PUBLIC_MAPBOX_ACCESS_TOKEN}`;

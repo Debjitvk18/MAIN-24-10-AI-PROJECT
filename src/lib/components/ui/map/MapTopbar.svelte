@@ -21,26 +21,10 @@
 			<!-- Separator Bar -->
 			<div class="w-[1px] h-8 bg-gray-300"></div>
 
-			<!-- Facebook -->
-			<div class="flex flex-col items-center space-y-1 text-gray-500 hover:text-black cursor-pointer">
-				<Icon class="w-6 h-6" icon="lucide:facebook" />
-				<span class="text-sm">Facebook</span>
-			</div>
-			<!-- Separator Bar -->
-			<div class="w-[1px] h-8 bg-gray-300"></div>
-
 			<!-- Panoids -->
 			<div class="flex flex-col items-center space-y-1 text-gray-500 hover:text-black cursor-pointer">
 				<Icon class="w-6 h-6" icon="lucide:map-pinned" />
 				<span class="text-sm">Panoids</span>
-			</div>
-			<!-- Separator Bar -->
-			<div class="w-[1px] h-8 bg-gray-300"></div>
-
-			<!-- Google News -->
-			<div class="flex flex-col items-center space-y-1 text-gray-500 hover:text-black cursor-pointer">
-				<Icon class="w-6 h-6" icon="simple-icons:googlenews" />
-				<span class="text-sm">Google News</span>
 			</div>
 		</div>
 
@@ -58,7 +42,7 @@
 			</div>
 
 			<!-- Filters -->
-			<MapFilters	/>
+			<MapFilters />
 		</div>
 	</div>
 </div>

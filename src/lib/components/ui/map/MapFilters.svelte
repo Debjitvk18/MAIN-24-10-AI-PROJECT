@@ -5,35 +5,108 @@
 	import { Switch } from '$lib/components/ui/switch';
 	import * as Card from '$lib/components/ui/card';
 	import * as Sheet from '$lib/components/ui/sheet';
-	import { Separator } from '$lib/components/ui/separator';
 
-	import CalendarIcon from 'lucide-svelte/icons/calendar';
 	import {
-		CalendarDate,
 		DateFormatter,
 		type DateValue,
-		getLocalTimeZone
+		getLocalTimeZone,
+		today
 	} from '@internationalized/date';
-	import { cn } from '$lib/utils.ts';
 	import { RangeCalendar } from '$lib/components/ui/range-calendar/index.ts';
+
+	import { cn } from '$lib/utils.ts';
 	import * as Popover from '$lib/components/ui/popover/index.ts';
 	import { Label } from '$lib/components/ui/label';
 	import { Slider } from '$lib/components/ui/slider';
+	import { MapService } from '$lib/services/map-service';
+	import AlertError from '$lib/components/form/messages/AlertError.svelte';
 
 	const df = new DateFormatter('en-US', {
 		dateStyle: 'medium'
 	});
 
-	let value: DateRange | undefined = {
-		start: new CalendarDate(2022, 1, 20),
-		end: new CalendarDate(2022, 1, 20).add({ days: 20 })
-	};
+	const todayDate = today(getLocalTimeZone());
+	let datePickerValue = $state<DateRange | undefined>({
+		start: todayDate,
+		end: todayDate
+	});
 
-	let startValue: DateValue | undefined = undefined;
+	let startValue = $state<DateValue | undefined>(undefined);
 
-	// Radius and Resolutions
-	let radiusValue = $state(1);
-	let resolutionValue = $state(1);
+
+	// Initialize MapService
+	const mapService = new MapService();
+
+	// filter values
+	// let radiusValue = $state(1);
+	// let resolutionValue = $state(1);
+	let selectedSource = [];
+
+	let enableTwitter = $state(true);
+	$effect(() => {
+		if (enableTwitter) {
+			selectedSource = Array.isArray(selectedSource)
+				? [...selectedSource, 'x-twitter'].filter((v, i, a) => a.indexOf(v) === i)
+				: ['x-twitter'];
+		} else {
+			selectedSource = Array.isArray(selectedSource)
+				? selectedSource.filter((source) => source !== 'x-twitter')
+				: [];
+		}
+	});
+
+	let enablePanoids = $state(true);
+	$effect(() => {
+		if (enablePanoids) {
+			selectedSource = Array.isArray(selectedSource)
+				? [...selectedSource, 'streetview'].filter((v, i, a) => a.indexOf(v) === i)
+				: ['streetview'];
+		} else {
+			selectedSource = Array.isArray(selectedSource)
+				? selectedSource.filter((source) => source !== 'streetview')
+				: [];
+		}
+	});
+
+
+	let radiusValue = 5;
+	let resolutionValue = 1;
+
+	// apply filters
+	let errorMessages = $state<string | null>(null);
+
+	async function applyFilters() {
+		// validate, at-least one data source is selected.
+		if (!Array.isArray(selectedSource) || selectedSource.length === 0) {
+			errorMessages = { features: ['Please select at least one data source to continue.'] };
+			return;
+		}
+
+		const payload = {
+			address: '',
+			latitude: 0,
+			longitude: 0,
+			radius: radiusValue,
+			resolution: resolutionValue,
+			start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
+			end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
+			features: selectedSource
+		};
+
+		try {
+			const response = await mapService.getMapResults(payload);
+			console.log('Filters applied successfully:', response);
+			if (!response.success) {
+				errorMessages = response.errors ?? null;
+			} else {
+				errorMessages = null;
+				console.log('Filters applied successfully:', response);
+			}
+		} catch (error) {
+			console.error('Error applying filters:', error);
+			errorMessages = { general: ['An unexpected error occurred while applying filters.'] };
+		}
+	}
 </script>
 
 <Sheet.Root>
@@ -51,9 +124,12 @@
 				Adjust the filters below to customize your search results. Click "Apply Filters" once you are finished.
 			</Sheet.Description>
 		</Sheet.Header>
-		<div class="flex-1 overflow-y-auto">
+
+		<AlertError errors={errorMessages} />
+
+		<div class="flex-1 overflow-y-auto border-t border-b border-gray-200 py-2">
 			<!-- Social Media Selector -->
-			<Card.Root>
+			<Card.Root class="mb-4 mt-2">
 				<Card.Header>
 					<Card.Title>Select Data Source</Card.Title>
 					<Card.Description>Choose the platforms you want to include in your data view.</Card.Description>
@@ -61,17 +137,6 @@
 				<Card.Content>
 					<div class="space-y-4">
 						<div class="grid gap-6">
-							<!-- Facebook -->
-							<div class="flex items-center justify-between space-x-4">
-								<div class="flex items-center space-x-4">
-									<Icon class="w-6 h-6" icon="lucide:facebook" />
-									<div>
-										<p class="text-sm font-medium leading-none">Facebook</p>
-									</div>
-								</div>
-								<Switch />
-							</div>
-
 							<!-- Twitter -->
 							<div class="flex items-center justify-between space-x-4">
 								<div class="flex items-center space-x-4">
@@ -80,7 +145,7 @@
 										<p class="text-sm font-medium leading-none">X (Twitter)</p>
 									</div>
 								</div>
-								<Switch />
+								<Switch bind:enableTwitter checked={enableTwitter} on:click={enableTwitter = !enableTwitter} />
 							</div>
 
 							<!-- Panoids -->
@@ -91,18 +156,7 @@
 										<p class="text-sm font-medium leading-none">Panoids</p>
 									</div>
 								</div>
-								<Switch />
-							</div>
-
-							<!-- Google News -->
-							<div class="flex items-center justify-between space-x-4">
-								<div class="flex items-center space-x-4">
-									<Icon class="w-6 h-6" icon="simple-icons:googlenews" />
-									<div>
-										<p class="text-sm font-medium leading-none">Google News</p>
-									</div>
-								</div>
-								<Switch />
+								<Switch bind:enablePanoids checked={enablePanoids} on:click={enablePanoids = !enablePanoids} />
 							</div>
 
 						</div>
@@ -110,10 +164,8 @@
 				</Card.Content>
 			</Card.Root>
 
-			<Separator class="my-4" />
-
 			<!-- Radius & Resolutions -->
-			<Card.Root>
+			<Card.Root class="mb-4">
 				<Card.Header>
 					<Card.Title>Adjust Radius & Resolution</Card.Title>
 					<Card.Description>Expand the search area to view more data points.</Card.Description>
@@ -124,7 +176,7 @@
 							<Label for="radius">Search Radius</Label>
 							<span
 								class="text-muted-foreground hover:border-border w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
-								{radiusValue}
+										{radiusValue} KM
 							</span>
 						</div>
 						<Slider
@@ -134,6 +186,7 @@
 							id="radius"
 							max={50}
 							min={1}
+							on:change={() => console.log('change')}
 							step={1}
 						/>
 					</div>
@@ -151,18 +204,16 @@
 							bind:resolutionValue
 							class="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
 							id="resolution"
-							max={50}
-							min={1}
-							step={1}
+							max={100}
+							min={5}
+							step={5}
 						/>
 					</div>
 				</Card.Content>
 			</Card.Root>
 
-			<Separator class="my-4" />
-
 			<!-- Date Range -->
-			<Card.Root>
+			<Card.Root class="mb-4">
 				<Card.Header>
 					<Card.Title>Choose Date Range</Card.Title>
 					<Card.Description>Select dates to include historical data within your search.</Card.Description>
@@ -173,16 +224,19 @@
 							<Popover.Trigger asChild let:builder>
 								<Button
 									builders={[builder]}
-									class={cn("w-[300px] justify-start text-left font-normal", !value && "text-muted-foreground")}
+									class={cn(
+										"w-[300px] justify-start text-left font-normal",
+										!datePickerValue && "text-muted-foreground"
+									)}
 									variant="outline">
-									<CalendarIcon class="mr-2 h-4 w-4" />
-									{#if value && value.start}
-										{#if value.end}
-											{df.format(value.start.toDate(getLocalTimeZone()))} - {df.format(
-											value.end.toDate(getLocalTimeZone())
+									<Icon class="mr-2 h-4 w-4" icon="lucide:calendar-days" />
+									{#if datePickerValue && datePickerValue.start}
+										{#if datePickerValue.end}
+											{df.format(datePickerValue.start.toDate(getLocalTimeZone()))} - {df.format(
+											datePickerValue.end.toDate(getLocalTimeZone())
 										)}
 										{:else}
-											{df.format(value.start.toDate(getLocalTimeZone()))}
+											{df.format(datePickerValue.start.toDate(getLocalTimeZone()))}
 										{/if}
 									{:else if startValue}
 										{df.format(startValue.toDate(getLocalTimeZone()))}
@@ -194,10 +248,11 @@
 							<Popover.Content align="start" class="w-auto p-0">
 								<RangeCalendar
 									bind:startValue
-									bind:value
+									bind:value={datePickerValue}
 									initialFocus
+									maxValue={todayDate}
 									numberOfMonths={2}
-									placeholder={value?.start}
+									placeholder={datePickerValue?.start}
 								/>
 							</Popover.Content>
 						</Popover.Root>
@@ -205,11 +260,10 @@
 				</Card.Content>
 			</Card.Root>
 
-			<Separator class="my-4" />
 		</div>
 
 		<Sheet.Footer>
-			<Button>Apply Filters</Button>
+			<Button on:click={applyFilters}>Apply Filters</Button>
 			<Sheet.Close>
 				<Button variant="ghost">Close</Button>
 			</Sheet.Close>
