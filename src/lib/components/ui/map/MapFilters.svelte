@@ -21,7 +21,7 @@
 	import { MapService } from '$lib/services/map-service';
 	import AlertError from '$lib/components/form/messages/AlertError.svelte';
 	import MapSearchBox from '$lib/components/ui/map/MapSearchBox.svelte';
-	import { getDataFromURL, putDataInURL } from '$lib/utils/generalUtils';
+	import { getDataFromURL } from '$lib/utils/generalUtils';
 	import { onMount } from 'svelte';
 
 	const df = new DateFormatter('en-US', {
@@ -152,6 +152,7 @@
 				console.log('Filters applied successfully:', response);
 				// pass payload in URL
 				const url = new URL(window.location.href);
+				// payload.request_id = response.search_id;
 				Object.entries(payload).forEach(([key, value]) => {
 					if (key === 'features') {
 						url.searchParams.delete('features[]');
@@ -168,7 +169,7 @@
 				});
 				window.history.replaceState({}, '', url);
 
-
+				window.location.reload();
 			}
 		} catch (error) {
 			console.error('Error applying filters:', error);
@@ -205,7 +206,7 @@
 					<div class="space-y-4">
 						<MapSearchBox
 							on:select={handleLocationSelect}
-							query={getDataFromURL('search')	}
+							query={getDataFromURL('search')}
 							redirectOnSelect={false}
 							showSearchButton={false}
 						/>

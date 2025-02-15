@@ -333,6 +333,9 @@
 	}
 
 	onMount(() => {
+		const rawRadius = getDataFromURL('radius');
+		const radiusValue = [parseInt(rawRadius, 10) || 1];
+
 		mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
 		map = new mapboxgl.Map({
 			container: mapContainer, // Container ID
@@ -444,10 +447,10 @@
 					map.flyTo({ center: coordinates });
 				}, 2000);
 
-				// create 1km radius circle around the search result
+				// create selected radius circle around the search result
 				setTimeout(() => {
 					overlayLoadingText = 'Creating radius circle to find the social media posts';
-					circle = turf.circle(coordinates, 1, { units: 'kilometers' });
+					circle = turf.circle(coordinates, radiusValue, { units: 'kilometers' });
 					const circleSource = map.getSource('circle');
 					if (circleSource) {
 						circleSource.setData(circle);
