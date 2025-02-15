@@ -1,17 +1,19 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import * as Table from '$lib/components/ui/table';
-	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.ts';
 	import NotFound from '$lib/components/general/NotFound.svelte';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import { ApiService } from '$lib/services/api-service';
 	import { formatDate } from '$lib/utils/generalUtils';
+	import { page } from '$app/stores';
 
 	export let data;
 	let meta = data?.searchRequests?.meta || {};
 	let searchRequests = data?.searchRequests?.data || [];
 	let error = data?.error || null;
+	let queryParam;
+	$: queryParam = $page.url.searchParams.get('page');
 
 	function getPaginationNumbers() {
 		if (!meta || !meta.current_page || !meta.last_page) return [];
@@ -48,6 +50,8 @@
 
 	async function fetchSearchRequests(pageNumber = 1) {
 		try {
+			if (meta?.current_page == pageNumber) return;
+
 			let apiService = new ApiService();
 			const response = await apiService.makeApiCall(`search-requests?page=${pageNumber}`);
 
@@ -75,6 +79,11 @@
 			}
 		}
 	}
+
+	$: if (!queryParam || error) {
+		fetchSearchRequests();
+	}
+
 </script>
 
 <div class="container max-w-100">
@@ -102,7 +111,7 @@
 						</Table.Header>
 						<Table.Body>
 							{#each searchRequests as request}
-								<Table.Row>
+								<Table.Row class="cursor-pointer" on:click={()=> {goto(`my-requests/${request.id}`)}}>
 									<Table.Cell class="font-medium">{request.address || 'N/A'}</Table.Cell>
 									<Table.Cell
 										>{request.request_params.latitude}, {request.request_params
@@ -145,8 +154,8 @@
 						{#each getPaginationNumbers() as page}
 							<button
 								class="px-3 py-1 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600
-									hover:bg-gray-200 dark:hover:bg-gray-700
-									{meta.current_page === page ? 'bg-gray-300 dark:bg-gray-600 text-white' : ''}"
+									hover:bg-primary-200 dark:hover:bg-gray-700
+									{meta.current_page === page ? 'bg-primary dark:bg-gray-600 text-white' : ''}"
 								on:click={() => goToPage(page)}
 							>
 								{page}

@@ -97,8 +97,8 @@
 					<Icon icon="lucide:user" class="text-muted-foreground h-4 w-4" />
 				</Card.Header>
 				<Card.Content>
-					<div class="text-2sm font-bold"><i>Last login</i> 3 days ago</div>
-					<p class="text-muted-foreground text-xs">{$user.email}</p>
+					<div class="text-2sm font-bold"><i>Last login</i> {$user.last_login}</div>
+					<p class="text-muted-foreground text-xs">IP: {$user.last_login_ip}</p>
 				</Card.Content>
 			</Card.Root>
 		
@@ -118,21 +118,21 @@
 		{/if}
 		
 		</div>
-		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-			<Card.Root class="col-span-4">
+		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-7 h-full">
+			<Card.Root class="col-span-4 flex flex-col h-[500px]">
 				<Card.Header>
 					<Card.Title>Recent Usage</Card.Title>
 				</Card.Header>
-				<Card.Content>
+				<Card.Content class="flex-grow">
 					<Overview loading={loading} usages={api_credits_usage} />					
 				</Card.Content>
-				
 			</Card.Root>
-			<Card.Root class="col-span-3">
+		
+			<Card.Root class="col-span-3 flex flex-col h-[500px]">
 				<Card.Header>
 					<Card.Title>Recent Searches</Card.Title>
 				</Card.Header>
-				<Card.Content>
+				<Card.Content class="flex-grow overflow-y-auto">
 					<RecentSearch loading={loading} searches={recent_searches} />
 				</Card.Content>
 			</Card.Root>
