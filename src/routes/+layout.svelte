@@ -7,6 +7,8 @@
 	import '../app.css';
 	import Sidebar from '$lib/components/layout/Sidebar.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
+	import { ModeWatcher } from "mode-watcher";
+	import { Toaster } from "$lib/components/ui/sonner";
 	let { children } = $props();
 
 	// const noLayoutRoutes = ['/', '/login', '/register']; // Add routes where you don't want to show the layout
@@ -26,14 +28,17 @@
 </script>
 
 <!-- {#if !noLayoutRoutes.includes($page.url.pathname)} -->
+<Toaster />
+
 {#if $page.data.layout !== false}
 	<div class="app-container">
+		<ModeWatcher />
 		<Sidebar />
 		<div
 			class="xl:ps-72 [&>.serviceapp-header]:xl:start-72 [&>.serviceapp-header]:xl:w-[calc(100%-theme(spacing.72))] peer-[&.is-compact:not(.has-hover)]:xl:ps-[74px] peer-[&.is-compact:not(.has-hover)]:[&>.serviceapp-header]:xl:start-[74px] peer-[&.is-compact:not(.has-hover)]:[&>.serviceapp-header]:xl:w-[calc(100%-74px)] flex flex-col min-h-screen transition-all duration-300"
 		>
 			<Header />
-			<div id="pagecontent" class="serviceapp-content mt-16 px-1.5 sm:px-5 py-6 sm:py-8">
+			<div id="pagecontent" class="serviceapp-content px-1.5 sm:px-5 py-6 sm:py-8 dark:bg-gray-900">
 				{@render children()}
 			</div>
 			<!-- content -->

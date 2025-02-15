@@ -3,4 +3,8 @@
 	export let height = '40';
 </script>
 
-Logo
+<img
+	class="h-8 w-auto"
+	src="https://tailwindui.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
+	alt=""
+/>

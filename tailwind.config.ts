@@ -1,112 +1,67 @@
-import containerQueries from '@tailwindcss/container-queries';
-import forms from '@tailwindcss/forms';
-import typography from '@tailwindcss/typography';
-import type { Config } from 'tailwindcss';
+import { fontFamily } from "tailwindcss/defaultTheme";
+import type { Config } from "tailwindcss";
 
-export default {
-	content: ['./src/**/*.{html,js,svelte,ts}'],
-	darkMode: 'class',
+const config: Config = {
+	darkMode: ["class"],
+	content: ["./src/**/*.{html,js,svelte,ts}"],
+	safelist: ["dark"],
 	theme: {
+		container: {
+			center: true,
+			padding: "2rem",
+			screens: {
+				"2xl": "1400px"
+			}
+		},
 		extend: {
 			zIndex: {
 				100: 100,
 			},
 			colors: {
+				border: "hsl(var(--border) / <alpha-value>)",
+				input: "hsl(var(--input) / <alpha-value>)",
+				ring: "hsl(var(--ring) / <alpha-value>)",
+				background: "hsl(var(--background) / <alpha-value>)",
+				foreground: "hsl(var(--foreground) / <alpha-value>)",
 				primary: {
-					50: '#f7f8ff',
-					100: '#eff1ff',
-					200: '#e3e7fe',
-					300: '#c4cefe',
-					400: '#9cabff',
-					500: '#798bff',
-					600: '#6576ff',
-					700: '#5664d9',
-					800: '#465fff',
-					900: '#2c3782',
-					950: '#29347a',
+					DEFAULT: "hsl(var(--primary) / <alpha-value>)",
+					foreground: "hsl(var(--primary-foreground) / <alpha-value>)"
 				},
-				green: {
-					50: '#e9fcf7',
-					100: '#e6fcf6',
-					200: '#bcf6e6',
-					300: '#a5f3de',
-					400: '#78eccd',
-					500: '#4be6bd',
-					600: '#1ee0ac',
-					700: '#18b38a',
-					800: '#128667',
-					900: '#0c5a45',
-					950: '#062d22',
+				secondary: {
+					DEFAULT: "hsl(var(--secondary) / <alpha-value>)",
+					foreground: "hsl(var(--secondary-foreground) / <alpha-value>)"
 				},
-				yellow: {
-					50: '#fef8e7',
-					100: '#fef8e4',
-					200: '#fcebb7',
-					300: '#fbe59f',
-					400: '#f8d76e',
-					500: '#f6ca3e',
-					600: '#f4bd0e',
-					700: '#c3970b',
-					800: '#927108',
-					900: '#624c06',
-					950: '#312603',
+				destructive: {
+					DEFAULT: "hsl(var(--destructive) / <alpha-value>)",
+					foreground: "hsl(var(--destructive-foreground) / <alpha-value>)"
 				},
-				red: {
-					50: '#fdeeed',
-					100: '#fceceb',
-					200: '#f8cbc8',
-					300: '#f6bab5',
-					400: '#f19891',
-					500: '#ed756c',
-					600: '#e85347',
-					700: '#ba4239',
-					800: '#8b322b',
-					900: '#2e110e',
-					950: '#2e110e',
+				muted: {
+					DEFAULT: "hsl(var(--muted) / <alpha-value>)",
+					foreground: "hsl(var(--muted-foreground) / <alpha-value>)"
 				},
-				cyan: {
-					50: '#e6f9fc',
-					100: '#e4f8fb',
-					200: '#b5edf5',
-					300: '#9de7f2',
-					400: '#6bdaeb',
-					500: '#3acee5',
-					600: '#09c2de',
-					700: '#079bb2',
-					800: '#057485',
-					900: '#044e59',
-					950: '#02272c',
+				accent: {
+					DEFAULT: "hsl(var(--accent) / <alpha-value>)",
+					foreground: "hsl(var(--accent-foreground) / <alpha-value>)"
 				},
-				slate: {
-					50: '#f5f7fd',
-					100: '#ecf2ff',
-					200: '#dfe9fe',
-					300: '#b6c6e3',
-					400: '#8094ae',
-					500: '#6e82a5',
-					600: '#526484',
-					700: '#364a63',
-					800: '#203145',
-					900: '#1c2b46',
-					950: '#131f34',
+				popover: {
+					DEFAULT: "hsl(var(--popover) / <alpha-value>)",
+					foreground: "hsl(var(--popover-foreground) / <alpha-value>)"
 				},
-				gray: {
-					50: '#f7fafc',
-					100: '#ebeef2',
-					200: '#e5e9f2',
-					300: '#dbdfea',
-					400: '#b7c2d0',
-					500: '#8091a7',
-					600: '#3c4d62',
-					700: '#344357',
-					800: '#2b3748',
-					900: '#1f2b3a',
-					950: '#101924',
-					1000: '#0d141d',
-				},
+				card: {
+					DEFAULT: "hsl(var(--card) / <alpha-value>)",
+					foreground: "hsl(var(--card-foreground) / <alpha-value>)"
+				}
 			},
+			borderRadius: {
+				lg: "var(--radius)",
+				md: "calc(var(--radius) - 2px)",
+				sm: "calc(var(--radius) - 4px)"
+			},
+			fontFamily: {
+				sans: [...fontFamily.sans]
+			}
 		}
 	},
+};
 
-	plugins: [typography, forms, containerQueries]
-} satisfies Config;
+export default config;

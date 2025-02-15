@@ -1,54 +1,67 @@
 <script lang="ts">
-	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
-	import { onMount, onDestroy } from 'svelte';
+	// Svelte
+	import { onDestroy, onMount } from 'svelte';
+	import { page } from '$app/stores';
+	import { ApiService } from '$lib/services/api-service';
+
+	// Mapbox
 	import mapboxgl from 'mapbox-gl';
 	import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 	import * as turf from '@turf/turf';
 
-	import InstagramIcon from '$lib/assets/svg/marker/insta-pin.svg?raw';
-	import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
+	// Environment variables
+	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
+
+	// Services
+	import { MapService } from '$lib/services/map-service';
+
+	// Constants
+	import { API_BASE_URL, MAPBOX_THEMES, PANOID_BASE_URL } from '$lib/constants/constants';
+
+	// Utility functions
+	import { getDataFromURL, putDataInURL, toggleFullScreen, truncateString } from '$lib/utils/generalUtils';
+	import { highlightMarker, parseCoordinates } from '$lib/utils/mapUtils';
+
+	// SVG icons
 	import TwitterIcon from '$lib/assets/svg/marker/x-pin.svg?raw';
-	import LinkedinIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
 	import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
 
-	import FacebookPostImage from '$lib/assets/posts/facebook.jpg';
-	import InstagramPostImage from '$lib/assets/posts/instagram.jpg';
-	import LinkedinPostImage from '$lib/assets/posts/linkedin.webp';
-	import TwitterPostImage from '$lib/assets/posts/twitter.jpg';
-	import Modal from '../modal/Modal.svelte';
-	import { MapService } from '$lib/services/map-service';
-	import LoadingButton from '$lib/components/form/buttons/LoadingButton.svelte';
-
+	// UI Components
 	import { showToast } from '$lib/stores/toastStore';
-	import { page } from '$app/stores';
-
-	// loading overlay
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
-	import { API_BASE_URL, PANOID_BASE_URL } from '$lib/constants/constants';
-	import { truncateString } from '$lib/utils/generalUtils';
+
+	// Icon Component
+	import MapTopbar from '$lib/components/ui/map/MapTopbar.svelte';
+	import MapSidebar from '$lib/components/ui/map/MapSidebar.svelte';
+
+	// Default Data...
 	let showLoadingOverlay = false;
 	let overlayLoadingText = 'Loading';
-
 	let searchQuery: string = '';
-
-	const unsubscribe = page.subscribe(($page) => {
-		searchQuery = $page.url.searchParams.get('search') || '';
-	});
-
-	onDestroy(() => {
-		unsubscribe();
-	});
-
+	let socialMediaJson = [];
+	let socialMediaIcons;
+	let socialMediaData;
+	let circle;
+	let visibility: { [key: string]: boolean };
 	let map: mapboxgl.Map;
 	let mapContainer: HTMLElement;
 	let showSidebar = false;
-	let isLoading = false; // loader
 	let errorMessages: string[] = []; // validation errors
-
 	const mapService = new MapService();
+	let reqId: number;
+	let reqLate: number;
+	let reqLong: number;
+	let request_id: number;
 
-	// show save report modal?
-	let showSaveModal = false;
+	/**
+	 * A boolean variable that indicates the visibility state of a sidebar component.
+	 *
+	 * When set to `true`, the sidebar is visible to the user.
+	 * When set to `false`, the sidebar is hidden.
+	 */
+	let isSidebarVisible = false;
+
+	let mapMarker = null; // set by onclick on map
 
 	// save results form data
 	let saveResultsFormData = {
@@ -57,7 +70,35 @@
 		autoUpdateEmail: false
 	};
 
-	// if refreshFrequency is not 'No Refresh', show autoUpdateEmail checkbox
+	// Markers for social media types
+	let markers: { [key: string]: mapboxgl.Marker[] } = {};
+
+
+	/**
+	 * A variable that holds the unsubscribe function returned by the subscription to the `page` store.
+	 * The subscription listens to changes in the `$page` object, particularly to retrieve the `search`
+	 * query parameter from the URL's `searchParams`. This value is assigned to the `searchQuery` variable.
+	 *
+	 * Calling the `unsubscribe` function stops the subscription and prevents further updates to the
+	 * `$page` object.
+	 */
+	const unsubscribe = page.subscribe(($page) => {
+		searchQuery = $page.url.searchParams.get('search') || '';
+		reqId = $page.url.searchParams.get('req_id') || '';
+		reqLate = $page.url.searchParams.get('lat') || '';
+		reqLong = $page.url.searchParams.get('long') || '';
+		request_id = $page.url.searchParams.get('request_id') || '';
+
+	});
+
+	/**
+	 * Determines if the "Auto Update Email" functionality should be shown
+	 * based on the refresh frequency setting in the form data. If the refresh
+	 * frequency is not set to 'No Refresh', it returns true. Otherwise, it disables
+	 * the auto update email option and returns false.
+	 *
+	 * @return {boolean} Returns true if the refresh frequency is not 'No Refresh', otherwise false.
+	 */
 	function showAutoUpdateEmail() {
 		if (saveResultsFormData.refreshFrequency !== 'No Refresh') {
 			return true;
@@ -67,7 +108,13 @@
 		return false;
 	}
 
-	// api call to save results
+	/**
+	 * Handles the saving of results when triggered by a form event. Prevents the default action of the event,
+	 * sends a request to save the results, and manages the UI state and notifications based on the response.
+	 *
+	 * @param {Event} event The event triggered by the user interaction, typically a form submission.
+	 * @return {Promise<void>} A promise that resolves when the save operation completes, either successfully or with errors.
+	 */
 	async function handleSaveResults(event: Event) {
 		event.preventDefault();
 		isLoading = true;
@@ -98,6 +145,12 @@
 		}
 	}
 
+	/**
+	 * Processes and formats error messages from a given response object.
+	 *
+	 * @param {object} data - The data containing error messages or information.
+	 * @returns {void} This function does not return a value; it manipulates the errorMessages array directly.
+	 */
 	function handleErrors(data: any) {
 		errorMessages = [];
 
@@ -110,16 +163,179 @@
 		}
 	}
 
-	var socialMediaJson = [];
-	var socialMediaIcons;
-	var socialMediaData;
-	var circle;
-	var visibility: { [key: string]: boolean };
+	/**
+	 * Creates a custom style switcher control for a Mapbox map, allowing users
+	 * to dynamically switch map styles from a dropdown menu.
+	 *
+	 * This control includes a dropdown selector populated with available themes
+	 * and applies the selected style to the map. The control also updates the
+	 * URL with the chosen theme for persistence and resets when removed from the map.
+	 *
+	 * @return {Object} A new instance of the StyleSwitcherControl class, which can
+	 *         be added to a Mapbox map as a control to switch map styles.
+	 */
+	function createStyleSwitcherControl() {
+		class StyleSwitcherControl {
+			onAdd(map) {
+				this.map = map;
+				this.container = document.createElement('div');
+				this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group cyberglobes-map-control';
 
-	// Markers for social media types
-	let markers: { [key: string]: mapboxgl.Marker[] } = {};
+				const themeFromUrl = getDataFromURL('theme');
+				const select = this.createStyleSelector(themeFromUrl);
+				this.container.appendChild(select);
+				return this.container;
+			}
+
+			// Create Style Switch Dropdown
+			createStyleSelector(themeFromUrl) {
+				const select = document.createElement('select');
+				select.className = 'style-switcher p-3 shadow-md rounded-md bg-white dark:bg-gray-950';
+
+				MAPBOX_THEMES.forEach(({ style, name }) => {
+					const option = document.createElement('option');
+					option.value = style;
+					option.textContent = name;
+					option.selected = `mapbox://styles/mapbox/${themeFromUrl}` === style;
+					select.appendChild(option);
+
+					if (option.selected) {
+						map.setStyle(style);
+					}
+				});
+
+				select.addEventListener('change', this.handleStyleChange.bind(this));
+				return select;
+			}
+
+			// Handle theme change
+			handleStyleChange(event) {
+				let selectedStyle = event.target.value;
+				map.setStyle(selectedStyle);
+
+				// Extract theme name and update URL
+				const theme = selectedStyle.replace('mapbox://styles/mapbox/', '');
+				putDataInURL('theme', theme);
+			}
+
+			// Reset when map removed!
+			onRemove() {
+				this.container.parentNode.removeChild(this.container);
+				this.map = undefined;
+			}
+		}
+
+		return new StyleSwitcherControl();
+	}
+
+	/**
+	 * Creates a full-screen control for a Mapbox map.
+	 *
+	 * The full-screen control allows the user to toggle full-screen mode
+	 * for the specified map container. It includes a button with an SVG icon
+	 * that triggers the full-screen functionality when clicked.
+	 *
+	 * @return {Object} An instance of FullScreenControl, which can be added to a Mapbox map.
+	 */
+	function createFullScreenControl() {
+		class FullScreenControl {
+			onAdd(map) {
+				this.map = map;
+				this.container = document.createElement('div');
+				this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group cyberglobes-map-control';
+				const button = this.createFullScreenButton();
+				this.container.appendChild(button);
+				return this.container;
+			}
+
+			createFullScreenButton() {
+				const button = document.createElement('button');
+				button.className =
+					'mapboxgl-ctrl-icon mapboxgl-ctrl-fullscreen cyberglobes-map-control-btn';
+				button.type = 'button';
+				button.title = 'Toggle Fullscreen';
+				button.style.padding = '2px';
+				button.innerHTML =
+					'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9V6a2 2 0 0 1 2-2h3m11 11v3a2 2 0 0 1-2 2h-3m0-16h3a2 2 0 0 1 2 2v3M9 20H6a2 2 0 0 1-2-2v-3"/></svg>';
+
+				button.onclick = () => {
+					toggleFullScreen('map-container');
+				};
+
+				return button;
+			}
+
+			onRemove() {
+				this.container.parentNode.removeChild(this.container);
+				this.map = undefined;
+			}
+		}
+
+		return new FullScreenControl();
+	}
+
+	function twitterView(data)
+	{
+		const posts = data.tweets.map((tweetObj) => {
+		const tweet = tweetObj.tweet;
+		const user = tweet.user_details;
+		const place = tweet.place ?? null;
+		let lat = null;
+		let lng = null;
+		if (place) {
+			lat = place.bounding_box.coordinates[0][0][1];
+			lng = place.bounding_box.coordinates[0][0][0];
+		}
+
+		return {
+			id: tweetObj.entryId,
+			title: tweet.full_text,
+			description: tweet.full_text,
+			image: user.profile_image_url_https,
+			lat,
+			lng,
+			url: tweet?.url ?? '#'
+		};
+	});
+
+	const twitterData = {
+		type: 'twitter',
+		count: posts.length,
+		icon: TwitterIcon,
+		posts: posts
+	};
+
+	socialMediaJson.push(twitterData);
+	}
+
+	function panoidView(data)
+	{
+		const posts = data.panoids.map((panoid) => {
+		return {
+				id: panoid.panoid,
+				title: `panoid - ${panoid.panoid}`,
+				description: `description - ${panoid.panoid}`,
+				image: '',
+				lat: panoid.lat,
+				lng: panoid.lon,
+				url: `${PANOID_BASE_URL}${panoid.panoid}`
+			};
+		});
+
+		const panoidsData = {
+			type: 'panoids',
+			count: posts.length,
+			icon: PanoidsIcon,
+			posts: posts
+		};
+
+		socialMediaJson.push(panoidsData);
+	}
 
 	onMount(() => {
+		const rawRadius = getDataFromURL('radius');
+		const radiusValue = [parseInt(rawRadius, 10) || 1];
+
 		mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
 		map = new mapboxgl.Map({
 			container: mapContainer, // Container ID
@@ -130,12 +346,39 @@
 
 		const geocoder = new MapboxGeocoder({
 			accessToken: mapboxgl.accessToken,
+			localGeocoder: parseCoordinates,
 			mapboxgl: mapboxgl,
 			marker: false,
-			placeholder: 'Search for an address'
+			placeholder: 'Search by lng,lat or address...'
 		});
 
 		map.addControl(geocoder);
+
+		map.on('click', (e) => {
+			if (mapMarker) mapMarker.remove();
+
+			// Add a marker at the clicked location
+			mapMarker = new mapboxgl.Marker()
+				.setLngLat(e.lngLat)
+				.addTo(map);
+
+
+			const lngLat = e.lngLat;
+			geocoder.setInput(lngLat.lng + ',' + lngLat.lat);
+			geocoder.query([lngLat.lng, lngLat.lat].join(','));
+		});
+
+		// add control to switch between map and satellite view
+		map.addControl(
+			new mapboxgl.NavigationControl({
+				showCompass: false,
+				showZoom: true
+			}),
+			'top-right'
+		);
+
+		map.addControl(createStyleSwitcherControl(), 'top-left');
+		map.addControl(createFullScreenControl(), 'top-right');
 
 		map.on('load', () => {
 			map.addSource('single-point', {
@@ -177,12 +420,18 @@
 			geocoder.on('result', async (event: any) => {
 				// Show loading overlay
 				showLoadingOverlay = true;
+				if (mapMarker) mapMarker.remove(); // Remove clicked map marker
 
 				// Get the coordinates of the search result
 				const coordinates = event.result.geometry.coordinates;
 				const address = event.result.place_name;
 				const lat = coordinates[1];
 				const lng = coordinates[0];
+
+				// pass values in the url
+				putDataInURL('search', address);
+				putDataInURL('lat', lat);
+				putDataInURL('long', lng);
 
 				setTimeout(() => {
 					overlayLoadingText = 'Getting Address coordinates';
@@ -198,10 +447,10 @@
 					map.flyTo({ center: coordinates });
 				}, 2000);
 
-				// create 1km radius circle around the search result
+				// create selected radius circle around the search result
 				setTimeout(() => {
 					overlayLoadingText = 'Creating radius circle to find the social media posts';
-					circle = turf.circle(coordinates, 1, { units: 'kilometers' });
+					circle = turf.circle(coordinates, radiusValue, { units: 'kilometers' });
 					const circleSource = map.getSource('circle');
 					if (circleSource) {
 						circleSource.setData(circle);
@@ -214,103 +463,62 @@
 				}, 3000);
 
 				// make api call to get social media posts
+			  if (!request_id) {
 				setTimeout(async () => {
 					overlayLoadingText = 'Fetching social media posts';
 					const mapService = new MapService();
-
-					const response = await mapService.getMapResults({
-						address,
-						latitude: lat,
-						longitude: lng
-					});
-					if (!response.success) {
-						// hide loader
-						showLoadingOverlay = false;
-						return false;
+					let search_id;
+					if (!reqId) {
+						const response = await mapService.getMapResults({
+							address,
+							latitude: lat,
+							longitude: lng
+						});
+						if (!response.success) {
+							// hide loader
+							showLoadingOverlay = false;
+							return false;
+						}
+						search_id = response.search_id;
+					} else {
+						search_id = reqId;
+						putDataInURL('req_id', '');
 					}
 
-					const source = new EventSource(`${API_BASE_URL}map/search-sse/${response.search_id}`);
+					const source = new EventSource(`${API_BASE_URL}map/search-sse/${search_id}`);
 
 					// streeview.
-					source.addEventListener('streetview', function (e) {
+					source.addEventListener('streetview', function(e) {
 						const data = JSON.parse(e.data);
-
-						const posts = data.panoids.map((panoid) => {
-							return {
-								id: panoid.panoid,
-								title: `panoid - ${panoid.panoid}`,
-								description: `description - ${panoid.panoid}`,
-								image: '',
-								lat: panoid.lat,
-								lng: panoid.lon,
-								url: `${PANOID_BASE_URL}${panoid.panoid}`
-							};
-						});
-
-						const panoidsData = {
-							type: 'panoids',
-							count: posts.length,
-							icon: PanoidsIcon,
-							posts: posts
-						};
-
-						socialMediaJson.push(panoidsData);
+						panoidView(data);
 					});
 
 					// twitter.
-					source.addEventListener('x-twitter', function (e) {
+					source.addEventListener('x-twitter', function(e) {
 						const data = JSON.parse(e.data);
-						const posts = data.tweets.map((tweetObj) => {
-							const tweet = tweetObj.tweet;
-							const user = tweet.user_details;
-							const place = tweet.place ?? null;
-							let lat = null;
-							let lng = null;
-							if (place) {
-								lat = place.bounding_box.coordinates[0][0][1];
-								lng = place.bounding_box.coordinates[0][0][0];
-							}
-
-							return {
-								id: tweetObj.entryId,
-								title: tweet.full_text,
-								description: tweet.full_text,
-								image: user.profile_image_url_https,
-								lat,
-								lng,
-								url: tweet?.url ?? '#'
-							};
-						});
-
-						const twitterData = {
-							type: 'twitter',
-							count: posts.length,
-							icon: TwitterIcon,
-							posts: posts
-						};
-
-						socialMediaJson.push(twitterData);
+						console.log(data, 'here')
+						twitterView(data);
 					});
 
 					// streetview error.
-					source.addEventListener('streetview_error', function (e) {
+					source.addEventListener('streetview_error', function(e) {
 						const data = JSON.parse(e.data);
 					});
 
 					// Twitter error.
-					source.addEventListener('x-twitter_error', function (e) {
+					source.addEventListener('x-twitter_error', function(e) {
 						const data = JSON.parse(e.data);
 					});
 
 					// Error.
-					source.addEventListener('error', function (e) {
+					source.addEventListener('error', function(e) {
 						const data = JSON.parse(e.data);
 						source.close();
 						overlayLoadingText = 'Something went wrong, please try again';
 					});
 
 					// Done.
-					source.addEventListener('done', function (e) {
+					source.addEventListener('done', function(e) {
 						const data = JSON.parse(e.data);
 						source.close();
 
@@ -318,6 +526,34 @@
 						displaySocialMediaPosts();
 					});
 				}, 4000);
+
+			  } else{
+					try {
+						let apiService = new ApiService();
+						const res = await apiService.makeApiCall(`search-requests/${request_id}`);
+						if (res.success) {
+							// twitter.
+							const data = res;
+							if (data.responses && data.responses["x-twitter"]?.response) {
+								const tweetsData = data.responses["x-twitter"].response; 
+								twitterView(tweetsData)
+							}
+							// panoids.
+							if (data.responses && data.responses["streetview"]?.response) {
+								const panoidsData = data.responses["streetview"].response; 
+								panoidView(panoidsData);
+							}
+
+							setTimeout( async () => {
+								showLoadingOverlay = false;
+								await displaySocialMediaPosts();
+							}, 4000);
+						}
+
+					} catch (error) {
+						console.error('Error in load function:', error.message);
+					}
+			  }
 			});
 
 			if (searchQuery) {
@@ -329,6 +565,46 @@
 					}, 500);
 				}
 			}
+
+			if ((reqId || request_id) && reqLate && reqLong) {
+				const lat = reqLate;
+				const lng = reqLong;
+				const coordinatesString = `${lng},${lat}`;
+
+				// Set input and trigger search
+				geocoder.setInput(coordinatesString);
+				geocoder.query(coordinatesString);
+
+				let isQueryExecuted = false;
+
+				const handleResults = (event) => {
+					if (!isQueryExecuted && event.features.length > 0) {
+						console.log('Suggestions:', event.features);
+						const firstSuggestion = event.features[0];
+
+						geocoder.setInput(firstSuggestion.place_name);
+						geocoder.query(firstSuggestion.place_name);
+
+						isQueryExecuted = true;
+						geocoder.off('results', handleResults);
+					}
+				};
+
+				geocoder.off('results', handleResults);
+				geocoder.on('results', handleResults);
+
+				let activeSuggestion = document.querySelector('.suggestions');
+				if (activeSuggestion) {
+					setTimeout(() => {
+						activeSuggestion.style.display = 'none';
+					}, 500);
+				}
+			}
+
+			// if(request_id) {
+			// 	console.log("Request", request_id)
+			// }
+
 		});
 	});
 
@@ -336,8 +612,17 @@
 		if (map) {
 			map.remove();
 		}
+
+		unsubscribe();
 	});
 
+	/**
+	 * Displays social media posts on a map by positioning markers based on specified data types and counts.
+	 * The method initializes marker visibility, adds random points within a defined polygon, and updates the map state accordingly.
+	 * Includes asynchronous steps to finalize map view and update the user interface.
+	 *
+	 * @return {void} Does not return a value; performs operations to display social media posts on a map.
+	 */
 	function displaySocialMediaPosts() {
 		socialMediaIcons = socialMediaJson.reduce((acc, { type, icon }) => {
 			acc[type] = icon;
@@ -362,6 +647,7 @@
 			overlayLoadingText = 'Setting up the social icons on map';
 			while (pointsAdded < count) {
 				const randomPoints = turf.randomPoint(count - pointsAdded, { bbox: turf.bbox(circle) });
+				console.log(turf.bbox(circle), 'randomPoints')
 				randomPoints.features.forEach((feature) => {
 					if (turf.booleanPointInPolygon(feature, circle) && pointsAdded < count) {
 						const coords = feature.geometry.coordinates;
@@ -412,9 +698,16 @@
 			showLoadingOverlay = false;
 			// Show the sidebar once the circle and icons are added
 			showSidebar = true;
+			isSidebarVisible = true;
 		}, 4000);
 	}
 
+	/**
+	 * Toggles the visibility of markers for a specified type.
+	 *
+	 * @param {string} type - The type of markers whose visibility needs to be toggled.
+	 * @return {void} This function does not return a value.
+	 */
 	function toggleVisibility(type: string) {
 		// Update the visibility object
 		visibility = { ...visibility, [type]: !visibility[type] };
@@ -425,30 +718,16 @@
 		});
 	}
 
-	function highlightMarker(type: string, id: string, highlight: boolean = true) {
-		const marker = markers[type][id];
-		if (!marker) return;
-		const markerElement = marker.getElement();
-		const targetLngLat = [marker.getLngLat().lng, marker.getLngLat().lat];
-
-		// Find the SVG element inside the marker
-		const svgElement = markerElement.querySelector('svg');
-
-		if (svgElement) {
-			if (highlight) {
-				// Highlight the marker by changing its scale and style
-				svgElement.style.transition = 'transform 0.5s ease-out';
-				svgElement.style.transform = 'scale(1.5)';
-				// change svg fill color to custom color
-				svgElement.style.fill = '#448ee4';
-			} else {
-				// Reset the marker's scale and style
-				svgElement.style.transform = 'scale(1)';
-				// change svg fill color to white
-				svgElement.style.fill = 'black';
-			}
-		}
-		marker.setLngLat(targetLngLat);
+	/**
+	 * Toggles the visibility of the sidebar and adjusts the map size accordingly.
+	 *
+	 * @return {void} Does not return a value.
+	 */
+	function toggleSidebar() {
+		isSidebarVisible = !isSidebarVisible;
+		setTimeout(() => {
+			map.resize();
+		}, 100);
 	}
 </script>
 
@@ -461,224 +740,112 @@
 </svelte:head>
 
 <LoadingOverlay isLoading={showLoadingOverlay} loadingText={overlayLoadingText} />
-<div class="h-screen flex flex-col">
-	<div class="flex h-full flex-1 relative">
-		<div class="h-full relative flex-1">
-			{#if showSidebar}
-				<div class="absolute top-0 md:pt-3 p-2 md:px-3 z-100 w-auto">
-					<div class="flex items-center gap-2 max-md:gap-1 md:justify-between">
-						<div class="flex gap-2 items-center">
-							<div class="h-full">
-								<div class="flex gap-1">
-									<!-- <button
-										class="rounded-lg block disabled:cursor-not-allowed transition-all duration-100 ease-in px-3 py-1.5 font-500 flex items-center justify-center gap-2 bg-black hover:bg-black disabled:bg-zinc-600 text-white max-md:size-9"
-										on:click={() => (showSaveModal = !showSaveModal)}
-									>
-										<div class="md:hidden i-lucide-plus p-3"></div>
-										<span>Save Results</span></button
-									> -->
-								</div>
-								<Modal
-									title="Save your results"
-									open={showSaveModal}
-									on:close={() => (showSaveModal = false)}
-								>
-									<svelte:fragment slot="body">
-										<form on:submit={handleSaveResults}>
-											<div>
-												<label class="block font-medium text-sm text-gray-700" for="Title"
-													>Title</label
-												>
-												<input
-													class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full"
-													id="title"
-													type="text"
-													required
-													bind:value={saveResultsFormData.title}
-												/>
-											</div>
-											<div class="mt-4">
-												<label
-													class="block font-medium text-sm text-gray-700"
-													for="refresh_frequency">Refresh Frequency</label
-												>
-												<select
-													id="refresh_frequency"
-													name="refresh_frequency"
-													class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full"
-													bind:value={saveResultsFormData.refreshFrequency}
-												>
-													<option value="No Refresh">No Refresh</option>
-													<option value="Daily">Daily</option>
-													<option value="Monthly">Monthly</option>
-												</select>
-											</div>
-											{#if showAutoUpdateEmail()}
-												<div class="block mt-4">
-													<label for="auto_update_email" class="flex items-center"
-														><input
-															type="checkbox"
-															class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-															id="auto_update_email"
-															name="auto_update_email"
-															bind:checked={saveResultsFormData.autoUpdateEmail}
-														/>
-														<span class="ml-2 text-sm text-gray-600">Email me when auto-update</span
-														></label
-													>
-												</div>
-											{/if}
-											<!-- <div class="flex items-center justify-end mt-4">
-												{#if isLoading}
-													<LoadingButton buttonText="Saving..." />
-												{:else}
-													<button
-														type="submit"
-														class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition ml-4"
-														>Save results</button
-													>
-												{/if}
-											</div> -->
-										</form>
-									</svelte:fragment>
-								</Modal>
-							</div>
-						</div>
-					</div>
-				</div>
-			{/if}
-			<div bind:this={mapContainer} id="map"></div>
-		</div>
+<div class={`h-screen flex flex-col ${isSidebarVisible ? 'sidebar-visible' : ''}`} id="map-container">
+	<!-- Topbar -->
+	<MapTopbar
+		isSidebarVisible={isSidebarVisible}
+		showSidebar={showSidebar}
+		socialMediaIcons={socialMediaIcons}
+		toggleSidebarVisibility={toggleSidebar}
+		toggleVisibility={toggleVisibility}
+		visibility={visibility}
+	/>
 
+	<div class="flex h-full flex-1 relative">
 		{#if showSidebar}
-			<div class="h-full">
-				<div class="bg-neutral-900 w-96 p-4 pt-0 h-full overflow-y-auto">
-					<div class="sticky top-0">
-						<div class="bg-neutral-800 rounded-lg p-3 flex justify-start gap-5 w-full">
-							{#each Object.keys(socialMediaIcons) as type}
-								<button
-									on:click={() => toggleVisibility(type)}
-									class="relative rounded p-1 flex items-center justify-center gap-1 bg-white dark:hover:bg-neutral-500 shadow {visibility[
-										type
-									]
-										? ''
-										: 'bg-neutral-500'}"
-								>
-									<span title={type}>{@html socialMediaIcons[type]}</span>
-									<span
-										class="absolute bg-blue-200 text-black px-2 py-1 text-xs font-bold rounded-full -top-3 -right-3"
-									>
-										{socialMediaData.find((data) => data.type === type).count}
-									</span>
-								</button>
-							{/each}
-						</div>
-					</div>
-					<div>
-						<div class="pb-5 h-full">
-							<div class="max-w-md mx-auto">
-								{#each socialMediaJson as socialMedia}
-									{#each socialMedia.posts as post, index}
-										<div
-											class="flex items-start border-b border-b-slate-800 p-4 hover:bg-neutral-800 rounded-lg {visibility[
-												socialMedia.type
-											]
-												? ''
-												: 'hidden'}"
-											on:mouseover={() => highlightMarker(socialMedia.type, index)}
-											on:mouseleave={() => highlightMarker(socialMedia.type, index, false)}
-											on:mouseleave={() => highlightMarker(socialMedia.type, index, false)}
-										>
-											<a href={post.url} target="_blank" class="flex items-start">
-												<img
-													src={post.image}
-													alt="Panorama"
-													class="w-12 h-12 object-cover rounded-md shadow"
-												/>
-												<div class="ml-4">
-													<h2 class="text-lg font-bold text-white">
-														{truncateString(post.title, 50)}
-													</h2>
-													<p class="text-sm text-white">{truncateString(post.description, 250)}</p>
-													<p class="text-sm text-white">Lat: {post.lat}, Lng: {post.lng}</p>
-												</div>
-											</a>
-										</div>
-									{/each}
-								{/each}
-							</div>
-							<div class="max-md:col-span-5 col-span-2 mt-5">
-								<div class="flex gap-2">
-									<div class="bg-white rounded-lg">
-										<a
-											href="/login"
-											class="rounded-lg px-4 py-2 bg-gray-200 hover:bg-gray-300 duration-300"
-											>Login to explore more</a
-										>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
+			<!-- Sidebar -->
+			<div class="sidebar {isSidebarVisible ? 'visible' : ''}">
+				<MapSidebar
+					isSidebarVisible={isSidebarVisible}
+					socialMediaData={socialMediaJson}
+					markers={markers}
+					visibility={visibility}
+				/>
 			</div>
 		{/if}
+
+		<div class="h-full relative flex-1">
+			<!-- Map Area -->
+			<div bind:this={mapContainer} id="map"></div>
+		</div>
 	</div>
 </div>
 
 <style>
-	#map {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-	}
-	.sidebar {
-		background-color: rgb(35 55 75 / 90%);
-		color: #fff;
-		padding: 10px;
-		font-family: monospace;
-		z-index: 1;
-		position: absolute;
-		top: 10px;
-		left: 10px;
-		border-radius: 4px;
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-	}
-	.social-marker {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: white;
-		border-radius: 50%;
-		width: 30px;
-		height: 30px;
-		text-align: center;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-	}
-	.icon {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-	}
-	.icon svg {
-		fill: white !important;
-	}
+    .social-marker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
 
-	.bounce-animation {
-		animation: bounce 0.6s ease forwards;
-	}
+    .icon {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
 
-	@keyframes bounce {
-		0% {
-			transform: translateY(0);
-		}
-		50% {
-			transform: translateY(-10px); /* Move up by 10px */
-		}
-		100% {
-			transform: translateY(0); /* Return to original position */
-		}
-	}
+    .icon svg {
+        fill: white !important;
+    }
+
+    .bounce-animation {
+        animation: bounce 0.6s ease forwards;
+    }
+
+    @keyframes bounce {
+        0% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px); /* Move up by 10px */
+        }
+        100% {
+            transform: translateY(0); /* Return to original position */
+        }
+    }
+
+    .style-switcher {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 5px;
+        font-size: 14px;
+    }
+
+    .sidebar {
+        width: 24rem;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background-color: #f9f9f9;
+        transition: transform 0.3s ease;
+        transform: translateX(-100%);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        z-index: 1;
+        position: absolute;
+        border-radius: 4px;
+    }
+
+    .sidebar.visible {
+        transform: translateX(0);
+    }
+
+    #map {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        transition: margin-left 0.3s ease;
+    }
+
+    .sidebar-visible #map {
+        width: calc(100% - 24rem);
+        margin-left: 24rem; /* Same width as the sidebar */
+    }
+
 </style>
