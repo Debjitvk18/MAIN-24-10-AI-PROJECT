@@ -14,6 +14,8 @@
 	import Cta from '$lib/components/ui/home/Cta.svelte';
 	import * as Tabs from "$lib/components/ui/tabs";
 	import Icon from '@iconify/svelte';
+	import { ApiService } from '$lib/services/api-service';
+	import { toast } from "svelte-sonner";
 
 	const accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
 
@@ -39,7 +41,6 @@
 			suggestions = [];
 			showSuggestions = false;
 		}
-		console.log(suggestions);
 	}
 
 	function handleClickOutside(event) {
@@ -170,6 +171,53 @@
 	function handleFileSelect(event) {
 		file = event.target.files[0];
 	}
+
+	function validateFile(selectedFile) {
+		if (!selectedFile) return;
+
+		const allowedTypes = ['image/png', 'image/jpeg'];
+		if (allowedTypes.includes(selectedFile.type)) {
+			return true;
+		} else {
+			toast.error("Invalid file type. Please upload a PNG or JPG.")
+			return false;
+		}
+	}
+
+	$: if(file) {
+		if (validateFile(file)) {
+			uploadFile(file);
+		}
+	}
+
+	let fileLoader = false;
+	async function uploadFile(file) {
+		if (!file) return;
+		fileLoader = true;
+		let apiService = new ApiService();
+		let formData = new FormData();
+		formData.append('image', file);
+
+		try {
+			const res = await apiService.makeApiCall(`map/image-search/`, formData, 'POST', 'formdata');
+			if (res.success) {
+				console.log('xUpload successful:', res);
+				let lat = res.search_request.request_params.latitude
+				let long = res.search_request.request_params.longitude
+				let id = res.search_request.id
+				goto(`try-demo?req_id=${id}&lat=${lat}&long=${long}`);
+
+			} else {
+				toast.error(res.message)
+			}
+
+		} catch (error) {
+			toast.error('Upload failed:'+error)
+		} finally{
+			fileLoader = false;
+		}
+	}
+
 </script>
 
 <section class="bg-white bg-gradient-to-b from-blue-50 to-blue-100">
@@ -299,21 +347,8 @@
 									type="submit"
 									class="absolute right-0 top-0 bottom-0 p-4 text-sm font-medium text-white bg-[#2C7BE5] rounded-r-lg border-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
 								>
-									<svg
-										class="w-5 h-5"
-										aria-hidden="true"
-										xmlns="http://www.w3.org/2000/svg"
-										fill="none"
-										viewBox="0 0 20 20"
-									>
-										<path
-											stroke="currentColor"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-										/>
-									</svg>
+									<Icon icon="ic:sharp-search" class="w-6 h-6"/>
+									
 									<span class="sr-only">Search</span>
 								</button>
 							</div>
@@ -327,21 +362,10 @@
 										<li
 											class="pl-8 pr-2 py-1 border-gray-100 relative cursor-pointer hover:bg-yellow-50 hover:text-gray-900"
 										>
-											<a
+											<a	class="block w-100"
 												href={`/try-demo?search=${encodeURIComponent(suggestion.place_name)}&lat=${suggestion.center[1]}&long=${suggestion.center[0]}`}
 											>
-												<svg
-													class="absolute w-4 h-4 left-2 top-2"
-													xmlns="http://www.w3.org/2000/svg"
-													viewBox="0 0 20 20"
-													fill="currentColor"
-												>
-													<path
-														fill-rule="evenodd"
-														d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
-														clip-rule="evenodd"
-													/>
-												</svg>
+												<Icon icon="si:arrow-right-fill" class="absolute w-6 h-6 left-2 right-2"/>
 												{suggestion.place_name}
 											</a>
 										</li>
@@ -370,21 +394,26 @@
 							>
 								<label
 									for="dropzone-file"
-									class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50
-									   dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600
-									   transition-all duration-300"
+									class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50
+									dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600
+									transition-all duration-300"
 									class:border-blue-500={isDragging}
+									class:border-gray-300={!isDragging && !fileLoader}
+									class:border-gray-500={fileLoader} 
 								>
 									<div class="flex flex-col items-center justify-center pt-5 pb-6">
-										<Icon
-											icon="icon-park-outline:upload-one"
-											class="w-8 h-8 mb-4 text-primary dark:text-gray-400"
-										/>
-										<p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
-											<span class="font-semibold">Click to upload</span> or drag and drop
-										</p>
-										<p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG</p>
+										{#if fileLoader}
+											<Icon icon="line-md:uploading-loop" class="text-5xl text-primary" />
+											<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Uploading...</p>
+										{:else}
+											<Icon icon="icon-park-outline:upload-one" class="w-8 h-8 mb-4 text-primary dark:text-gray-400" />
+											<p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
+												<span class="font-semibold">Click to upload</span> or drag and drop
+											</p>
+											<p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG</p>
+										{/if}
 									</div>
+									{#if !fileLoader}
 									<input
 										id="dropzone-file"
 										accept="image/png, image/jpeg"
@@ -392,6 +421,7 @@
 										class="hidden"
 										on:change={handleFileSelect}
 									/>
+									{/if}
 								</label>
 							</div>
 						</form>

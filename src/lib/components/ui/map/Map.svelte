@@ -47,6 +47,9 @@
 	let showSidebar = false;
 	let errorMessages: string[] = []; // validation errors
 	const mapService = new MapService();
+	let reqId: number;
+	let reqLate: number;
+	let reqLong: number;
 
 	/**
 	 * A boolean variable that indicates the visibility state of a sidebar component.
@@ -79,6 +82,10 @@
 	 */
 	const unsubscribe = page.subscribe(($page) => {
 		searchQuery = $page.url.searchParams.get('search') || '';
+		reqId = $page.url.searchParams.get('req_id') || '';
+		reqLate = $page.url.searchParams.get('lat') || '';
+		reqLong = $page.url.searchParams.get('long') || '';
+
 	});
 
 	/**
@@ -395,19 +402,25 @@
 				setTimeout(async () => {
 					overlayLoadingText = 'Fetching social media posts';
 					const mapService = new MapService();
-
-					const response = await mapService.getMapResults({
-						address,
-						latitude: lat,
-						longitude: lng
-					});
-					if (!response.success) {
-						// hide loader
-						showLoadingOverlay = false;
-						return false;
+					let search_id; 
+					if (!reqId) {
+						const response = await mapService.getMapResults({
+							address,
+							latitude: lat,
+							longitude: lng
+						});
+						if (!response.success) {
+							// hide loader
+							showLoadingOverlay = false;
+							return false;
+						}
+						search_id = response.search_id
+					} else{
+						search_id = reqId;
+						putDataInURL('req_id', '');
 					}
 
-					const source = new EventSource(`${API_BASE_URL}map/search-sse/${response.search_id}`);
+					const source = new EventSource(`${API_BASE_URL}map/search-sse/${search_id}`);
 
 					// streeview.
 					source.addEventListener('streetview', function(e) {
@@ -507,6 +520,42 @@
 					}, 500);
 				}
 			}
+
+			if (reqId && reqLate && reqLong) {
+				const lat = reqLate;
+				const lng = reqLong;
+				const coordinatesString = `${lng},${lat}`;
+				
+				// Set input and trigger search
+				geocoder.setInput(coordinatesString);
+				geocoder.query(coordinatesString);
+
+				let isQueryExecuted = false; 
+
+				const handleResults = (event) => {
+					if (!isQueryExecuted && event.features.length > 0) {
+						console.log("Suggestions:", event.features);
+						const firstSuggestion = event.features[0]; 
+
+						geocoder.setInput(firstSuggestion.place_name); 
+						geocoder.query(firstSuggestion.place_name); 
+
+						isQueryExecuted = true; 
+						geocoder.off('results', handleResults); 
+					}
+				};
+
+			geocoder.off('results', handleResults);
+			geocoder.on('results', handleResults);
+
+			let activeSuggestion = document.querySelector('.suggestions');
+				if (activeSuggestion) {
+					setTimeout(() => {
+						activeSuggestion.style.display = 'none';
+					}, 500);
+			}
+			}
+
 		});
 	});
 
