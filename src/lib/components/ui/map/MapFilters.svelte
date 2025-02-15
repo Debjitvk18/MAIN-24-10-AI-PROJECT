@@ -21,7 +21,7 @@
 	import { MapService } from '$lib/services/map-service';
 	import AlertError from '$lib/components/form/messages/AlertError.svelte';
 	import MapSearchBox from '$lib/components/ui/map/MapSearchBox.svelte';
-	import { getDataFromURL } from '$lib/utils/generalUtils';
+	import { getDataFromURL, putDataInURL } from '$lib/utils/generalUtils';
 	import { onMount } from 'svelte';
 
 	const df = new DateFormatter('en-US', {
@@ -34,6 +34,50 @@
 		end: todayDate
 	});
 
+	let selectedSource = [];
+
+	// Radius and Resolution slider
+	let radiusValue = $state([1]);
+	let resolutionValue = $state([5]);
+
+	let selectedLocation = null;
+
+	onMount(() => {
+		// check if data present in the url
+		const selectedLocationFromURL = getDataFromURL('search');
+		const selectedLatitudeFromURL = getDataFromURL('lat');
+		const selectedLongitudeFromURL = getDataFromURL('long');
+		const selectedFeaturesFromURL = getDataFromURL('features[]');
+		if (selectedLocationFromURL && selectedLatitudeFromURL && selectedLongitudeFromURL) {
+			selectedLocation = {
+				place_name: selectedLocationFromURL,
+				latitude: selectedLatitudeFromURL,
+				longitude: selectedLongitudeFromURL
+			};
+		}
+
+		if (selectedFeaturesFromURL) {
+			selectedSource = selectedFeaturesFromURL;
+		}
+
+		// const rawStartDate = getDataFromURL('start_date');
+		// const rawEndDate = getDataFromURL('end_date');
+		//
+		// const startDate = rawStartDate ? new Date(rawStartDate) : today(getLocalTimeZone());
+		// const endDate = rawEndDate ? new Date(rawEndDate) : today(getLocalTimeZone());
+		//
+		// datePickerValue = {
+		// 	start: startDate,
+		// 	end: endDate
+		// };
+
+		// Radius and resolution value parsing
+		const rawRadius = getDataFromURL('radius');
+		const rawResolution = getDataFromURL('resolution');
+		radiusValue = [parseInt(rawRadius, 10) || 1];
+		resolutionValue = [parseInt(rawResolution, 10) || 5];
+	});
+
 	let startValue = $state<DateValue | undefined>(undefined);
 
 
@@ -41,10 +85,6 @@
 	const mapService = new MapService();
 
 	// filter values
-	// let radiusValue = $state(1);
-	// let resolutionValue = $state(1);
-	let selectedSource = [];
-
 	let enableTwitter = $state(true);
 	$effect(() => {
 		if (enableTwitter) {
@@ -71,35 +111,15 @@
 		}
 	});
 
-
-	// Radius and Resolution slider
-	let radiusValue = $state([1]);
-	let resolutionValue = $state([5]);
-
 	// apply filters
 	let errorMessages = $state<string | null>(null);
-	let selectedLocation = null;
-
-	onMount(() => {
-		// check if data present in the url
-		const selectedLocationFromURL = getDataFromURL('search');
-		const selectedLatitudeFromURL = getDataFromURL('lat');
-		const selectedLongitudeFromURL = getDataFromURL('long');
-		if (selectedLocationFromURL && selectedLatitudeFromURL && selectedLongitudeFromURL) {
-			selectedLocation = {
-				place_name: selectedLocationFromURL,
-				latitude: selectedLatitudeFromURL,
-				longitude: selectedLongitudeFromURL
-			};
-		}
-	});
 
 	function handleLocationSelect(event) {
 		selectedLocation = event.detail;
 	}
 
 	async function applyFilters() {
-		if(!selectedLocation) {
+		if (!selectedLocation) {
 			errorMessages = { address: ['Please select a location to continue.'] };
 			return;
 		}
@@ -130,6 +150,25 @@
 			} else {
 				errorMessages = null;
 				console.log('Filters applied successfully:', response);
+				// pass payload in URL
+				const url = new URL(window.location.href);
+				Object.entries(payload).forEach(([key, value]) => {
+					if (key === 'features') {
+						url.searchParams.delete('features[]');
+						if (value?.length) {
+							value.forEach(v => url.searchParams.append('features[]', v));
+						}
+					} else {
+						if (key === 'longitude') key = 'long';
+						if (key === 'latitude') key = 'lat';
+						if (key === 'address') key = 'search';
+
+						url.searchParams.set(key, value);
+					}
+				});
+				window.history.replaceState({}, '', url);
+
+
 			}
 		} catch (error) {
 			console.error('Error applying filters:', error);
@@ -166,9 +205,9 @@
 					<div class="space-y-4">
 						<MapSearchBox
 							on:select={handleLocationSelect}
+							query={getDataFromURL('search')	}
 							redirectOnSelect={false}
 							showSearchButton={false}
-							query={getDataFromURL('search')	}
 						/>
 					</div>
 				</Card.Content>
@@ -226,8 +265,8 @@
 							</span>
 						</div>
 						<Slider
-							bind:value={radiusValue}
 							ariaLabel="Radius"
+							bind:value={radiusValue}
 							id="radius"
 							max={50}
 							min={1}
@@ -243,8 +282,8 @@
 							</span>
 						</div>
 						<Slider
-							bind:value={resolutionValue}
 							ariaLabel="Resolution"
+							bind:value={resolutionValue}
 							id="resolution"
 							max={100}
 							min={5}
