@@ -20,6 +20,9 @@
 	import { Slider } from '$lib/components/ui/slider';
 	import { MapService } from '$lib/services/map-service';
 	import AlertError from '$lib/components/form/messages/AlertError.svelte';
+	import MapSearchBox from '$lib/components/ui/map/MapSearchBox.svelte';
+	import { getDataFromURL } from '$lib/utils/generalUtils';
+	import { onMount } from 'svelte';
 
 	const df = new DateFormatter('en-US', {
 		dateStyle: 'medium'
@@ -69,25 +72,52 @@
 	});
 
 
-	let radiusValue = 5;
-	let resolutionValue = 1;
+	// Radius and Resolution slider
+	let radiusValue = $state([1]);
+	let resolutionValue = $state([5]);
 
 	// apply filters
 	let errorMessages = $state<string | null>(null);
+	let selectedLocation = null;
+
+	onMount(() => {
+		// check if data present in the url
+		const selectedLocationFromURL = getDataFromURL('search');
+		const selectedLatitudeFromURL = getDataFromURL('lat');
+		const selectedLongitudeFromURL = getDataFromURL('long');
+		if (selectedLocationFromURL && selectedLatitudeFromURL && selectedLongitudeFromURL) {
+			selectedLocation = {
+				place_name: selectedLocationFromURL,
+				latitude: selectedLatitudeFromURL,
+				longitude: selectedLongitudeFromURL
+			};
+		}
+	});
+
+	function handleLocationSelect(event) {
+		selectedLocation = event.detail;
+	}
 
 	async function applyFilters() {
+		if(!selectedLocation) {
+			errorMessages = { address: ['Please select a location to continue.'] };
+			return;
+		}
+
 		// validate, at-least one data source is selected.
 		if (!Array.isArray(selectedSource) || selectedSource.length === 0) {
 			errorMessages = { features: ['Please select at least one data source to continue.'] };
 			return;
 		}
 
+		const { place_name, latitude, longitude } = selectedLocation;
+
 		const payload = {
-			address: '',
-			latitude: 0,
-			longitude: 0,
-			radius: radiusValue,
-			resolution: resolutionValue,
+			address: place_name,
+			latitude: latitude,
+			longitude: longitude,
+			radius: radiusValue[0],
+			resolution: resolutionValue[0],
 			start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
 			end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
 			features: selectedSource
@@ -95,7 +125,6 @@
 
 		try {
 			const response = await mapService.getMapResults(payload);
-			console.log('Filters applied successfully:', response);
 			if (!response.success) {
 				errorMessages = response.errors ?? null;
 			} else {
@@ -108,7 +137,6 @@
 		}
 	}
 </script>
-
 <Sheet.Root>
 	<Sheet.Trigger>
 		<Button
@@ -128,6 +156,24 @@
 		<AlertError errors={errorMessages} />
 
 		<div class="flex-1 overflow-y-auto border-t border-b border-gray-200 py-2">
+			<!-- Address Search -->
+			<Card.Root class="mb-4 mt-2">
+				<Card.Header>
+					<Card.Title>Search Address</Card.Title>
+					<Card.Description>Search by entering some address.</Card.Description>
+				</Card.Header>
+				<Card.Content>
+					<div class="space-y-4">
+						<MapSearchBox
+							on:select={handleLocationSelect}
+							redirectOnSelect={false}
+							showSearchButton={false}
+							query={getDataFromURL('search')	}
+						/>
+					</div>
+				</Card.Content>
+			</Card.Root>
+
 			<!-- Social Media Selector -->
 			<Card.Root class="mb-4 mt-2">
 				<Card.Header>
@@ -175,20 +221,17 @@
 						<div class="flex items-center justify-between">
 							<Label for="radius">Search Radius</Label>
 							<span
-								class="text-muted-foreground hover:border-border w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
-										{radiusValue} KM
+								class="text-muted-foreground hover:border-border w-24 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
+										{radiusValue[0]} KM
 							</span>
 						</div>
 						<Slider
-							aria-label="Radius"
-							bind:radiusValue
-							class="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
+							bind:value={radiusValue}
+							ariaLabel="Radius"
 							id="radius"
 							max={50}
 							min={1}
-							on:change={() => console.log('change')}
-							step={1}
-						/>
+							step={1} />
 					</div>
 
 					<div class="grid gap-2 pt-2">
@@ -196,18 +239,16 @@
 							<Label for="resolution">Search Resolution</Label>
 							<span
 								class="text-muted-foreground hover:border-border w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
-								{resolutionValue}
+								{resolutionValue[0]}
 							</span>
 						</div>
 						<Slider
-							aria-label="Resolution"
-							bind:resolutionValue
-							class="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
+							bind:value={resolutionValue}
+							ariaLabel="Resolution"
 							id="resolution"
 							max={100}
 							min={5}
-							step={5}
-						/>
+							step={5} />
 					</div>
 				</Card.Content>
 			</Card.Root>
