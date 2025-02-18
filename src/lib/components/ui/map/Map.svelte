@@ -19,12 +19,13 @@
 	import { API_BASE_URL, MAPBOX_THEMES, PANOID_BASE_URL } from '$lib/constants/constants';
 
 	// Utility functions
-	import { getDataFromURL, putDataInURL, toggleFullScreen, truncateString } from '$lib/utils/generalUtils';
-	import { highlightMarker, parseCoordinates } from '$lib/utils/mapUtils';
+	import { getDataFromURL, putDataInURL, toggleFullScreen } from '$lib/utils/generalUtils';
+	import { parseCoordinates } from '$lib/utils/mapUtils';
 
 	// SVG icons
 	import TwitterIcon from '$lib/assets/svg/marker/x-pin.svg?raw';
 	import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
+	import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
 
 	// UI Components
 	import { showToast } from '$lib/stores/toastStore';
@@ -49,7 +50,7 @@
 	let errorMessages: string[] = []; // validation errors
 	const mapService = new MapService();
 	let reqId: number;
-	let reqLate: number;
+	let reqLat: number;
 	let reqLong: number;
 	let request_id: number;
 
@@ -85,7 +86,7 @@
 	const unsubscribe = page.subscribe(($page) => {
 		searchQuery = $page.url.searchParams.get('search') || '';
 		reqId = $page.url.searchParams.get('req_id') || '';
-		reqLate = $page.url.searchParams.get('lat') || '';
+		reqLat = $page.url.searchParams.get('lat') || '';
 		reqLong = $page.url.searchParams.get('long') || '';
 		request_id = $page.url.searchParams.get('request_id') || '';
 
@@ -308,6 +309,29 @@
 	socialMediaJson.push(twitterData);
 	}
 
+	function linkedInView(data) {
+		const posts = data.posts.map((post) => {
+			return {
+				id: post.urn,
+				title: post.text,
+				description: post.text,
+				image: post.attachment?.type == "Image" ? post.attachment?.type : post.author.image_ur ? post.author.image_ur : '',
+				lat: null,
+				lng: null,
+				url: post.url ?? '#'
+			};
+		});
+
+		const linkedInData = {
+			type: 'linkedin',
+			count: posts.length,
+			icon: LinkedInIcon,
+			posts: posts
+		};
+
+		socialMediaJson.push(linkedInData);
+	}
+
 	function panoidView(data)
 	{
 		const posts = data.panoids.map((panoid) => {
@@ -503,8 +527,14 @@
 						twitterView(data);
 					});
 
-					// streetview error.
-					source.addEventListener('streetview_error', function(e) {
+					// LinkedIn.
+					source.addEventListener('linkedin', function(e) {
+						const data = JSON.parse(e.data);
+						linkedInView(data);
+					});
+
+					// LinkedIn error.
+					source.addEventListener('linkedin_error', function(e) {
 						const data = JSON.parse(e.data);
 					});
 
@@ -538,12 +568,19 @@
 							// twitter.
 							const data = res;
 							if (data.responses && data.responses["x-twitter"]?.response) {
-								const tweetsData = data.responses["x-twitter"].response; 
+								const tweetsData = data.responses["x-twitter"].response;
 								twitterView(tweetsData)
 							}
+
+							// linkedin
+							if (data.responses && data.responses["linkedin"]?.response) {
+								const linkedinData = data.responses["linkedin"].response;
+								linkedInView(linkedinData);
+							}
+
 							// panoids.
 							if (data.responses && data.responses["streetview"]?.response) {
-								const panoidsData = data.responses["streetview"].response; 
+								const panoidsData = data.responses["streetview"].response;
 								panoidView(panoidsData);
 							}
 
@@ -569,8 +606,8 @@
 				}
 			}
 
-			if ((reqId || request_id) && reqLate && reqLong) {
-				const lat = reqLate;
+			if ((reqId || request_id) && reqLat && reqLong) {
+				const lat = reqLat;
 				const lng = reqLong;
 				const coordinatesString = `${lng},${lat}`;
 
