@@ -50,9 +50,21 @@ export function toggleFullScreen(elementId) {
  * @param {string} queryString - The query string to get data from.
  * @returns {string} The data from the URL.
  */
+
 export function getDataFromURL(queryString) {
     const url = new URL(window.location.href);
-    return url.searchParams.get(queryString) || '';
+    
+    const values = url.searchParams.getAll(queryString);
+
+    if (queryString === 'features[]') {
+        return values;
+    }  
+
+    if (values.length === 1) {
+        return values[0];
+    }
+
+    return '';
 }
 
 /**
@@ -69,7 +81,47 @@ export function putDataInURL(queryString, data) {
     window.history.replaceState({}, '', url);
 }
 
+/**
+ * Removes a specific query parameter from the URL without reloading the page.
+ *
+ * @param {string} queryString - The key of the query parameter to remove.
+ */
+export function removeDataFromURL(queryString) {
+    // Create a URL object from the current window location
+    const url = new URL(window.location.href);
+
+    // Delete the specified query parameter
+    url.searchParams.delete(queryString);
+
+    // Update the URL in the browser without refreshing the page
+    window.history.replaceState({}, '', url);
+}
+
 export function formatDate(isoString) {
     const date = new Date(isoString);
     return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+export function loadOnMapUrl(request) {
+    const { id, request_params, address } = request;
+    const { latitude, longitude, radius, features, start_date, end_date } = request_params;
+
+    let params = new URLSearchParams({
+        request_id: id,
+        lat: latitude,
+        long: longitude,
+        radius,
+        // search : address
+    });
+
+    // Append features as array format
+    if (features?.length) {
+        features.forEach(feature => params.append("features[]", feature));
+    }
+
+    // Add optional parameters if they are not null
+    if (start_date) params.append("start_date", start_date);
+    if (end_date) params.append("end_date", end_date);
+
+    return `/try-demo/?${params.toString()}`;
 }

@@ -469,11 +469,15 @@
 					const mapService = new MapService();
 					let search_id;
 					if (!reqId) {
-						const response = await mapService.getMapResults({
+						let preData = {
 							address,
 							latitude: lat,
 							longitude: lng
-						});
+						}
+						if(getDataFromURL('features[]')) {
+							preData.features = getDataFromURL('features[]');
+						}
+						const response = await mapService.getMapResults(preData);
 						if (!response.success) {
 							// hide loader
 							showLoadingOverlay = false;
@@ -496,7 +500,6 @@
 					// twitter.
 					source.addEventListener('x-twitter', function(e) {
 						const data = JSON.parse(e.data);
-						console.log(data, 'here')
 						twitterView(data);
 					});
 
@@ -579,7 +582,6 @@
 
 				const handleResults = (event) => {
 					if (!isQueryExecuted && event.features.length > 0) {
-						console.log('Suggestions:', event.features);
 						const firstSuggestion = event.features[0];
 
 						geocoder.setInput(firstSuggestion.place_name);
@@ -647,7 +649,6 @@
 			overlayLoadingText = 'Setting up the social icons on map';
 			while (pointsAdded < count) {
 				const randomPoints = turf.randomPoint(count - pointsAdded, { bbox: turf.bbox(circle) });
-				console.log(turf.bbox(circle), 'randomPoints')
 				randomPoints.features.forEach((feature) => {
 					if (turf.booleanPointInPolygon(feature, circle) && pointsAdded < count) {
 						const coords = feature.geometry.coordinates;

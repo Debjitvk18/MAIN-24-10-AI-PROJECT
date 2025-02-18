@@ -7,12 +7,13 @@
 	import Icon from '@iconify/svelte';
 	import { goto } from '$app/navigation';
 	import { ApiService } from '$lib/services/api-service';
+	import GetBack from '$lib/components/general/GetBack.svelte';
+	import TableShimmer from '$lib/components/general/shimmer/TableShimmer.svelte';
 
 	$: id = $page.params.id;
 	const slug = 'streetview';
 
 	let loader = true
-	let skeletonRows = Array(10).fill(0);
 
 	export let data;
 	let streetViews = data?.streetview?.response?.data || [];
@@ -93,6 +94,7 @@
 		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">
 			Search <span>{slug}</span>
 		</h2>
+		<GetBack url={`/my-requests/${id}`} />
 
 		<Card.Root class="col-span-4">
 			{#if !loader}
@@ -167,18 +169,7 @@
 			{:else}
 				<Card.Content>
 					<div class="w-full">
-						<table class="w-full border-collapse">
-						  <tbody>
-							{#each skeletonRows as _, i}
-							<tr class="border-b">
-							  <td class="p-3"><div class="h-4 w-64 bg-gray-300 rounded animate-pulse"></div></td>
-							  <td class="p-3"><div class="h-4 w-52 bg-gray-300 rounded animate-pulse"></div></td>
-							  <td class="p-3"><div class="h-4 w-52 bg-gray-300 rounded animate-pulse"></div></td>
-							  <td class="p-3"><div class="h-4 w-52 bg-gray-300 rounded animate-pulse"></div></td>
-							</tr>
-						  {/each}
-						  </tbody>
-						</table>
+						<TableShimmer rows={15} />
 					  </div>
 				</Card.Content>
 			{/if}

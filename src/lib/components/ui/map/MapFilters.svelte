@@ -21,7 +21,7 @@
 	import { MapService } from '$lib/services/map-service';
 	import AlertError from '$lib/components/form/messages/AlertError.svelte';
 	import MapSearchBox from '$lib/components/ui/map/MapSearchBox.svelte';
-	import { getDataFromURL } from '$lib/utils/generalUtils';
+	import { getDataFromURL, removeDataFromURL } from '$lib/utils/generalUtils';
 	import { onMount } from 'svelte';
 
 	const df = new DateFormatter('en-US', {
@@ -42,8 +42,9 @@
 
 	let selectedLocation = null;
 
-	onMount(() => {
-		// check if data present in the url
+	// Function to initialize values from URL parameters
+	function initializeURLData() {
+  		 // check if data present in the url
 		const selectedLocationFromURL = getDataFromURL('search');
 		const selectedLatitudeFromURL = getDataFromURL('lat');
 		const selectedLongitudeFromURL = getDataFromURL('long');
@@ -76,38 +77,42 @@
 		const rawResolution = getDataFromURL('resolution');
 		radiusValue = [parseInt(rawRadius, 10) || 1];
 		resolutionValue = [parseInt(rawResolution, 10) || 5];
+  	}
+
+	onMount(async () => {
+		// setTimeout(async () => {
+			await initializeURLData();
+		// },5000)
 	});
 
 	let startValue = $state<DateValue | undefined>(undefined);
 
+	function toggleSource(enable, source) {
+		selectedSource = Array.isArray(selectedSource)
+			? enable
+				? [...selectedSource, source].filter((v, i, a) => a.indexOf(v) === i)
+				: selectedSource.filter((s) => s !== source)
+			: enable
+			? [source]
+			: [];
+	}
 
 	// Initialize MapService
 	const mapService = new MapService();
 
 	// filter values
 	let enableTwitter = $state(true);
-	$effect(() => {
-		if (enableTwitter) {
-			selectedSource = Array.isArray(selectedSource)
-				? [...selectedSource, 'x-twitter'].filter((v, i, a) => a.indexOf(v) === i)
-				: ['x-twitter'];
-		} else {
-			selectedSource = Array.isArray(selectedSource)
-				? selectedSource.filter((source) => source !== 'x-twitter')
-				: [];
-		}
-	});
+	$effect(() => toggleSource(enableTwitter, 'x-twitter'));
 
 	let enablePanoids = $state(true);
+	$effect(() => toggleSource(enablePanoids, 'streetview'));
+
 	$effect(() => {
-		if (enablePanoids) {
-			selectedSource = Array.isArray(selectedSource)
-				? [...selectedSource, 'streetview'].filter((v, i, a) => a.indexOf(v) === i)
-				: ['streetview'];
-		} else {
-			selectedSource = Array.isArray(selectedSource)
-				? selectedSource.filter((source) => source !== 'streetview')
-				: [];
+		const features = getDataFromURL('features[]');
+
+		if (Array.isArray(features)) {
+			enableTwitter = features.includes('x-twitter');
+			enablePanoids = features.includes('streetview');
 		}
 	});
 
@@ -119,6 +124,13 @@
 	}
 
 	async function applyFilters() {
+		await initializeURLData();
+		toggleSource(enableTwitter, 'x-twitter')
+		toggleSource(enablePanoids, 'streetview')
+
+		removeDataFromURL('request_id')
+		removeDataFromURL('req_id')
+
 		if (!selectedLocation) {
 			errorMessages = { address: ['Please select a location to continue.'] };
 			return;
@@ -195,7 +207,7 @@
 
 		<AlertError errors={errorMessages} />
 
-		<div class="flex-1 overflow-y-auto border-t border-b border-gray-200 py-2">
+		<div class="flex-1 overflow-y-auto overflow-x-hidden border-t border-b border-gray-200 py-2">
 			<!-- Address Search -->
 			<Card.Root class="mb-4 mt-2">
 				<Card.Header>
@@ -306,7 +318,7 @@
 								<Button
 									builders={[builder]}
 									class={cn(
-										"w-[300px] justify-start text-left font-normal",
+										"justify-start text-left font-normal",
 										!datePickerValue && "text-muted-foreground"
 									)}
 									variant="outline">

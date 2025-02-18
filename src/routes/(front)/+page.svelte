@@ -167,7 +167,6 @@
 		try {
 			const res = await apiService.makeApiCall(`map/image-search/`, formData, 'POST', 'formdata');
 			if (res.success) {
-				console.log('xUpload successful:', res);
 				let lat = res.search_request.request_params.latitude
 				let long = res.search_request.request_params.longitude
 				let id = res.search_request.id
