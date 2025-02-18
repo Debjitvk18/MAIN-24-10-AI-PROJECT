@@ -5,7 +5,7 @@
 	import { Switch } from '$lib/components/ui/switch/index.ts';
 	import MapFilters from '$lib/components/ui/map/MapFilters.svelte';
 	import { Button } from '$lib/components/ui/button/index.ts';
-	import SaveSearch from '$lib/components/ui/map/SaveSearch.svelte';
+	// import SaveSearch from '$lib/components/ui/map/SaveSearch.svelte';
 
 	export let isSidebarVisible; // prop
 	export let toggleSidebarVisibility;

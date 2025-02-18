@@ -107,25 +107,15 @@
 	let enablePanoids = $state(true);
 	$effect(() => toggleSource(enablePanoids, 'streetview'));
 
+	let enableLinkedin = $state(true);
+	$effect(() => toggleSource(enableLinkedin, 'linkedin'));
+
 	$effect(() => {
 		const features = getDataFromURL('features[]');
-
-		if (Array.isArray(features)) {
+		if (Array.isArray(features) && features.length > 0  ) {
 			enableTwitter = features.includes('x-twitter');
 			enablePanoids = features.includes('streetview');
-		}
-	});
-
-	let enableLinkedin = $state(true);
-	$effect(() => {
-		if (enableLinkedin) {
-			selectedSource = Array.isArray(selectedSource)
-				? [...selectedSource, 'linkedin'].filter((v, i, a) => a.indexOf(v) === i)
-				: ['linkedin'];
-		} else {
-			selectedSource = Array.isArray(selectedSource)
-				? selectedSource.filter((source) => source !== 'linkedin')
-				: [];
+			enableLinkedin = features.includes('linkedin');
 		}
 	});
 
@@ -140,6 +130,7 @@
 		await initializeURLData();
 		toggleSource(enableTwitter, 'x-twitter')
 		toggleSource(enablePanoids, 'streetview')
+		toggleSource(enableLinkedin, 'linkedin')
 
 		removeDataFromURL('request_id')
 		removeDataFromURL('req_id')
