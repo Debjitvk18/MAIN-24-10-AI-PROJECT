@@ -111,6 +111,19 @@
 		}
 	});
 
+	let enableLinkedin = $state(true);
+	$effect(() => {
+		if (enableLinkedin) {
+			selectedSource = Array.isArray(selectedSource)
+				? [...selectedSource, 'linkedin'].filter((v, i, a) => a.indexOf(v) === i)
+				: ['linkedin'];
+		} else {
+			selectedSource = Array.isArray(selectedSource)
+				? selectedSource.filter((source) => source !== 'linkedin')
+				: [];
+		}
+	});
+
 	// apply filters
 	let errorMessages = $state<string | null>(null);
 
@@ -232,6 +245,17 @@
 									</div>
 								</div>
 								<Switch bind:enableTwitter checked={enableTwitter} on:click={enableTwitter = !enableTwitter} />
+							</div>
+
+							<!-- Linkedin -->
+							<div class="flex items-center justify-between space-x-4">
+								<div class="flex items-center space-x-4">
+									<Icon class="w-6 h-6" icon="mdi:linkedin" />
+									<div>
+										<p class="text-sm font-medium leading-none">Linkedin</p>
+									</div>
+								</div>
+								<Switch bind:enableLinkedin checked={enableLinkedin} on:click={enableLinkedin = !enableLinkedin} />
 							</div>
 
 							<!-- Panoids -->
