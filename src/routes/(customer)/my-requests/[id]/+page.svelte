@@ -15,7 +15,8 @@
 		streetview: 'lucide:map-pinned',
 		'x-twitter': 'ri:twitter-x-fill',
 		facebook: 'lucide:facebook',
-		googlenews: 'simple-icons:googlenews'
+		googlenews: 'simple-icons:googlenews',
+		linkedin: 'mdi:linkedin',
 	};
 </script>
 
