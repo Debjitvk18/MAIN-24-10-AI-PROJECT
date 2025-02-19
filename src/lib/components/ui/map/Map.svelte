@@ -19,7 +19,7 @@
 	import { API_BASE_URL, MAPBOX_THEMES, PANOID_BASE_URL } from '$lib/constants/constants';
 
 	// Utility functions
-	import { getDataFromURL, putDataInURL, toggleFullScreen } from '$lib/utils/generalUtils';
+	import { getDataFromURL, putDataInURL, removeDataFromURL, toggleFullScreen } from '$lib/utils/generalUtils';
 	import { parseCoordinates } from '$lib/utils/mapUtils';
 
 	// SVG icons
@@ -239,7 +239,7 @@
 				id: post.urn,
 				title: post.text,
 				description: post.text,
-				image: post.attachment?.type == "Image" ? post.attachment?.type : post.author.image_ur ? post.author.image_ur : '',
+				image: post.post_image ||  post.author.image_url,
 				lat: null,
 				lng: null,
 				url: post.url ?? '#'
@@ -422,8 +422,10 @@
 							latitude: lat,
 							longitude: lng
 						}
-						if(getDataFromURL('features[]')) {
+						if(getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
 							preData.features = getDataFromURL('features[]');
+						} else {
+							preData.features = ['streetview', 'x-twitter', 'linkedin'];
 						}
 						const response = await mapService.getMapResults(preData);
 						if (!response.success) {
@@ -434,7 +436,7 @@
 						search_id = response.search_id;
 					} else {
 						search_id = reqId;
-						putDataInURL('req_id', '');
+						removeDataFromURL('req_id');
 					}
 
 					searchRequestID.set(Number(search_id));

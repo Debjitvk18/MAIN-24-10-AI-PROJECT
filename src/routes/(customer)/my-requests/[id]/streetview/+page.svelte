@@ -9,16 +9,17 @@
 	import { ApiService } from '$lib/services/api-service';
 	import GetBack from '$lib/components/general/GetBack.svelte';
 	import TableShimmer from '$lib/components/general/shimmer/TableShimmer.svelte';
+	import { PANOID_BASE_URL } from '$lib/constants/constants.js';
 
 	$: id = $page.params.id;
 	const slug = 'streetview';
 
-	let loader = true
+	let loader = true;
 
 	export let data;
 	let streetViews = data?.streetview?.response?.data || [];
 	let meta = data?.streetview?.response || [];
-
+	let response_id = null;
 	function getPaginationNumbers() {
 		if (!meta || !meta.current_page || !meta.last_page) return [];
 
@@ -56,11 +57,11 @@
 
 			let apiService = new ApiService();
 			let res = await apiService.makeApiCall(`search-requests/${id}/streetview?page=${pageNumber}`);
-			
+
 			if (!res.success) {
 				throw new Error(res.error);
 			}
-
+			response_id = res?.response?._id;
 			streetViews = [...(res?.response?.response?.data || [])];
 			meta = { ...(res.response?.response || {}) };
 		} catch (err) {
@@ -68,6 +69,48 @@
 		} finally {
 			loader = false;
 		}
+	}
+
+	let downloadLoaders = [];
+	async function downloadPanoid(panoid_id: string) {
+    try {
+        if (response_id === null || !panoid_id) return;
+
+        downloadLoaders = [...downloadLoaders, panoid_id];
+
+        let apiService = new ApiService();
+        
+		let res = await apiService.makeApiCall(
+			`search-requests/${response_id}/${panoid_id}/download`,
+			{}, 
+			'GET', 
+			'blob' 
+		);
+
+        if (!res) {
+            throw new Error("No response from server");
+        }
+
+        // Handle binary data (Blob)
+        const blob = new Blob([res], { type: 'image/jpeg' }); 
+        const url = URL.createObjectURL(blob);
+
+        // Create a temporary link to trigger the download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${panoid_id}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // Release object URL to free up memory
+        URL.revokeObjectURL(url);
+
+    } catch (err) {
+        console.error('Something went wrong, please try again.', err);
+    } finally {
+        downloadLoaders = downloadLoaders.filter(id => id !== panoid_id);
+    }
 	}
 
 	async function goToPage(pageNumber) {
@@ -114,16 +157,21 @@
 							<Table.Body>
 								{#each streetViews as streetView}
 									<Table.Row>
-										<Table.Cell class="font-medium">{streetView.panoid}</Table.Cell>
+										<Table.Cell class="font-medium">
+											<a href={`${PANOID_BASE_URL}${streetView.panoid}`} target="_blank" rel="noopener noreferrer">
+												{streetView.panoid}
+											</a>
+										</Table.Cell>
+
 										<Table.Cell>{streetView.lat}</Table.Cell>
 										<Table.Cell>{streetView.lon}</Table.Cell>
 										<Table.Cell>
-											{#if streetView.imageURL}
-												<a href={streetView.imageURL} download>
-													<Icon icon="lucide:download" class="text-blue-500 text-lg" />
-												</a>
+											{#if downloadLoaders.includes(streetView.panoid)}
+												<Icon icon="line-md:downloading-loop" class="text-blue-500" width="24" height="24" />
 											{:else}
-												<span class="text-gray-400">N/A</span>
+												<button on:click={() => downloadPanoid(streetView.panoid)}>
+													<Icon icon="lucide:download" class="text-blue-500" width="24" height="24" />
+												</button>
 											{/if}
 										</Table.Cell>
 									</Table.Row>
@@ -148,7 +196,10 @@
 							<!-- Page Numbers -->
 							{#each getPaginationNumbers() as page}
 								<button
-									class="px-3 py-1 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600  hover:bg-primary-200 dark:hover:bg-gray-700 {meta.current_page === page ? 'bg-primary dark:bg-gray-600 text-white' : ''}"
+									class="px-3 py-1 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 hover:bg-primary-200 dark:hover:bg-gray-700 {meta.current_page ===
+									page
+										? 'bg-primary dark:bg-gray-600 text-white'
+										: ''}"
 									on:click={() => goToPage(page)}
 								>
 									{page}
@@ -170,7 +221,7 @@
 				<Card.Content>
 					<div class="w-full">
 						<TableShimmer rows={15} />
-					  </div>
+					</div>
 				</Card.Content>
 			{/if}
 		</Card.Root>
