@@ -28,7 +28,6 @@
 	import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
 
 	// UI Components
-	import { showToast } from '$lib/stores/toastStore';
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
 
 	// Icon Component
@@ -49,7 +48,6 @@
 	let mapContainer: HTMLElement;
 	let showSidebar = false;
 	let errorMessages: string[] = []; // validation errors
-	const mapService = new MapService();
 	let reqId: number;
 	let reqLat: number;
 	let reqLong: number;
@@ -106,14 +104,14 @@
 				this.container = document.createElement('div');
 				this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group cyberglobes-map-control';
 
-				const themeFromUrl = getDataFromURL('theme');
-				const select = this.createStyleSelector(themeFromUrl);
+				const mapActiveTheme = getDataFromURL('theme');
+				const select = this.createStyleSelector(mapActiveTheme);
 				this.container.appendChild(select);
 				return this.container;
 			}
 
 			// Create Style Switch Dropdown
-			createStyleSelector(themeFromUrl) {
+			createStyleSelector(mapActiveTheme) {
 				const select = document.createElement('select');
 				select.className = 'style-switcher p-3 shadow-md rounded-md bg-white dark:bg-gray-950';
 
@@ -121,7 +119,7 @@
 					const option = document.createElement('option');
 					option.value = style;
 					option.textContent = name;
-					option.selected = `mapbox://styles/mapbox/${themeFromUrl}` === style;
+					option.selected = `mapbox://styles/mapbox/${mapActiveTheme}` === style;
 					select.appendChild(option);
 
 					if (option.selected) {
@@ -199,38 +197,37 @@
 		return new FullScreenControl();
 	}
 
-	function twitterView(data)
-	{
+	function twitterView(data) {
 		const posts = data.tweets.map((tweetObj) => {
-		const tweet = tweetObj.tweet;
-		const user = tweet.user_details;
-		const place = tweet.place ?? null;
-		let lat = null;
-		let lng = null;
-		if (place) {
-			lat = place.bounding_box.coordinates[0][0][1];
-			lng = place.bounding_box.coordinates[0][0][0];
-		}
+			const tweet = tweetObj.tweet;
+			const user = tweet.user_details;
+			const place = tweet.place ?? null;
+			let lat = null;
+			let lng = null;
+			if (place) {
+				lat = place.bounding_box.coordinates[0][0][1];
+				lng = place.bounding_box.coordinates[0][0][0];
+			}
 
-		return {
-			id: tweetObj.entryId,
-			title: tweet.full_text,
-			description: tweet.full_text,
-			image: user.profile_image_url_https,
-			lat,
-			lng,
-			url: tweet?.url ?? '#'
+			return {
+				id: tweetObj.entryId,
+				title: tweet.full_text,
+				description: tweet.full_text,
+				image: user.profile_image_url_https,
+				lat,
+				lng,
+				url: tweet?.url ?? '#'
+			};
+		});
+
+		const twitterData = {
+			type: 'twitter',
+			count: posts.length,
+			icon: TwitterIcon,
+			posts: posts
 		};
-	});
 
-	const twitterData = {
-		type: 'twitter',
-		count: posts.length,
-		icon: TwitterIcon,
-		posts: posts
-	};
-
-	socialMediaJson.push(twitterData);
+		socialMediaJson.push(twitterData);
 	}
 
 	function linkedInView(data) {
@@ -239,7 +236,7 @@
 				id: post.urn,
 				title: post.text,
 				description: post.text,
-				image: post.post_image ||  post.author.image_url,
+				image: post.post_image || post.author.image_url,
 				lat: null,
 				lng: null,
 				url: post.url ?? '#'
@@ -256,10 +253,9 @@
 		socialMediaJson.push(linkedInData);
 	}
 
-	function panoidView(data)
-	{
+	function panoidView(data) {
 		const posts = data.panoids.map((panoid) => {
-		return {
+			return {
 				id: panoid.panoid,
 				title: `panoid - ${panoid.panoid}`,
 				description: `description - ${panoid.panoid}`,
@@ -411,108 +407,108 @@
 				}, 3000);
 
 				// make api call to get social media posts
-			  if (!request_id) {
-				setTimeout(async () => {
-					overlayLoadingText = 'Fetching social media posts';
-					const mapService = new MapService();
-					let search_id;
-					if (!reqId) {
-						let preData = {
-							address,
-							latitude: lat,
-							longitude: lng
-						}
-						if(getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
-							preData.features = getDataFromURL('features[]');
+				if (!request_id) {
+					setTimeout(async () => {
+						overlayLoadingText = 'Fetching social media posts';
+						const mapService = new MapService();
+						let search_id;
+						if (!reqId) {
+							let preData = {
+								address,
+								latitude: lat,
+								longitude: lng
+							};
+							if (getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
+								preData.features = getDataFromURL('features[]');
+							} else {
+								preData.features = ['streetview', 'x-twitter', 'linkedin'];
+							}
+							const response = await mapService.getMapResults(preData);
+							if (!response.success) {
+								// hide loader
+								showLoadingOverlay = false;
+								return false;
+							}
+							search_id = response.search_id;
 						} else {
-							preData.features = ['streetview', 'x-twitter', 'linkedin'];
+							search_id = reqId;
+							removeDataFromURL('req_id');
 						}
-						const response = await mapService.getMapResults(preData);
-						if (!response.success) {
-							// hide loader
-							showLoadingOverlay = false;
-							return false;
-						}
-						search_id = response.search_id;
-					} else {
-						search_id = reqId;
-						removeDataFromURL('req_id');
-					}
 
-					searchRequestID.set(Number(search_id));
+						searchRequestID.set(Number(search_id));
 
-					const source = new EventSource(`${API_BASE_URL}map/search-sse/${search_id}`);
+						const source = new EventSource(`${API_BASE_URL}map/search-sse/${search_id}`);
 
-					// streeview.
-					source.addEventListener('streetview', function(e) {
-						const data = JSON.parse(e.data);
-						panoidView(data);
-					});
+						// streeview.
+						source.addEventListener('streetview', function(e) {
+							const data = JSON.parse(e.data);
+							panoidView(data);
+						});
 
-					// twitter.
-					source.addEventListener('x-twitter', function(e) {
-						const data = JSON.parse(e.data);
-						twitterView(data);
-					});
+						// twitter.
+						source.addEventListener('x-twitter', function(e) {
+							const data = JSON.parse(e.data);
+							twitterView(data);
+						});
 
-					// LinkedIn.
-					source.addEventListener('linkedin', function(e) {
-						const data = JSON.parse(e.data);
-						linkedInView(data);
-					});
+						// LinkedIn.
+						source.addEventListener('linkedin', function(e) {
+							const data = JSON.parse(e.data);
+							linkedInView(data);
+						});
 
-					// LinkedIn error.
-					source.addEventListener('linkedin_error', function(e) {
-						const data = JSON.parse(e.data);
-					});
+						// LinkedIn error.
+						source.addEventListener('linkedin_error', function(e) {
+							const data = JSON.parse(e.data);
+						});
 
-					// Twitter error.
-					source.addEventListener('x-twitter_error', function(e) {
-						const data = JSON.parse(e.data);
-					});
+						// Twitter error.
+						source.addEventListener('x-twitter_error', function(e) {
+							const data = JSON.parse(e.data);
+						});
 
-					// Error.
-					source.addEventListener('error', function(e) {
-						const data = JSON.parse(e.data);
-						source.close();
-						overlayLoadingText = 'Something went wrong, please try again';
-					});
+						// Error.
+						source.addEventListener('error', function(e) {
+							const data = JSON.parse(e.data);
+							source.close();
+							overlayLoadingText = 'Something went wrong, please try again';
+						});
 
-					// Done.
-					source.addEventListener('done', function(e) {
-						const data = JSON.parse(e.data);
-						source.close();
+						// Done.
+						source.addEventListener('done', function(e) {
+							const data = JSON.parse(e.data);
+							source.close();
 
-						// socialMediaJson
-						displaySocialMediaPosts();
-					});
-				}, 4000);
+							// socialMediaJson
+							displaySocialMediaPosts();
+						});
+					}, 4000);
 
-			  } else{
+				} else {
 					try {
 						let apiService = new ApiService();
 						const res = await apiService.makeApiCall(`search-requests/${request_id}`);
 						if (res.success) {
 							// twitter.
 							const data = res;
-							if (data.responses && data.responses["x-twitter"]?.response) {
-								const tweetsData = data.responses["x-twitter"].response;
-								twitterView(tweetsData)
+							if (data.responses && data.responses['x-twitter']?.response) {
+								const tweetsData = data.responses['x-twitter'].response;
+								twitterView(tweetsData);
 							}
 
 							// linkedin
-							if (data.responses && data.responses["linkedin"]?.response) {
-								const linkedinData = data.responses["linkedin"].response;
+							if (data.responses && data.responses['linkedin']?.response) {
+								const linkedinData = data.responses['linkedin'].response;
 								linkedInView(linkedinData);
 							}
 
 							// panoids.
-							if (data.responses && data.responses["streetview"]?.response) {
-								const panoidsData = data.responses["streetview"].response;
+							if (data.responses && data.responses['streetview']?.response) {
+								const panoidsData = data.responses['streetview'].response;
 								panoidView(panoidsData);
 							}
 
-							setTimeout( async () => {
+							setTimeout(async () => {
 								showLoadingOverlay = false;
 								await displaySocialMediaPosts();
 							}, 4000);
@@ -521,7 +517,7 @@
 					} catch (error) {
 						console.error('Error in load function:', error.message);
 					}
-			  }
+				}
 			});
 
 			if (searchQuery) {
