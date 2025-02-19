@@ -1,6 +1,7 @@
 import { MARKER_DEFAULT_COLOR, MARKER_HIGHLIGHT_COLOR } from '$lib/constants/constants.js';
 import { MapService } from '$lib/services/map-service.js';
 import { getDataFromURL } from '$lib/utils/generalUtils.js';
+import { hoveredPostId } from '$lib/stores/mapStore.ts';
 
 /**
  * Regular expression to match and extract latitude and longitude coordinates from a string.
@@ -15,14 +16,17 @@ import { getDataFromURL } from '$lib/utils/generalUtils.js';
  * 1. Latitude (as a signed decimal number)
  * 2. Longitude (as a signed decimal number)
  */
-export const COORDINATES_REGEXP = /^\s*(?:Lat: )?(-?\d+(\.\d+)?)[,\s]+(?:Lng: )?(-?\d+(\.\d+)?)\s*$/i;
+export const COORDINATES_REGEXP =
+	/^\s*(?:Lat: )?(-?\d+(\.\d+)?)[,\s]+(?:Lng: )?(-?\d+(\.\d+)?)\s*$/i;
 
 /**
- * Highlights or resets the visual state of a given marker.
+ * Highlights a map marker by modifying its visual appearance. Optionally animates the map view
+ * to center on the marker's location.
  *
- * @param {Object} marker - The marker object to be manipulated.
- * @param {boolean} [highlight=true] - Determines whether to highlight the marker or reset its state.
- * @return {void} This function does not return any value.
+ * @param {Object} marker The marker object to be highlighted. Must have methods like `getElement` and `getLngLat`.
+ * @param {Object} mapInstance The map instance on which the marker resides. Must support `flyTo` method.
+ * @param {boolean} [flyTo=false] Determines whether the map should animate to the marker's location.
+ * @return {void}
  */
 export function highlightMarker(marker, mapInstance, flyTo = false) {
 	if (!marker || !mapInstance) return;
@@ -48,7 +52,7 @@ export function highlightMarker(marker, mapInstance, flyTo = false) {
 			zoom: 18.5,
 			speed: 1.2, // Adjust speed if necessary
 			curve: 1.5,
-			essential: true,
+			essential: true
 		});
 	}
 }
@@ -94,13 +98,24 @@ export function parseCoordinates(query) {
 	const geocodes = [];
 
 	const mapService = new MapService();
-	mapService.reverseGeocode(longitude, latitude)
-		.then(features => {
-			features.features.forEach(feature => geocodes.push(feature));
+	mapService
+		.reverseGeocode(longitude, latitude)
+		.then((features) => {
+			features.features.forEach((feature) => geocodes.push(feature));
 		})
-		.catch(error => {
+		.catch((error) => {
 			console.error('Reverse geocoding failed:', error);
 		});
 
 	return geocodes;
+}
+
+/**
+ * Handles the event when a marker is hovered over by setting the hovered post ID.
+ *
+ * @param {string|number} postId - The identifier of the post associated with the hovered marker.
+ * @return {void} This function does not return a value.
+ */
+export function handleMarkerHover(postId) {
+	hoveredPostId.set(postId);
 }

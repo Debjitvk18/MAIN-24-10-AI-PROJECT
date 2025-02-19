@@ -26,11 +26,12 @@
 
 	// Utility functions
 	import { getDataFromURL, putDataInURL, removeDataFromURL, toggleFullScreen } from '$lib/utils/generalUtils';
-	import { parseCoordinates } from '$lib/utils/mapUtils';
+	import { handleMarkerHover, parseCoordinates } from '$lib/utils/mapUtils';
 
 	// SVG icons
 	import TwitterIcon from '$lib/assets/svg/marker/x-pin.svg?raw';
 	import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
+	import PanoidsIconImg from '$lib/assets/svg/marker/panoids-pin.svg';
 	import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
 
 	// UI Components
@@ -264,7 +265,7 @@
 				id: panoid.panoid,
 				title: `panoid - ${panoid.panoid}`,
 				description: `description - ${panoid.panoid}`,
-				image: '',
+				image: PanoidsIconImg,
 				lat: panoid.lat,
 				lng: panoid.lon,
 				url: `${PANOID_BASE_URL}${panoid.panoid}`
@@ -580,7 +581,7 @@
 	});
 
 
-	function createMarker(icon: string, coordinates: [number, number], isVisible: boolean, postid: number): mapboxgl.Marker {
+	function createMarker(icon: string, coordinates: [number, number], isVisible: boolean, post: number): mapboxgl.Marker {
 		const el = document.createElement('div');
 		el.className = SOCIAL_MARKER_CLASS;
 		el.innerHTML = icon;
@@ -594,19 +595,26 @@
 		const popup = new mapboxgl.Popup({
 			closeButton: false,
 			closeOnClick: false,
-			offset: 25, // Moves popup above marker
-		}).setHTML(`<strong>Post ID:</strong> ${postid}`);
+			offset: 25 // Moves popup above marker
+		}).setHTML(`
+			<div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    		<img src="${post.image}" style="width: 50px; height: 50px; border-radius: 50%;" alt="post"/>
+    		<p style="margin-top: 8px;">${post.title}</p>
+  	</div>
+		`);
 
 		// Attach popup to marker
 		marker.setPopup(popup);
 
 		// Show popup on hover
 		marker.getElement().addEventListener('mouseenter', () => {
-			marker.togglePopup(); // Show popup
+			marker.togglePopup();
+			handleMarkerHover(post.id);
 		});
 
 		marker.getElement().addEventListener('mouseleave', () => {
-			marker.togglePopup(); // Hide popup
+			marker.togglePopup();
+			handleMarkerHover(null);
 		});
 
 		return marker;
@@ -676,7 +684,7 @@
 						socialMediaIcons[type],
 						[post.lng, post.lat],
 						visibility[type],
-						post.id
+						post
 					);
 					pointsAdded++;
 				}
@@ -693,7 +701,7 @@
 							socialMediaIcons[type],
 							[randomPoint[0], randomPoint[1]] as [number, number],
 							visibility[type],
-							post.id
+							post
 						);
 						pointsAdded++;
 					}
@@ -875,5 +883,4 @@
         width: calc(100% - 24rem);
         margin-left: 24rem; /* Same width as the sidebar */
     }
-
 </style>

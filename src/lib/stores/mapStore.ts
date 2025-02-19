@@ -6,3 +6,6 @@ export const refreshMapTrigger = writable(false);
 
 // search request id to share in components
 export const searchRequestID = writable(0);
+
+// handle the mouseover on map marker
+export const hoveredPostId = writable(null);
