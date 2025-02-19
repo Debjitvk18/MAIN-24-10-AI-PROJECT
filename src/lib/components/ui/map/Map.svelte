@@ -34,6 +34,7 @@
 	// Icon Component
 	import MapTopbar from '$lib/components/ui/map/MapTopbar.svelte';
 	import MapSidebar from '$lib/components/ui/map/MapSidebar.svelte';
+	import { searchRequestID } from '$lib/stores/mapStore';
 
 	// Default Data...
 	let showLoadingOverlay = false;
@@ -64,13 +65,6 @@
 
 	let mapMarker = null; // set by onclick on map
 
-	// save results form data
-	let saveResultsFormData = {
-		title: '',
-		refreshFrequency: 'No Refresh',
-		autoUpdateEmail: false
-	};
-
 	// Markers for social media types
 	let markers: { [key: string]: mapboxgl.Marker[] } = {};
 
@@ -90,79 +84,9 @@
 		reqLong = $page.url.searchParams.get('long') || '';
 		request_id = $page.url.searchParams.get('request_id') || '';
 
+		// save request id to store, to use in the save search popup.
+		searchRequestID.set(Number(request_id || reqId));
 	});
-
-	/**
-	 * Determines if the "Auto Update Email" functionality should be shown
-	 * based on the refresh frequency setting in the form data. If the refresh
-	 * frequency is not set to 'No Refresh', it returns true. Otherwise, it disables
-	 * the auto update email option and returns false.
-	 *
-	 * @return {boolean} Returns true if the refresh frequency is not 'No Refresh', otherwise false.
-	 */
-	function showAutoUpdateEmail() {
-		if (saveResultsFormData.refreshFrequency !== 'No Refresh') {
-			return true;
-		}
-
-		saveResultsFormData.autoUpdateEmail = false;
-		return false;
-	}
-
-	/**
-	 * Handles the saving of results when triggered by a form event. Prevents the default action of the event,
-	 * sends a request to save the results, and manages the UI state and notifications based on the response.
-	 *
-	 * @param {Event} event The event triggered by the user interaction, typically a form submission.
-	 * @return {Promise<void>} A promise that resolves when the save operation completes, either successfully or with errors.
-	 */
-	async function handleSaveResults(event: Event) {
-		event.preventDefault();
-		isLoading = true;
-
-		try {
-			const data = await mapService.saveResults({
-				title: saveResultsFormData.title,
-				refresh_frequency: saveResultsFormData.refreshFrequency,
-				auto_update_email: saveResultsFormData.autoUpdateEmail
-			});
-			if (data.success) {
-				showSaveModal = false;
-				saveResultsFormData = {
-					title: '',
-					refreshFrequency: 'No Refresh',
-					autoUpdateEmail: false
-				};
-
-				// show success message
-				showToast({ message: data.message });
-			} else {
-				handleErrors(data);
-			}
-		} catch (error) {
-			errorMessages.push('An unexpected error occurred.');
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	/**
-	 * Processes and formats error messages from a given response object.
-	 *
-	 * @param {object} data - The data containing error messages or information.
-	 * @returns {void} This function does not return a value; it manipulates the errorMessages array directly.
-	 */
-	function handleErrors(data: any) {
-		errorMessages = [];
-
-		if (data.errors) {
-			Object.keys(data.errors).forEach((key) => {
-				errorMessages.push(...data.errors[key]);
-			});
-		} else {
-			errorMessages.push(data.message || 'An error occurred');
-		}
-	}
 
 	/**
 	 * Creates a custom style switcher control for a Mapbox map, allowing users
@@ -512,6 +436,8 @@
 						search_id = reqId;
 						putDataInURL('req_id', '');
 					}
+
+					searchRequestID.set(Number(search_id));
 
 					const source = new EventSource(`${API_BASE_URL}map/search-sse/${search_id}`);
 

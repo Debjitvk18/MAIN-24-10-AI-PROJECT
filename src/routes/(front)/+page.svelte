@@ -3,7 +3,6 @@
 	import TestimoinalCard from '$lib/components/ui/card/TestimoinalCard.svelte';
 	import Faq from '$lib/components/ui/home/Faq.svelte';
 	import Pricing from '$lib/components/ui/pricing/Pricing.svelte';
-	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import FacebookIcon from '$lib/assets/svg/marker/fb-mark.svg?raw';

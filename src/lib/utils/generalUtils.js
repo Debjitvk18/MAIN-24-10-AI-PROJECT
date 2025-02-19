@@ -125,3 +125,23 @@ export function loadOnMapUrl(request) {
 
     return `/try-demo/?${params.toString()}`;
 }
+
+/**
+ * Processes error data and extracts error messages into an array.
+ *
+ * @param {Object} data - The error data structure which may contain error details.
+ * @return {string[]} An array of error messages extracted from the input data.
+ */
+export function handleErrors(data) {
+    let errorMessages = [];
+
+    if (data.errors) {
+        Object.keys(data.errors).forEach((key) => {
+            errorMessages.push(...data.errors[key]);
+        });
+    } else {
+        errorMessages.push(data.message || 'An error occurred');
+    }
+
+    return errorMessages;
+}

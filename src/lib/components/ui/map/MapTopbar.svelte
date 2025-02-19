@@ -4,8 +4,8 @@
 	import { Label } from '$lib/components/ui/label/index.ts';
 	import { Switch } from '$lib/components/ui/switch/index.ts';
 	import MapFilters from '$lib/components/ui/map/MapFilters.svelte';
-	import { Button } from '$lib/components/ui/button/index.ts';
-	// import SaveSearch from '$lib/components/ui/map/SaveSearch.svelte';
+	import SaveSearch from '$lib/components/ui/map/SaveSearch.svelte';
+	import { isLoggedIn } from '$lib/stores/authStore';
 
 	export let isSidebarVisible; // prop
 	export let toggleSidebarVisibility;
@@ -69,9 +69,10 @@
 
 			<!-- Filters -->
 			<MapFilters />
-
-			<!-- Save Search -->
-<!--			<SaveSearch />-->
+			{#if $isLoggedIn && showSidebar}
+				<!-- Save Search -->
+				<SaveSearch />
+			{/if}
 		</div>
 	</div>
 </div>
