@@ -24,9 +24,9 @@
 							{#if (visibility[socialMedia.type])}
 								<div
 									class="bg-white p-4 rounded-lg shadow-md mt-4 hover:bg-gray-100 border border-gray-300"
-									on:mouseover={() => highlightMarker(markers[socialMedia.type]?.[index])}
-									on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[index], false)}
-									on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[index], false)}>
+									on:mouseover={() => highlightMarker(markers[socialMedia.type]?.[post.id])}
+									on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[post.id], false)}
+									on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[post.id], false)}>
 									<a href={post.url} target="_blank" class="flex items-center gap-4">
 										<img class="h-12 w-12 rounded-full" src="{post.image}" alt="post" />
 										<div class="flex flex-col">
@@ -34,6 +34,7 @@
 												class="text-sm font-medium text-gray-900 dark:text-gray-200">{truncateString(post.title, 50)}</strong>
 											<span class="text-sm font-medium text-gray-500 dark:text-gray-400">
 											{truncateString(post.description, 250)}
+												{post.lat}, {post.lng}
 										</span>
 										</div>
 									</a>

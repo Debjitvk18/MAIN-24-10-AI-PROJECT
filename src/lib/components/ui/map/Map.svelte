@@ -16,7 +16,13 @@
 	import { MapService } from '$lib/services/map-service';
 
 	// Constants
-	import { API_BASE_URL, MAPBOX_THEMES, PANOID_BASE_URL } from '$lib/constants/constants';
+	import {
+		API_BASE_URL,
+		MAPBOX_THEMES,
+		MARKER_FONT_SIZE,
+		PANOID_BASE_URL,
+		SOCIAL_MARKER_CLASS
+	} from '$lib/constants/constants';
 
 	// Utility functions
 	import { getDataFromURL, putDataInURL, removeDataFromURL, toggleFullScreen } from '$lib/utils/generalUtils';
@@ -47,7 +53,6 @@
 	let map: mapboxgl.Map;
 	let mapContainer: HTMLElement;
 	let showSidebar = false;
-	let errorMessages: string[] = []; // validation errors
 	let reqId: number;
 	let reqLat: number;
 	let reqLong: number;
@@ -563,11 +568,6 @@
 					}, 500);
 				}
 			}
-
-			// if(request_id) {
-			// 	console.log("Request", request_id)
-			// }
-
 		});
 	});
 
@@ -579,12 +579,70 @@
 		unsubscribe();
 	});
 
+
+	function createMarker(icon: string, coordinates: [number, number], isVisible: boolean, postid: number): mapboxgl.Marker {
+		const el = document.createElement('div');
+		el.className = SOCIAL_MARKER_CLASS;
+		el.innerHTML = icon;
+		el.style.fontSize = MARKER_FONT_SIZE;
+		if (!isVisible) el.style.display = 'none';
+
+		// Create the marker
+		const marker = new mapboxgl.Marker(el).setLngLat(coordinates).addTo(map);
+
+		// Create the popup with post.id
+		const popup = new mapboxgl.Popup({
+			closeButton: false,
+			closeOnClick: false,
+			offset: 25, // Moves popup above marker
+		}).setHTML(`<strong>Post ID:</strong> ${postid}`);
+
+		// Attach popup to marker
+		marker.setPopup(popup);
+
+		// Show popup on hover
+		marker.getElement().addEventListener('mouseenter', () => {
+			marker.togglePopup(); // Show popup
+		});
+
+		marker.getElement().addEventListener('mouseleave', () => {
+			marker.togglePopup(); // Hide popup
+		});
+
+		return marker;
+	}
+
+	function filterValidPosts(posts: { lat: number; lng: number }[], shape: any) {
+		return posts.filter((post) => {
+			if (post.lat !== null && post.lng !== null) {
+				return true;
+
+				// check if lat/lng is in the radius circle.
+				// const point = turf.point([post.lng, post.lat]);
+				// return turf.booleanPointInPolygon(point, shape);
+			}
+		});
+	}
+
+	function generateRandomValidPoints(count: number, circle: any) {
+		const points = [];
+		const randomPoints = turf.randomPoint(count, { bbox: turf.bbox(circle) });
+
+		randomPoints.features.forEach((feature) => {
+			if (turf.booleanPointInPolygon(feature, circle)) {
+				points.push(feature.geometry.coordinates);
+			}
+		});
+
+		return points;
+	}
+
+
 	/**
 	 * Displays social media posts on a map by positioning markers based on specified data types and counts.
-	 * The method initializes marker visibility, adds random points within a defined polygon, and updates the map state accordingly.
-	 * Includes asynchronous steps to finalize map view and update the user interface.
+	 * Prioritizes posts with lat/lng inside the circle for marker placement before randomly positioning.
 	 *
-	 * @return {void} Does not return a value; performs operations to display social media posts on a map.
+	 * @return {void} Updates the map with markers for social media posts.
 	 */
 	function displaySocialMediaPosts() {
 		socialMediaIcons = socialMediaJson.reduce((acc, { type, icon }) => {
@@ -593,7 +651,7 @@
 		}, {});
 
 		// get the social media data
-		socialMediaData = socialMediaJson.map(({ type, count }) => ({ type, count }));
+		socialMediaData = socialMediaJson.map(({ type, count, posts }) => ({ type, count, posts }));
 
 		// Visibility state for social media types
 		visibility = socialMediaData.reduce((acc, { type }) => {
@@ -602,63 +660,70 @@
 		}, {});
 
 		markers = {};
+
 		// Add social media markers
-		socialMediaData.forEach(({ type, count }) => {
+		socialMediaData.forEach(({ type, count, posts }) => {
 			let pointsAdded = 0;
+			const validPosts = filterValidPosts(posts, circle);
 			const markersForType = [];
 
 			overlayLoadingText = 'Setting up the social icons on map';
-			while (pointsAdded < count) {
-				const randomPoints = turf.randomPoint(count - pointsAdded, { bbox: turf.bbox(circle) });
-				randomPoints.features.forEach((feature) => {
-					if (turf.booleanPointInPolygon(feature, circle) && pointsAdded < count) {
-						const coords = feature.geometry.coordinates;
-						const el = document.createElement('div');
-						el.className = 'social-marker';
-						el.innerHTML = socialMediaIcons[type];
-						el.style.fontSize = '20px';
 
-						const marker = new mapboxgl.Marker(el).setLngLat(coords).addTo(map);
+			// Add posts marker having valid lat/lng inside the circle
+			validPosts.forEach((post) => {
+				if (pointsAdded < count) {
+					markersForType[post.id] = createMarker(
+						socialMediaIcons[type],
+						[post.lng, post.lat],
+						visibility[type],
+						post.id
+					);
+					pointsAdded++;
+				}
+			});
 
-						// Hide marker if the type is not visible
-						if (!visibility[type]) marker.getElement().style.display = 'none';
 
-						markersForType.push(marker);
+			const invalidPosts = posts.filter((post) => !validPosts.some((validPost) => validPost.id === post.id));
+			invalidPosts.forEach((post) => {
+				if (pointsAdded < count) {
+					const randomPoints = generateRandomValidPoints(1, circle);
+					const randomPoint = randomPoints[0];
+					if (randomPoint && randomPoint.length === 2) {
+						markersForType[post.id] = createMarker(
+							socialMediaIcons[type],
+							[randomPoint[0], randomPoint[1]] as [number, number],
+							visibility[type],
+							post.id
+						);
 						pointsAdded++;
 					}
-				});
-			}
+				}
+			});
 
 			markers[type] = markersForType;
 		});
 
+
 		// finalizing the map
 		setTimeout(() => {
 			overlayLoadingText = 'Finalizing the map';
-			// set map zoom to fit the circle
 			const bounds = circle.geometry.coordinates[0].reduce(
-				(bounds, coord) => {
-					return bounds.extend(coord);
-				},
+				(bounds, coord) => bounds.extend(coord),
 				new mapboxgl.LngLatBounds(
 					circle.geometry.coordinates[0][0],
 					circle.geometry.coordinates[0][0]
 				)
 			);
-
 			map.fitBounds(bounds, { padding: 20 });
 		}, 2000);
 
-		// hide the loading overlay
 		setTimeout(() => {
 			overlayLoadingText = 'Almost done';
 		}, 3000);
 
-		// hide the loading overlay
 		setTimeout(() => {
 			overlayLoadingText = 'Almost done';
 			showLoadingOverlay = false;
-			// Show the sidebar once the circle and icons are added
 			showSidebar = true;
 			isSidebarVisible = true;
 		}, 4000);
