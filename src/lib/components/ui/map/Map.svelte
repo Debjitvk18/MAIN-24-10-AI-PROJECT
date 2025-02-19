@@ -605,7 +605,9 @@
 		el.className = SOCIAL_MARKER_CLASS;
 		el.innerHTML = icon;
 		el.style.fontSize = MARKER_FONT_SIZE;
-		if (!isVisible) el.style.display = 'none';
+		el.style.display = !isVisible ? 'none' : 'block';
+		el.style.cursor = 'pointer';
+		el.id = post.toString() ;
 
 		// Create the marker
 		const marker = new mapboxgl.Marker(el).setLngLat(coordinates).addTo(map);
@@ -692,7 +694,7 @@
 		socialMediaData.forEach(({ type, count, posts }) => {
 			let pointsAdded = 0;
 			const validPosts = filterValidPosts(posts, circle);
-			const markersForType = [];
+			const markersForType: mapboxgl.Marker[] = [];
 
 			overlayLoadingText = 'Setting up the social icons on map';
 
@@ -767,7 +769,7 @@
 		visibility = { ...visibility, [type]: !visibility[type] };
 
 		// Show or hide markers
-		markers[type]?.forEach((marker) => {
+		Object.values(markers[type]).forEach((marker) => {
 			marker.getElement().style.display = visibility[type] ? 'block' : 'none';
 		});
 	}
