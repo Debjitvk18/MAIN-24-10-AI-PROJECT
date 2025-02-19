@@ -41,6 +41,7 @@
 	import MapTopbar from '$lib/components/ui/map/MapTopbar.svelte';
 	import MapSidebar from '$lib/components/ui/map/MapSidebar.svelte';
 	import { searchRequestID } from '$lib/stores/mapStore';
+	import ErrorDialog from '$lib/components/general/dialog/ErrorDialog.svelte';
 
 	// Default Data...
 	let showLoadingOverlay = false;
@@ -58,6 +59,8 @@
 	let reqLat: number;
 	let reqLong: number;
 	let request_id: number;
+	let showErrorDialog = false;
+	let errorResponse = {};
 
 	/**
 	 * A boolean variable that indicates the visibility state of a sidebar component.
@@ -331,6 +334,9 @@
 		map.addControl(createFullScreenControl(), 'top-right');
 
 		map.on('load', () => {
+			showErrorDialog = false;
+			errorResponse = {};
+
 			map.addSource('single-point', {
 				type: 'geojson',
 				data: {
@@ -433,6 +439,10 @@
 							if (!response.success) {
 								// hide loader
 								showLoadingOverlay = false;
+
+								// show MapError Dialog
+								showErrorDialog = true;
+								errorResponse = response;
 								return false;
 							}
 							search_id = response.search_id;
@@ -494,6 +504,15 @@
 					try {
 						let apiService = new ApiService();
 						const res = await apiService.makeApiCall(`search-requests/${request_id}`);
+
+						if(!res.success) {
+							// show MapError Dialog
+							showErrorDialog = true;
+							errorResponse = response;
+							return false;
+						}
+
+
 						if (res.success) {
 							// twitter.
 							const data = res;
@@ -774,6 +793,7 @@
 	/>
 </svelte:head>
 
+<ErrorDialog bind:isOpen={showErrorDialog} error={errorResponse} />
 <LoadingOverlay isLoading={showLoadingOverlay} loadingText={overlayLoadingText} />
 <div class={`h-screen flex flex-col ${isSidebarVisible ? 'sidebar-visible' : ''}`} id="map-container">
 	<!-- Topbar -->
