@@ -787,6 +787,7 @@
 					socialMediaData={socialMediaJson}
 					markers={markers}
 					visibility={visibility}
+					map={map}
 				/>
 			</div>
 		{/if}

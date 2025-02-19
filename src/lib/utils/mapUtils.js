@@ -1,5 +1,6 @@
 import { MARKER_DEFAULT_COLOR, MARKER_HIGHLIGHT_COLOR } from '$lib/constants/constants.js';
 import { MapService } from '$lib/services/map-service.js';
+import { getDataFromURL } from '$lib/utils/generalUtils.js';
 
 /**
  * Regular expression to match and extract latitude and longitude coordinates from a string.
@@ -23,18 +24,33 @@ export const COORDINATES_REGEXP = /^\s*(?:Lat: )?(-?\d+(\.\d+)?)[,\s]+(?:Lng: )?
  * @param {boolean} [highlight=true] - Determines whether to highlight the marker or reset its state.
  * @return {void} This function does not return any value.
  */
-export function highlightMarker(marker, highlight = true) {
-	if (!marker) return;
+export function highlightMarker(marker, mapInstance, flyTo = false) {
+	if (!marker || !mapInstance) return;
 
-	const markerElement = marker.getElement();
-	const targetCoordinates = [marker.getLngLat().lng, marker.getLngLat().lat];
+	const element = marker.getElement();
 
 	// Find the SVG element inside the marker
-	const svgElement = markerElement.querySelector('svg');
+	const svgElement = element.querySelector('svg');
 	if (!svgElement) return;
 
-	highlight ? highlightSvgElement(svgElement) : resetSvgElement(svgElement);
-	marker.setLngLat(targetCoordinates);
+	// Highlight the marker visually
+	if (flyTo) {
+		highlightSvgElement(svgElement);
+	} else {
+		resetSvgElement(svgElement);
+	}
+
+	if (flyTo) {
+		// Fly to marker's location
+		const [lng, lat] = marker.getLngLat().toArray();
+		mapInstance.flyTo({
+			center: [lng, lat],
+			zoom: 18.5,
+			speed: 1.2, // Adjust speed if necessary
+			curve: 1.5,
+			essential: true,
+		});
+	}
 }
 
 /**

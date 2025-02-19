@@ -7,6 +7,7 @@
 	export let socialMediaData = [];
 	export let markers = {};
 	export let visibility;
+	export let map;
 </script>
 
 <!-- Sidebar -->
@@ -24,9 +25,8 @@
 							{#if (visibility[socialMedia.type])}
 								<div
 									class="bg-white p-4 rounded-lg shadow-md mt-4 hover:bg-gray-100 border border-gray-300"
-									on:mouseover={() => highlightMarker(markers[socialMedia.type]?.[post.id])}
-									on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[post.id], false)}
-									on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[post.id], false)}>
+									on:mouseover={() => highlightMarker(markers[socialMedia.type]?.[post.id], map, true)}
+									on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[post.id], map, false)}>
 									<a href={post.url} target="_blank" class="flex items-center gap-4">
 										<img class="h-12 w-12 rounded-full" src="{post.image}" alt="post" />
 										<div class="flex flex-col">
@@ -47,3 +47,9 @@
 		</div>
 	</div>
 {/if}
+<style>
+	.mapboxgl-marker.highlight {
+			transform: scale(1.5);
+			transition: transform 0.3s ease;
+	}
+</style>
