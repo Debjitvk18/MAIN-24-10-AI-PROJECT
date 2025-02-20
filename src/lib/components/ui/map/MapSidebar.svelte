@@ -3,6 +3,7 @@
 	import { highlightMarker } from '$lib/utils/mapUtils.js';
 	import { sanitizeId, truncateString } from '$lib/utils/generalUtils.js';
 	import { hoveredPostId } from '$lib/stores/mapStore.ts';
+	import Icon from '@iconify/svelte';
 
 	export let isSidebarVisible = true; // prop
 	export let socialMediaData = [];
@@ -55,6 +56,11 @@
 											<span class="text-sm font-medium text-gray-500 dark:text-gray-400">
 												{truncateString(post.description, 250)}
 											</span>
+											{#if post.price}
+												<span class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1">
+													<Icon icon="grommet-icons:money" /> {post.currency}{post.price}
+												</span>
+											{/if}
 										</div>
 									</a>
 								</div>

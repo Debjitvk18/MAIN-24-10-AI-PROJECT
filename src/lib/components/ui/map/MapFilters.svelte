@@ -46,7 +46,7 @@
 
 	// Function to initialize values from URL parameters
 	function initializeURLData() {
-  		 // check if data present in the url
+		// check if data present in the url
 		const selectedLocationFromURL = getDataFromURL('search');
 		const selectedKeywordOrHashtags = getDataFromURL('keywords');
 		const selectedLatitudeFromURL = getDataFromURL('lat');
@@ -81,14 +81,14 @@
 		radiusValue = [parseInt(rawRadius, 10) || 1];
 		resolutionValue = [parseInt(rawResolution, 10) || 5];
 
-			if(selectedKeywordOrHashtags && keywordsOrHashtags == "") {
-				keywordsOrHashtags = selectedKeywordOrHashtags;
-			}
-  	}
+		if (selectedKeywordOrHashtags && keywordsOrHashtags == '') {
+			keywordsOrHashtags = selectedKeywordOrHashtags;
+		}
+	}
 
 	onMount(async () => {
 		// setTimeout(async () => {
-			await initializeURLData();
+		await initializeURLData();
 		// },5000)
 	});
 
@@ -100,8 +100,8 @@
 				? [...selectedSource, source].filter((v, i, a) => a.indexOf(v) === i)
 				: selectedSource.filter((s) => s !== source)
 			: enable
-			? [source]
-			: [];
+				? [source]
+				: [];
 	}
 
 	// Initialize MapService
@@ -117,12 +117,20 @@
 	let enableLinkedin = $state(true);
 	$effect(() => toggleSource(enableLinkedin, 'linkedin'));
 
+	let enableFacebook = $state(true);
+	$effect(() => toggleSource(enableFacebook, 'facebook'));
+
+	let enableFacebookMarketPlace = $state(true);
+	$effect(() => toggleSource(enableFacebookMarketPlace, 'facebook-marketplace'));
+
 	$effect(() => {
 		const features = getDataFromURL('features[]');
-		if (Array.isArray(features) && features.length > 0  ) {
+		if (Array.isArray(features) && features.length > 0) {
 			enableTwitter = features.includes('x-twitter');
 			enablePanoids = features.includes('streetview');
 			enableLinkedin = features.includes('linkedin');
+			enableFacebook = features.includes('facebook');
+			enableFacebookMarketPlace = features.includes('facebook-marketplace');
 		}
 	});
 
@@ -135,12 +143,14 @@
 
 	async function applyFilters() {
 		await initializeURLData();
-		toggleSource(enableTwitter, 'x-twitter')
-		toggleSource(enablePanoids, 'streetview')
-		toggleSource(enableLinkedin, 'linkedin')
+		toggleSource(enableTwitter, 'x-twitter');
+		toggleSource(enablePanoids, 'streetview');
+		toggleSource(enableLinkedin, 'linkedin');
+		toggleSource(enableFacebook, 'facebook');
+		toggleSource(enableFacebookMarketPlace, 'facebook-marketplace');
 
-		removeDataFromURL('request_id')
-		removeDataFromURL('req_id')
+		removeDataFromURL('request_id');
+		removeDataFromURL('req_id');
 
 		if (!selectedLocation) {
 			errorMessages = { address: ['Please select a location to continue.'] };
@@ -164,7 +174,7 @@
 			start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
 			end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
 			features: selectedSource,
-			keywords: keywordsOrHashtags,
+			keywords: keywordsOrHashtags
 		};
 
 		try {
@@ -242,13 +252,14 @@
 			<Card.Root class="mb-4 mt-2">
 				<Card.Header>
 					<Card.Title>Keywords or Hashtags</Card.Title>
-					<Card.Description>Enter keywords, e.g., <code class="text-pink-600">keyword1, keyword2</code>, or hashtags, e.g.,
+					<Card.Description>Enter keywords, e.g., <code class="text-pink-600">keyword1, keyword2</code>, or hashtags,
+						e.g.,
 						<code class="text-pink-600">#ElonMusk, #chatGPT</code>, separated by commas.
 					</Card.Description>
 				</Card.Header>
 				<Card.Content>
 					<div class="space-y-4">
-						<Input placeholder="Enter keyword or hashtags" bind:value={keywordsOrHashtags} />
+						<Input bind:value={keywordsOrHashtags} placeholder="Enter keyword or hashtags" />
 					</div>
 				</Card.Content>
 			</Card.Root>
@@ -282,6 +293,29 @@
 									</div>
 								</div>
 								<Switch bind:enableLinkedin checked={enableLinkedin} on:click={enableLinkedin = !enableLinkedin} />
+							</div>
+
+							<!-- Facebook -->
+							<div class="flex items-center justify-between space-x-4">
+								<div class="flex items-center space-x-4">
+									<Icon class="w-6 h-6" icon="mdi:facebook" />
+									<div>
+										<p class="text-sm font-medium leading-none">Facebook</p>
+									</div>
+								</div>
+								<Switch bind:enableFacebook checked={enableFacebook} on:click={enableFacebook = !enableFacebook} />
+							</div>
+
+							<!-- Facebook Marketplace -->
+							<div class="flex items-center justify-between space-x-4">
+								<div class="flex items-center space-x-4">
+									<Icon class="w-6 h-6" icon="healthicons:market-stall" />
+									<div>
+										<p class="text-sm font-medium leading-none">Facebook Marketplace</p>
+									</div>
+								</div>
+								<Switch bind:enableFacebookMarketPlace checked={enableFacebookMarketPlace}
+												on:click={enableFacebookMarketPlace = !enableFacebookMarketPlace} />
 							</div>
 
 							<!-- Panoids -->
