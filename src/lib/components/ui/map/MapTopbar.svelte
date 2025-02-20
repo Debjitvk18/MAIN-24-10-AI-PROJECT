@@ -18,8 +18,8 @@
 		twitter: { icon: 'ri:twitter-x-fill', label: 'X (Twitter)' },
 		panoids: { icon: 'lucide:map-pinned', label: 'Panoids' },
 		linkedin: { icon: 'mdi:linkedin', label: 'Linkedin' },
-		facebook: { icon: 'mdi:facebook', label: 'Facebook' },
-		'facebook-marketplace': { icon: 'healthicons:market-stall', label: 'Facebook Marketplace' }
+		facebook: { icon: 'lucide:facebook', label: 'Facebook' },
+		'facebook-marketplace': { icon: 'lucide:facebook', label: 'Marketplace' }
 	};
 </script>
 

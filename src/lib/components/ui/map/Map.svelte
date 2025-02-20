@@ -272,9 +272,9 @@
 				id: post.id,
 				title: post.message,
 				description: post.message,
-				image: post.actors[0].profile_picture || FacebookIconImg,
-				lat: post.explicit_place.latitude ?? null,
-				lng: post.explicit_place.latitude ?? null,
+				image: post.actors[0]?.profile_picture || FacebookIconImg,
+				lat: post.explicit_place?.latitude ?? null,
+				lng: post.explicit_place?.longitude ?? null,
 				url: post.url ?? '#'
 			};
 		});
@@ -291,17 +291,19 @@
 
 	function facebookMarketplaceView(data) {
 		const posts = data.data.marketplace_search.feed_units.edges.map((post) => {
-			return {
-				id: post.node.id,
-				title: post.node.data.title || '',
-				description: post.node.description || '',
-				image: post.node.photo.image.uri || FacebookMarketPlaceIconImg,
-				lat: null,
-				lng: null,
-				url: post.node.link ?? '#',
-				price: post.node.data.price.amount_with_offset,
-				currency: post.node.data.price.currency
-			};
+			if(post.node?.data?.title) {
+				return {
+					id: post.node.id,
+					title: post.node?.data?.title || '',
+					description: post.node?.data?.description || '',
+					image: post.node?.photo?.image?.uri || FacebookMarketPlaceIconImg,
+					lat: null,
+					lng: null,
+					url: post.node?.link ?? '#',
+					price: post.node?.data?.price?.amount_with_offset || null,
+					currency: post.node?.data?.price?.currency || null
+				};
+			}
 		}) || [];
 
 		const marketplaceData = {
@@ -729,7 +731,7 @@
 
 	function filterValidPosts(posts: { lat: number; lng: number }[], shape: any) {
 		return posts.filter((post) => {
-			if (post.lat !== null && post.lng !== null) {
+			if (post && post.lat !== null && post.lng !== null) {
 				return true;
 
 				// check if lat/lng is in the radius circle.
@@ -786,7 +788,7 @@
 
 			// Add posts marker having valid lat/lng inside the circle
 			validPosts.forEach((post) => {
-				if (pointsAdded < count) {
+				if (post && pointsAdded < count) {
 					markersForType[post.id] = createMarker(
 						socialMediaIcons[type],
 						[post.lng, post.lat],
@@ -797,10 +799,9 @@
 				}
 			});
 
-
-			const invalidPosts = posts.filter((post) => !validPosts.some((validPost) => validPost.id === post.id));
+			const invalidPosts = posts.filter((post) => post && !validPosts.some((validPost) => validPost.id === post.id));
 			invalidPosts.forEach((post) => {
-				if (pointsAdded < count) {
+				if (post && pointsAdded < count) {
 					const randomPoints = generateRandomValidPoints(1, circle);
 					const randomPoint = randomPoints[0];
 					if (randomPoint && randomPoint.length === 2) {
@@ -817,7 +818,6 @@
 
 			markers[type] = markersForType;
 		});
-
 
 		// finalizing the map
 		setTimeout(() => {
