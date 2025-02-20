@@ -24,8 +24,8 @@
 	<div class="flex-1 space-y-4">
 		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Search Request</h2>
 		<GetBack url={`/my-requests`} />
-		{#if data.searchRequest.length !== 0}
-			<a href={loadOnMapUrl(searchRequest)} class={`${buttonVariants({ variant: "outline" })} float-end`} target="">
+		{#if data.searchRequest.length !== 0 && data.searchRequest.is_completed}
+			<a href={loadOnMapUrl(searchRequest)} class={`${buttonVariants({ variant: "outline" })} float-end`} target="_blank">
 				<Icon icon="quill:link-out" class="me-2" /> Load on Map
 			</a>
 		{/if}

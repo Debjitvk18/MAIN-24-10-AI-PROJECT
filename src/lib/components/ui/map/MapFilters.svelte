@@ -214,9 +214,9 @@
 <Sheet.Root>
 	<Sheet.Trigger>
 		<Button
-			class="py-2.5 px-5 me-2 text-sm text-gray-500 hover:text-black bg-white hover:bg-gray-100 border rounded-lg border-gray-300 hover:border-black inline-flex items-center">
-			<Icon class="w-6 h-6 me-2" icon="mage:filter" />
-			Filters
+		variant="outline">
+			<Icon class="w-6 h-6 md:me-2 sm:me-0" icon="mage:filter" />
+			<span class="hidden md:inline">Filters</span> 
 		</Button>
 	</Sheet.Trigger>
 	<Sheet.Content class="flex flex-col h-full" side="right">
