@@ -298,7 +298,7 @@
 							<!-- Facebook -->
 							<div class="flex items-center justify-between space-x-4">
 								<div class="flex items-center space-x-4">
-									<Icon class="w-6 h-6" icon="mdi:facebook" />
+									<Icon class="w-6 h-6" icon="lucide:facebook" />
 									<div>
 										<p class="text-sm font-medium leading-none">Facebook</p>
 									</div>
@@ -309,7 +309,7 @@
 							<!-- Facebook Marketplace -->
 							<div class="flex items-center justify-between space-x-4">
 								<div class="flex items-center space-x-4">
-									<Icon class="w-6 h-6" icon="healthicons:market-stall" />
+									<Icon class="w-6 h-6" icon="lucide:facebook" />
 									<div>
 										<p class="text-sm font-medium leading-none">Facebook Marketplace</p>
 									</div>

@@ -43,8 +43,8 @@
 
 		const payload = {
 			title: formData.title,
-			refresh_frequency: formData.refreshFrequency.value || REFRESH_FREQUENCY_OPTIONS[0],
-			auto_update_email: formData.notifyEmail,
+			frequency: formData.refreshFrequency.value || REFRESH_FREQUENCY_OPTIONS[0],
+			notify: formData.notifyEmail,
 			request_id: formData.requestID
 		};
 
