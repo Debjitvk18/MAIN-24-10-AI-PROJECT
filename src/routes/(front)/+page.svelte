@@ -3,7 +3,6 @@
 	import TestimoinalCard from '$lib/components/ui/card/TestimoinalCard.svelte';
 	import Faq from '$lib/components/ui/home/Faq.svelte';
 	import Pricing from '$lib/components/ui/pricing/Pricing.svelte';
-	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import FacebookIcon from '$lib/assets/svg/marker/fb-mark.svg?raw';
@@ -167,7 +166,6 @@
 		try {
 			const res = await apiService.makeApiCall(`map/image-search/`, formData, 'POST', 'formdata');
 			if (res.success) {
-				console.log('xUpload successful:', res);
 				let lat = res.search_request.request_params.latitude
 				let long = res.search_request.request_params.longitude
 				let id = res.search_request.id

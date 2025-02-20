@@ -16,23 +16,36 @@
 	import { MapService } from '$lib/services/map-service';
 
 	// Constants
-	import { API_BASE_URL, MAPBOX_THEMES, PANOID_BASE_URL } from '$lib/constants/constants';
+	import {
+		API_BASE_URL,
+		MAPBOX_THEMES,
+		MARKER_FONT_SIZE,
+		PANOID_BASE_URL,
+		SOCIAL_MARKER_CLASS
+	} from '$lib/constants/constants';
 
 	// Utility functions
-	import { getDataFromURL, putDataInURL, toggleFullScreen, truncateString } from '$lib/utils/generalUtils';
-	import { highlightMarker, parseCoordinates } from '$lib/utils/mapUtils';
+	import { getDataFromURL, putDataInURL, removeDataFromURL, toggleFullScreen } from '$lib/utils/generalUtils';
+	import { handleMarkerHover, parseCoordinates } from '$lib/utils/mapUtils';
 
 	// SVG icons
 	import TwitterIcon from '$lib/assets/svg/marker/x-pin.svg?raw';
 	import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
+	import PanoidsIconImg from '$lib/assets/svg/marker/panoids-pin.svg';
+	import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
+	import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
+	import FacebookIconImg from '$lib/assets/svg/marker/facebook-pin.svg';
+	import FacebookMarketPlaceIcon from '$lib/assets/svg/marker/facebook-marketplace-pin.svg?raw';
+	import FacebookMarketPlaceIconImg from '$lib/assets/svg/marker/facebook-marketplace-pin.svg';
 
 	// UI Components
-	import { showToast } from '$lib/stores/toastStore';
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
 
 	// Icon Component
 	import MapTopbar from '$lib/components/ui/map/MapTopbar.svelte';
 	import MapSidebar from '$lib/components/ui/map/MapSidebar.svelte';
+	import { searchRequestID } from '$lib/stores/mapStore';
+	import ErrorDialog from '$lib/components/general/dialog/ErrorDialog.svelte';
 
 	// Default Data...
 	let showLoadingOverlay = false;
@@ -46,12 +59,12 @@
 	let map: mapboxgl.Map;
 	let mapContainer: HTMLElement;
 	let showSidebar = false;
-	let errorMessages: string[] = []; // validation errors
-	const mapService = new MapService();
 	let reqId: number;
-	let reqLate: number;
+	let reqLat: number;
 	let reqLong: number;
 	let request_id: number;
+	let showErrorDialog = false;
+	let errorResponse = {};
 
 	/**
 	 * A boolean variable that indicates the visibility state of a sidebar component.
@@ -62,13 +75,6 @@
 	let isSidebarVisible = false;
 
 	let mapMarker = null; // set by onclick on map
-
-	// save results form data
-	let saveResultsFormData = {
-		title: '',
-		refreshFrequency: 'No Refresh',
-		autoUpdateEmail: false
-	};
 
 	// Markers for social media types
 	let markers: { [key: string]: mapboxgl.Marker[] } = {};
@@ -85,83 +91,13 @@
 	const unsubscribe = page.subscribe(($page) => {
 		searchQuery = $page.url.searchParams.get('search') || '';
 		reqId = $page.url.searchParams.get('req_id') || '';
-		reqLate = $page.url.searchParams.get('lat') || '';
+		reqLat = $page.url.searchParams.get('lat') || '';
 		reqLong = $page.url.searchParams.get('long') || '';
 		request_id = $page.url.searchParams.get('request_id') || '';
 
+		// save request id to store, to use in the save search popup.
+		searchRequestID.set(Number(request_id || reqId));
 	});
-
-	/**
-	 * Determines if the "Auto Update Email" functionality should be shown
-	 * based on the refresh frequency setting in the form data. If the refresh
-	 * frequency is not set to 'No Refresh', it returns true. Otherwise, it disables
-	 * the auto update email option and returns false.
-	 *
-	 * @return {boolean} Returns true if the refresh frequency is not 'No Refresh', otherwise false.
-	 */
-	function showAutoUpdateEmail() {
-		if (saveResultsFormData.refreshFrequency !== 'No Refresh') {
-			return true;
-		}
-
-		saveResultsFormData.autoUpdateEmail = false;
-		return false;
-	}
-
-	/**
-	 * Handles the saving of results when triggered by a form event. Prevents the default action of the event,
-	 * sends a request to save the results, and manages the UI state and notifications based on the response.
-	 *
-	 * @param {Event} event The event triggered by the user interaction, typically a form submission.
-	 * @return {Promise<void>} A promise that resolves when the save operation completes, either successfully or with errors.
-	 */
-	async function handleSaveResults(event: Event) {
-		event.preventDefault();
-		isLoading = true;
-
-		try {
-			const data = await mapService.saveResults({
-				title: saveResultsFormData.title,
-				refresh_frequency: saveResultsFormData.refreshFrequency,
-				auto_update_email: saveResultsFormData.autoUpdateEmail
-			});
-			if (data.success) {
-				showSaveModal = false;
-				saveResultsFormData = {
-					title: '',
-					refreshFrequency: 'No Refresh',
-					autoUpdateEmail: false
-				};
-
-				// show success message
-				showToast({ message: data.message });
-			} else {
-				handleErrors(data);
-			}
-		} catch (error) {
-			errorMessages.push('An unexpected error occurred.');
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	/**
-	 * Processes and formats error messages from a given response object.
-	 *
-	 * @param {object} data - The data containing error messages or information.
-	 * @returns {void} This function does not return a value; it manipulates the errorMessages array directly.
-	 */
-	function handleErrors(data: any) {
-		errorMessages = [];
-
-		if (data.errors) {
-			Object.keys(data.errors).forEach((key) => {
-				errorMessages.push(...data.errors[key]);
-			});
-		} else {
-			errorMessages.push(data.message || 'An error occurred');
-		}
-	}
 
 	/**
 	 * Creates a custom style switcher control for a Mapbox map, allowing users
@@ -181,14 +117,14 @@
 				this.container = document.createElement('div');
 				this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group cyberglobes-map-control';
 
-				const themeFromUrl = getDataFromURL('theme');
-				const select = this.createStyleSelector(themeFromUrl);
+				const mapActiveTheme = getDataFromURL('theme');
+				const select = this.createStyleSelector(mapActiveTheme);
 				this.container.appendChild(select);
 				return this.container;
 			}
 
 			// Create Style Switch Dropdown
-			createStyleSelector(themeFromUrl) {
+			createStyleSelector(mapActiveTheme) {
 				const select = document.createElement('select');
 				select.className = 'style-switcher p-3 shadow-md rounded-md bg-white dark:bg-gray-950';
 
@@ -196,7 +132,7 @@
 					const option = document.createElement('option');
 					option.value = style;
 					option.textContent = name;
-					option.selected = `mapbox://styles/mapbox/${themeFromUrl}` === style;
+					option.selected = `mapbox://styles/mapbox/${mapActiveTheme}` === style;
 					select.appendChild(option);
 
 					if (option.selected) {
@@ -274,48 +210,119 @@
 		return new FullScreenControl();
 	}
 
-	function twitterView(data)
-	{
+	function twitterView(data) {
 		const posts = data.tweets.map((tweetObj) => {
-		const tweet = tweetObj.tweet;
-		const user = tweet.user_details;
-		const place = tweet.place ?? null;
-		let lat = null;
-		let lng = null;
-		if (place) {
-			lat = place.bounding_box.coordinates[0][0][1];
-			lng = place.bounding_box.coordinates[0][0][0];
-		}
+			const tweet = tweetObj.tweet;
+			const user = tweet.user_details;
+			const place = tweet.place ?? null;
+			let lat = null;
+			let lng = null;
+			if (place) {
+				lat = place.bounding_box.coordinates[0][0][1];
+				lng = place.bounding_box.coordinates[0][0][0];
+			}
 
-		return {
-			id: tweetObj.entryId,
-			title: tweet.full_text,
-			description: tweet.full_text,
-			image: user.profile_image_url_https,
-			lat,
-			lng,
-			url: tweet?.url ?? '#'
+			return {
+				id: tweetObj.entryId,
+				title: tweet.full_text,
+				description: tweet.full_text,
+				image: user.profile_image_url_https,
+				lat,
+				lng,
+				url: tweet?.url ?? '#'
+			};
+		});
+
+		const twitterData = {
+			type: 'twitter',
+			count: posts.length,
+			icon: TwitterIcon,
+			posts: posts
 		};
-	});
 
-	const twitterData = {
-		type: 'twitter',
-		count: posts.length,
-		icon: TwitterIcon,
-		posts: posts
-	};
-
-	socialMediaJson.push(twitterData);
+		socialMediaJson.push(twitterData);
 	}
 
-	function panoidView(data)
-	{
+	function linkedInView(data) {
+		const posts = data.posts.map((post) => {
+			return {
+				id: post.urn,
+				title: post.text,
+				description: post.text,
+				image: post.post_image || post.author.image_url,
+				lat: null,
+				lng: null,
+				url: post.url ?? '#'
+			};
+		});
+
+		const linkedInData = {
+			type: 'linkedin',
+			count: posts.length,
+			icon: LinkedInIcon,
+			posts: posts
+		};
+
+		socialMediaJson.push(linkedInData);
+	}
+
+	function facebookView(data) {
+		const posts = data.results.map((post) => {
+			return {
+				id: post.id,
+				title: post.message,
+				description: post.message,
+				image: post.actors[0]?.profile_picture || FacebookIconImg,
+				lat: post.explicit_place?.latitude ?? null,
+				lng: post.explicit_place?.longitude ?? null,
+				url: post.url ?? '#'
+			};
+		});
+
+		const facebookData = {
+			type: 'facebook',
+			count: posts.length,
+			icon: FacebookIcon,
+			posts: posts
+		};
+
+		socialMediaJson.push(facebookData);
+	}
+
+	function facebookMarketplaceView(data) {
+		const posts = data.data.marketplace_search.feed_units.edges.map((post) => {
+			if(post.node?.data?.title) {
+				return {
+					id: post.node.id,
+					title: post.node?.data?.title || '',
+					description: post.node?.data?.description || '',
+					image: post.node?.photo?.image?.uri || FacebookMarketPlaceIconImg,
+					lat: null,
+					lng: null,
+					url: post.node?.link ?? '#',
+					price: post.node?.data?.price?.amount_with_offset || null,
+					currency: post.node?.data?.price?.currency || null
+				};
+			}
+		}) || [];
+
+		const marketplaceData = {
+			type: 'facebook-marketplace',
+			count: posts.length,
+			icon: FacebookMarketPlaceIcon,
+			posts: posts
+		};
+
+		socialMediaJson.push(marketplaceData);
+	}
+
+	function panoidView(data) {
 		const posts = data.panoids.map((panoid) => {
-		return {
+			return {
 				id: panoid.panoid,
 				title: `panoid - ${panoid.panoid}`,
 				description: `description - ${panoid.panoid}`,
-				image: '',
+				image: PanoidsIconImg,
 				lat: panoid.lat,
 				lng: panoid.lon,
 				url: `${PANOID_BASE_URL}${panoid.panoid}`
@@ -381,6 +388,9 @@
 		map.addControl(createFullScreenControl(), 'top-right');
 
 		map.on('load', () => {
+			showErrorDialog = false;
+			errorResponse = {};
+
 			map.addSource('single-point', {
 				type: 'geojson',
 				data: {
@@ -463,88 +473,155 @@
 				}, 3000);
 
 				// make api call to get social media posts
-			  if (!request_id) {
-				setTimeout(async () => {
-					overlayLoadingText = 'Fetching social media posts';
-					const mapService = new MapService();
-					let search_id;
-					if (!reqId) {
-						const response = await mapService.getMapResults({
-							address,
-							latitude: lat,
-							longitude: lng
-						});
-						if (!response.success) {
-							// hide loader
-							showLoadingOverlay = false;
-							return false;
+				if (!request_id) {
+					setTimeout(async () => {
+						overlayLoadingText = 'Fetching social media posts';
+						const mapService = new MapService();
+						let search_id;
+						if (!reqId) {
+							let preData = {
+								address,
+								latitude: lat,
+								longitude: lng
+							};
+							if (getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
+								preData.features = getDataFromURL('features[]');
+							} else {
+								preData.features = ['streetview', 'x-twitter', 'linkedin', 'facebook', 'facebook-marketplace'];
+							}
+							const response = await mapService.getMapResults(preData);
+							if (!response.success) {
+								// hide loader
+								showLoadingOverlay = false;
+
+								// show MapError Dialog
+								showErrorDialog = true;
+								errorResponse = response;
+								return false;
+							}
+							search_id = response.search_id;
+						} else {
+							search_id = reqId;
+							removeDataFromURL('req_id');
 						}
-						search_id = response.search_id;
-					} else {
-						search_id = reqId;
-						putDataInURL('req_id', '');
-					}
 
-					const source = new EventSource(`${API_BASE_URL}map/search-sse/${search_id}`);
+						searchRequestID.set(Number(search_id));
 
-					// streeview.
-					source.addEventListener('streetview', function(e) {
-						const data = JSON.parse(e.data);
-						panoidView(data);
-					});
+						const source = new EventSource(`${API_BASE_URL}map/search-sse/${search_id}`);
 
-					// twitter.
-					source.addEventListener('x-twitter', function(e) {
-						const data = JSON.parse(e.data);
-						console.log(data, 'here')
-						twitterView(data);
-					});
+						// streeview.
+						source.addEventListener('streetview', function(e) {
+							const data = JSON.parse(e.data);
+							panoidView(data);
+						});
 
-					// streetview error.
-					source.addEventListener('streetview_error', function(e) {
-						const data = JSON.parse(e.data);
-					});
+						// twitter.
+						source.addEventListener('x-twitter', function(e) {
+							const data = JSON.parse(e.data);
+							twitterView(data);
+						});
 
-					// Twitter error.
-					source.addEventListener('x-twitter_error', function(e) {
-						const data = JSON.parse(e.data);
-					});
+						// LinkedIn.
+						source.addEventListener('linkedin', function(e) {
+							const data = JSON.parse(e.data);
+							linkedInView(data);
+						});
 
-					// Error.
-					source.addEventListener('error', function(e) {
-						const data = JSON.parse(e.data);
-						source.close();
-						overlayLoadingText = 'Something went wrong, please try again';
-					});
+						// LinkedIn error.
+						source.addEventListener('linkedin_error', function(e) {
+							const data = JSON.parse(e.data);
+						});
 
-					// Done.
-					source.addEventListener('done', function(e) {
-						const data = JSON.parse(e.data);
-						source.close();
+						// Facebook.
+						source.addEventListener('facebook', function(e) {
+							const data = JSON.parse(e.data);
+							facebookView(data);
+						});
 
-						// socialMediaJson
-						displaySocialMediaPosts();
-					});
-				}, 4000);
+						// Facebook error.
+						source.addEventListener('facebook_error', function(e) {
+							const data = JSON.parse(e.data);
+						});
 
-			  } else{
+						// Facebook Marketplace.
+						source.addEventListener('facebook-marketplace', function(e) {
+							const data = JSON.parse(e.data);
+							facebookMarketplaceView(data);
+						});
+
+						// Facebook marketplace error.
+						source.addEventListener('facebook-marketplace_error', function(e) {
+							const data = JSON.parse(e.data);
+						});
+
+						// Twitter error.
+						source.addEventListener('x-twitter_error', function(e) {
+							const data = JSON.parse(e.data);
+						});
+
+						// Error.
+						source.addEventListener('error', function(e) {
+							const data = JSON.parse(e.data);
+							source.close();
+							overlayLoadingText = 'Something went wrong, please try again';
+						});
+
+						// Done.
+						source.addEventListener('done', function(e) {
+							const data = JSON.parse(e.data);
+							source.close();
+
+							// socialMediaJson
+							displaySocialMediaPosts();
+						});
+					}, 4000);
+
+				} else {
 					try {
 						let apiService = new ApiService();
 						const res = await apiService.makeApiCall(`search-requests/${request_id}`);
+
+						if (!res.success) {
+							// show MapError Dialog
+							showErrorDialog = true;
+							errorResponse = res;
+							return false;
+						}
+
+
 						if (res.success) {
 							// twitter.
 							const data = res;
-							if (data.responses && data.responses["x-twitter"]?.response) {
-								const tweetsData = data.responses["x-twitter"].response; 
-								twitterView(tweetsData)
+							if (data.responses && data.responses['x-twitter']?.response) {
+								const tweetsData = data.responses['x-twitter'].response;
+								twitterView(tweetsData);
 							}
+
+							// linkedin
+							if (data.responses && data.responses['linkedin']?.response) {
+								const linkedinData = data.responses['linkedin'].response;
+								linkedInView(linkedinData);
+							}
+
+							// Facebook
+							if (data.responses && data.responses['facebook']?.response) {
+								const facebookData = data.responses['facebook'].response;
+								facebookView(facebookData);
+							}
+
+							// Facebook Marketplace
+							if (data.responses && data.responses['facebook-marketplace']?.response) {
+								const facebookMarketplaceData = data.responses['facebook-marketplace'].response;
+								facebookMarketplaceView(facebookMarketplaceData);
+							}
+
 							// panoids.
-							if (data.responses && data.responses["streetview"]?.response) {
-								const panoidsData = data.responses["streetview"].response; 
+							if (data.responses && data.responses['streetview']?.response) {
+								const panoidsData = data.responses['streetview'].response;
 								panoidView(panoidsData);
 							}
 
-							setTimeout( async () => {
+							setTimeout(async () => {
 								showLoadingOverlay = false;
 								await displaySocialMediaPosts();
 							}, 4000);
@@ -553,7 +630,7 @@
 					} catch (error) {
 						console.error('Error in load function:', error.message);
 					}
-			  }
+				}
 			});
 
 			if (searchQuery) {
@@ -566,8 +643,8 @@
 				}
 			}
 
-			if ((reqId || request_id) && reqLate && reqLong) {
-				const lat = reqLate;
+			if ((reqId || request_id) && reqLat && reqLong) {
+				const lat = reqLat;
 				const lng = reqLong;
 				const coordinatesString = `${lng},${lat}`;
 
@@ -579,7 +656,6 @@
 
 				const handleResults = (event) => {
 					if (!isQueryExecuted && event.features.length > 0) {
-						console.log('Suggestions:', event.features);
 						const firstSuggestion = event.features[0];
 
 						geocoder.setInput(firstSuggestion.place_name);
@@ -600,11 +676,6 @@
 					}, 500);
 				}
 			}
-
-			// if(request_id) {
-			// 	console.log("Request", request_id)
-			// }
-
 		});
 	});
 
@@ -616,12 +687,79 @@
 		unsubscribe();
 	});
 
+
+	function createMarker(icon: string, coordinates: [number, number], isVisible: boolean, post: number): mapboxgl.Marker {
+		const el = document.createElement('div');
+		el.className = SOCIAL_MARKER_CLASS;
+		el.innerHTML = icon;
+		el.style.fontSize = MARKER_FONT_SIZE;
+		el.style.display = !isVisible ? 'none' : 'block';
+		el.style.cursor = 'pointer';
+		el.id = post.toString();
+
+		// Create the marker
+		const marker = new mapboxgl.Marker(el).setLngLat(coordinates).addTo(map);
+
+		// Create the popup with post.id
+		const popup = new mapboxgl.Popup({
+			closeButton: false,
+			closeOnClick: false,
+			offset: 25 // Moves popup above marker
+		}).setHTML(`
+			<div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    		<img src="${post.image}" style="width: 50px; height: 50px; border-radius: 50%;" alt="post"/>
+    		<p style="margin-top: 8px;">${post.title}</p>
+  	</div>
+		`);
+
+		// Attach popup to marker
+		marker.setPopup(popup);
+
+		// Show popup on hover
+		marker.getElement().addEventListener('mouseenter', () => {
+			marker.togglePopup();
+			handleMarkerHover(post.id);
+		});
+
+		marker.getElement().addEventListener('mouseleave', () => {
+			marker.togglePopup();
+			handleMarkerHover(null);
+		});
+
+		return marker;
+	}
+
+	function filterValidPosts(posts: { lat: number; lng: number }[], shape: any) {
+		return posts.filter((post) => {
+			if (post && post.lat !== null && post.lng !== null) {
+				return true;
+
+				// check if lat/lng is in the radius circle.
+				// const point = turf.point([post.lng, post.lat]);
+				// return turf.booleanPointInPolygon(point, shape);
+			}
+		});
+	}
+
+	function generateRandomValidPoints(count: number, circle: any) {
+		const points = [];
+		const randomPoints = turf.randomPoint(count, { bbox: turf.bbox(circle) });
+
+		randomPoints.features.forEach((feature) => {
+			if (turf.booleanPointInPolygon(feature, circle)) {
+				points.push(feature.geometry.coordinates);
+			}
+		});
+
+		return points;
+	}
+
+
 	/**
 	 * Displays social media posts on a map by positioning markers based on specified data types and counts.
-	 * The method initializes marker visibility, adds random points within a defined polygon, and updates the map state accordingly.
-	 * Includes asynchronous steps to finalize map view and update the user interface.
+	 * Prioritizes posts with lat/lng inside the circle for marker placement before randomly positioning.
 	 *
-	 * @return {void} Does not return a value; performs operations to display social media posts on a map.
+	 * @return {void} Updates the map with markers for social media posts.
 	 */
 	function displaySocialMediaPosts() {
 		socialMediaIcons = socialMediaJson.reduce((acc, { type, icon }) => {
@@ -630,7 +768,7 @@
 		}, {});
 
 		// get the social media data
-		socialMediaData = socialMediaJson.map(({ type, count }) => ({ type, count }));
+		socialMediaData = socialMediaJson.map(({ type, count, posts }) => ({ type, count, posts }));
 
 		// Visibility state for social media types
 		visibility = socialMediaData.reduce((acc, { type }) => {
@@ -639,33 +777,44 @@
 		}, {});
 
 		markers = {};
+
 		// Add social media markers
-		socialMediaData.forEach(({ type, count }) => {
+		socialMediaData.forEach(({ type, count, posts }) => {
 			let pointsAdded = 0;
-			const markersForType = [];
+			const validPosts = filterValidPosts(posts, circle);
+			const markersForType: mapboxgl.Marker[] = [];
 
 			overlayLoadingText = 'Setting up the social icons on map';
-			while (pointsAdded < count) {
-				const randomPoints = turf.randomPoint(count - pointsAdded, { bbox: turf.bbox(circle) });
-				console.log(turf.bbox(circle), 'randomPoints')
-				randomPoints.features.forEach((feature) => {
-					if (turf.booleanPointInPolygon(feature, circle) && pointsAdded < count) {
-						const coords = feature.geometry.coordinates;
-						const el = document.createElement('div');
-						el.className = 'social-marker';
-						el.innerHTML = socialMediaIcons[type];
-						el.style.fontSize = '20px';
 
-						const marker = new mapboxgl.Marker(el).setLngLat(coords).addTo(map);
+			// Add posts marker having valid lat/lng inside the circle
+			validPosts.forEach((post) => {
+				if (post && pointsAdded < count) {
+					markersForType[post.id] = createMarker(
+						socialMediaIcons[type],
+						[post.lng, post.lat],
+						visibility[type],
+						post
+					);
+					pointsAdded++;
+				}
+			});
 
-						// Hide marker if the type is not visible
-						if (!visibility[type]) marker.getElement().style.display = 'none';
-
-						markersForType.push(marker);
+			const invalidPosts = posts.filter((post) => post && !validPosts.some((validPost) => validPost.id === post.id));
+			invalidPosts.forEach((post) => {
+				if (post && pointsAdded < count) {
+					const randomPoints = generateRandomValidPoints(1, circle);
+					const randomPoint = randomPoints[0];
+					if (randomPoint && randomPoint.length === 2) {
+						markersForType[post.id] = createMarker(
+							socialMediaIcons[type],
+							[randomPoint[0], randomPoint[1]] as [number, number],
+							visibility[type],
+							post
+						);
 						pointsAdded++;
 					}
-				});
-			}
+				}
+			});
 
 			markers[type] = markersForType;
 		});
@@ -673,30 +822,23 @@
 		// finalizing the map
 		setTimeout(() => {
 			overlayLoadingText = 'Finalizing the map';
-			// set map zoom to fit the circle
 			const bounds = circle.geometry.coordinates[0].reduce(
-				(bounds, coord) => {
-					return bounds.extend(coord);
-				},
+				(bounds, coord) => bounds.extend(coord),
 				new mapboxgl.LngLatBounds(
 					circle.geometry.coordinates[0][0],
 					circle.geometry.coordinates[0][0]
 				)
 			);
-
 			map.fitBounds(bounds, { padding: 20 });
 		}, 2000);
 
-		// hide the loading overlay
 		setTimeout(() => {
 			overlayLoadingText = 'Almost done';
 		}, 3000);
 
-		// hide the loading overlay
 		setTimeout(() => {
 			overlayLoadingText = 'Almost done';
 			showLoadingOverlay = false;
-			// Show the sidebar once the circle and icons are added
 			showSidebar = true;
 			isSidebarVisible = true;
 		}, 4000);
@@ -713,7 +855,7 @@
 		visibility = { ...visibility, [type]: !visibility[type] };
 
 		// Show or hide markers
-		markers[type]?.forEach((marker) => {
+		Object.values(markers[type]).forEach((marker) => {
 			marker.getElement().style.display = visibility[type] ? 'block' : 'none';
 		});
 	}
@@ -739,6 +881,7 @@
 	/>
 </svelte:head>
 
+<ErrorDialog bind:isOpen={showErrorDialog} error={errorResponse} />
 <LoadingOverlay isLoading={showLoadingOverlay} loadingText={overlayLoadingText} />
 <div class={`h-screen flex flex-col ${isSidebarVisible ? 'sidebar-visible' : ''}`} id="map-container">
 	<!-- Topbar -->
@@ -760,6 +903,7 @@
 					socialMediaData={socialMediaJson}
 					markers={markers}
 					visibility={visibility}
+					map={map}
 				/>
 			</div>
 		{/if}
@@ -847,5 +991,4 @@
         width: calc(100% - 24rem);
         margin-left: 24rem; /* Same width as the sidebar */
     }
-
 </style>

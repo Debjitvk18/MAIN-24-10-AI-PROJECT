@@ -21,8 +21,9 @@
 	import { MapService } from '$lib/services/map-service';
 	import AlertError from '$lib/components/form/messages/AlertError.svelte';
 	import MapSearchBox from '$lib/components/ui/map/MapSearchBox.svelte';
-	import { getDataFromURL } from '$lib/utils/generalUtils';
+	import { getDataFromURL, removeDataFromURL } from '$lib/utils/generalUtils';
 	import { onMount } from 'svelte';
+	import { Input } from '$lib/components/ui/input';
 
 	const df = new DateFormatter('en-US', {
 		dateStyle: 'medium'
@@ -39,12 +40,15 @@
 	// Radius and Resolution slider
 	let radiusValue = $state([1]);
 	let resolutionValue = $state([5]);
+	let keywordsOrHashtags = $state('');
 
 	let selectedLocation = null;
 
-	onMount(() => {
+	// Function to initialize values from URL parameters
+	function initializeURLData() {
 		// check if data present in the url
 		const selectedLocationFromURL = getDataFromURL('search');
+		const selectedKeywordOrHashtags = getDataFromURL('keywords');
 		const selectedLatitudeFromURL = getDataFromURL('lat');
 		const selectedLongitudeFromURL = getDataFromURL('long');
 		const selectedFeaturesFromURL = getDataFromURL('features[]');
@@ -76,38 +80,57 @@
 		const rawResolution = getDataFromURL('resolution');
 		radiusValue = [parseInt(rawRadius, 10) || 1];
 		resolutionValue = [parseInt(rawResolution, 10) || 5];
+
+		if (selectedKeywordOrHashtags && keywordsOrHashtags == '') {
+			keywordsOrHashtags = selectedKeywordOrHashtags;
+		}
+	}
+
+	onMount(async () => {
+		// setTimeout(async () => {
+		await initializeURLData();
+		// },5000)
 	});
 
 	let startValue = $state<DateValue | undefined>(undefined);
 
+	function toggleSource(enable, source) {
+		selectedSource = Array.isArray(selectedSource)
+			? enable
+				? [...selectedSource, source].filter((v, i, a) => a.indexOf(v) === i)
+				: selectedSource.filter((s) => s !== source)
+			: enable
+				? [source]
+				: [];
+	}
 
 	// Initialize MapService
 	const mapService = new MapService();
 
 	// filter values
 	let enableTwitter = $state(true);
-	$effect(() => {
-		if (enableTwitter) {
-			selectedSource = Array.isArray(selectedSource)
-				? [...selectedSource, 'x-twitter'].filter((v, i, a) => a.indexOf(v) === i)
-				: ['x-twitter'];
-		} else {
-			selectedSource = Array.isArray(selectedSource)
-				? selectedSource.filter((source) => source !== 'x-twitter')
-				: [];
-		}
-	});
+	$effect(() => toggleSource(enableTwitter, 'x-twitter'));
 
 	let enablePanoids = $state(true);
+	$effect(() => toggleSource(enablePanoids, 'streetview'));
+
+	let enableLinkedin = $state(true);
+	$effect(() => toggleSource(enableLinkedin, 'linkedin'));
+
+	let enableFacebook = $state(true);
+	$effect(() => toggleSource(enableFacebook, 'facebook'));
+
+	let enableFacebookMarketPlace = $state(true);
+	$effect(() => toggleSource(enableFacebookMarketPlace, 'facebook-marketplace'));
+
 	$effect(() => {
-		if (enablePanoids) {
-			selectedSource = Array.isArray(selectedSource)
-				? [...selectedSource, 'streetview'].filter((v, i, a) => a.indexOf(v) === i)
-				: ['streetview'];
-		} else {
-			selectedSource = Array.isArray(selectedSource)
-				? selectedSource.filter((source) => source !== 'streetview')
-				: [];
+		const features = getDataFromURL('features[]');
+		if (Array.isArray(features) && features.length > 0) {
+			enableTwitter = features.includes('x-twitter');
+			enablePanoids = features.includes('streetview');
+			enableLinkedin = features.includes('linkedin');
+			enableFacebook = features.includes('facebook');
+			enableFacebookMarketPlace = features.includes('facebook-marketplace');
 		}
 	});
 
@@ -119,6 +142,16 @@
 	}
 
 	async function applyFilters() {
+		await initializeURLData();
+		toggleSource(enableTwitter, 'x-twitter');
+		toggleSource(enablePanoids, 'streetview');
+		toggleSource(enableLinkedin, 'linkedin');
+		toggleSource(enableFacebook, 'facebook');
+		toggleSource(enableFacebookMarketPlace, 'facebook-marketplace');
+
+		removeDataFromURL('request_id');
+		removeDataFromURL('req_id');
+
 		if (!selectedLocation) {
 			errorMessages = { address: ['Please select a location to continue.'] };
 			return;
@@ -140,7 +173,8 @@
 			resolution: resolutionValue[0],
 			start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
 			end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
-			features: selectedSource
+			features: selectedSource,
+			keywords: keywordsOrHashtags
 		};
 
 		try {
@@ -195,7 +229,7 @@
 
 		<AlertError errors={errorMessages} />
 
-		<div class="flex-1 overflow-y-auto border-t border-b border-gray-200 py-2">
+		<div class="flex-1 overflow-y-auto overflow-x-hidden border-t border-b border-gray-200 py-2">
 			<!-- Address Search -->
 			<Card.Root class="mb-4 mt-2">
 				<Card.Header>
@@ -210,6 +244,22 @@
 							redirectOnSelect={false}
 							showSearchButton={false}
 						/>
+					</div>
+				</Card.Content>
+			</Card.Root>
+
+			<!-- Keyword or Hashtag -->
+			<Card.Root class="mb-4 mt-2">
+				<Card.Header>
+					<Card.Title>Keywords or Hashtags</Card.Title>
+					<Card.Description>Enter keywords, e.g., <code class="text-pink-600">keyword1, keyword2</code>, or hashtags,
+						e.g.,
+						<code class="text-pink-600">#ElonMusk, #chatGPT</code>, separated by commas.
+					</Card.Description>
+				</Card.Header>
+				<Card.Content>
+					<div class="space-y-4">
+						<Input bind:value={keywordsOrHashtags} placeholder="Enter keyword or hashtags" />
 					</div>
 				</Card.Content>
 			</Card.Root>
@@ -232,6 +282,40 @@
 									</div>
 								</div>
 								<Switch bind:enableTwitter checked={enableTwitter} on:click={enableTwitter = !enableTwitter} />
+							</div>
+
+							<!-- Linkedin -->
+							<div class="flex items-center justify-between space-x-4">
+								<div class="flex items-center space-x-4">
+									<Icon class="w-6 h-6" icon="mdi:linkedin" />
+									<div>
+										<p class="text-sm font-medium leading-none">Linkedin</p>
+									</div>
+								</div>
+								<Switch bind:enableLinkedin checked={enableLinkedin} on:click={enableLinkedin = !enableLinkedin} />
+							</div>
+
+							<!-- Facebook -->
+							<div class="flex items-center justify-between space-x-4">
+								<div class="flex items-center space-x-4">
+									<Icon class="w-6 h-6" icon="mdi:facebook" />
+									<div>
+										<p class="text-sm font-medium leading-none">Facebook</p>
+									</div>
+								</div>
+								<Switch bind:enableFacebook checked={enableFacebook} on:click={enableFacebook = !enableFacebook} />
+							</div>
+
+							<!-- Facebook Marketplace -->
+							<div class="flex items-center justify-between space-x-4">
+								<div class="flex items-center space-x-4">
+									<Icon class="w-6 h-6" icon="healthicons:market-stall" />
+									<div>
+										<p class="text-sm font-medium leading-none">Facebook Marketplace</p>
+									</div>
+								</div>
+								<Switch bind:enableFacebookMarketPlace checked={enableFacebookMarketPlace}
+												on:click={enableFacebookMarketPlace = !enableFacebookMarketPlace} />
 							</div>
 
 							<!-- Panoids -->
@@ -306,7 +390,7 @@
 								<Button
 									builders={[builder]}
 									class={cn(
-										"w-[300px] justify-start text-left font-normal",
+										"justify-start text-left font-normal",
 										!datePickerValue && "text-muted-foreground"
 									)}
 									variant="outline">

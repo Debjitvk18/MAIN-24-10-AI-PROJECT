@@ -3,8 +3,9 @@
 	import * as Card from '$lib/components/ui/card/index.ts';
 	import NotFound from '$lib/components/general/NotFound.svelte';
 	import Icon from '@iconify/svelte';
-	import Badge from '$lib/components/ui/badge/badge.svelte';
-	import { formatDate } from '$lib/utils/generalUtils';
+	import { formatDate, loadOnMapUrl } from '$lib/utils/generalUtils';
+	import { buttonVariants } from "$lib/components/ui/button";
+	import GetBack from '$lib/components/general/GetBack.svelte';
 
 	export let data;
 	let searchRequest = data?.searchRequest;
@@ -14,14 +15,20 @@
 		streetview: 'lucide:map-pinned',
 		'x-twitter': 'ri:twitter-x-fill',
 		facebook: 'lucide:facebook',
-		googlenews: 'simple-icons:googlenews'
+		googlenews: 'simple-icons:googlenews',
+		linkedin: 'mdi:linkedin',
 	};
 </script>
 
 <div class="container max-w-100">
 	<div class="flex-1 space-y-4">
 		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Search Request</h2>
-
+		<GetBack url={`/my-requests`} />
+		{#if data.searchRequest.length !== 0}
+			<a href={loadOnMapUrl(searchRequest)} class={`${buttonVariants({ variant: "outline" })} float-end`} target="">
+				<Icon icon="quill:link-out" class="me-2" /> Load on Map
+			</a>
+		{/if}
 		<Card.Root class="col-span-4">
 			<Card.Content>
 				{#if data.searchRequest.length == 0}

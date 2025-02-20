@@ -13,7 +13,7 @@ export class MapService {
 	 * @returns {Promise<any>}
 	 */
 	async saveResults(payload) {
-		return this.apiService.makeApiCall('map/save-results', payload, 'POST');
+		return this.apiService.makeApiCall('save-request', payload, 'POST');
 	}
 
 	/**

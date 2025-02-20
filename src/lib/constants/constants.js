@@ -25,5 +25,14 @@ export const MAPBOX_THEMES = [
 	{ name: 'Mapbox Navigation Night', style: 'mapbox://styles/mapbox/navigation-night-v1' }
 ];
 
+export const REFRESH_FREQUENCY_OPTIONS = [
+	"No Refresh",
+	"Daily",
+	"Monthly",
+];
+
+
 export const MARKER_HIGHLIGHT_COLOR = '#448ee4';
 export const MARKER_DEFAULT_COLOR = 'black';
+export const SOCIAL_MARKER_CLASS = 'social-marker';
+export const MARKER_FONT_SIZE = '20px';

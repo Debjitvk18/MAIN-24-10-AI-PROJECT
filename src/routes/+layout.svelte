@@ -28,7 +28,7 @@
 </script>
 
 <!-- {#if !noLayoutRoutes.includes($page.url.pathname)} -->
-<Toaster />
+<Toaster richColors />
 
 {#if $page.data.layout !== false}
 	<div class="app-container">
