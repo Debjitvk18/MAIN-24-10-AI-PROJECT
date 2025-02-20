@@ -6,9 +6,15 @@
  * @returns {string} The truncated string.
  */
 export function truncateString(string, number = 50) {
+	// empty string?
+	if (typeof string !== 'string') {
+		return string;
+	}
+
 	if (string.length > number) {
 		return string.slice(0, number) + '...';
 	}
+
 	return string;
 }
 

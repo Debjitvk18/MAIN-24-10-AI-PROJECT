@@ -19,6 +19,8 @@
 		twitter: { icon: 'ri:twitter-x-fill', label: 'X (Twitter)' },
 		panoids: { icon: 'lucide:map-pinned', label: 'Panoids' },
 		linkedin: { icon: 'mdi:linkedin', label: 'Linkedin' },
+		facebook: { icon: 'lucide:facebook', label: 'Facebook' },
+		'facebook-marketplace': { icon: 'lucide:facebook', label: 'Marketplace' }
 	};
 
 

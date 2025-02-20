@@ -3,6 +3,8 @@
 	import { highlightMarker } from '$lib/utils/mapUtils.js';
 	import { sanitizeId, truncateString } from '$lib/utils/generalUtils.js';
 	import { hoveredPostId } from '$lib/stores/mapStore.ts';
+	import Icon from '@iconify/svelte';
+	import * as Avatar from "$lib/components/ui/avatar/index.ts";
 
 	export let isSidebarVisible = true; // prop
 	export let socialMediaData = [];
@@ -41,20 +43,28 @@
 				{#if socialMediaData}
 					{#each socialMediaData as socialMedia}
 						{#each socialMedia.posts as post}
-							{#if (visibility[socialMedia.type])}
+							{#if (visibility[socialMedia.type]) && (post) && (post.id)}
 								<div
 									class="post-row post-{sanitizeId(post.id)} bg-white p-4 rounded-lg shadow-md mt-4 border border-gray-300"
 									class:highlighted={activeHoveredPostId === post.id}
 									on:mouseover={() => highlightMarker(markers[socialMedia.type]?.[post.id], map, true)}
 									on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[post.id], map, false)}>
 									<a href={post.url} target="_blank" class="flex items-center gap-4">
-										<img class="h-12 w-12 rounded-full" src="{post.image}" alt="post" />
+										<Avatar.Root>
+											<Avatar.Image src="{post.image}" alt="post" />
+											<Avatar.Fallback>P</Avatar.Fallback>
+										</Avatar.Root>
 										<div class="flex flex-col">
 											<strong
 												class="text-sm font-medium text-gray-900 dark:text-gray-200">{truncateString(post.title, 50)}</strong>
 											<span class="text-sm font-medium text-gray-500 dark:text-gray-400">
 												{truncateString(post.description, 250)}
 											</span>
+											{#if post.price}
+												<span class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1">
+													<Icon icon="grommet-icons:money" /> {post.currency}{post.price}
+												</span>
+											{/if}
 										</div>
 									</a>
 								</div>

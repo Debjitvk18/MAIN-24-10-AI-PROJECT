@@ -33,6 +33,10 @@
 	import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
 	import PanoidsIconImg from '$lib/assets/svg/marker/panoids-pin.svg';
 	import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
+	import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
+	import FacebookIconImg from '$lib/assets/svg/marker/facebook-pin.svg';
+	import FacebookMarketPlaceIcon from '$lib/assets/svg/marker/facebook-marketplace-pin.svg?raw';
+	import FacebookMarketPlaceIconImg from '$lib/assets/svg/marker/facebook-marketplace-pin.svg';
 
 	// UI Components
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
@@ -262,6 +266,56 @@
 		socialMediaJson.push(linkedInData);
 	}
 
+	function facebookView(data) {
+		const posts = data.results.map((post) => {
+			return {
+				id: post.id,
+				title: post.message,
+				description: post.message,
+				image: post.actors[0]?.profile_picture || FacebookIconImg,
+				lat: post.explicit_place?.latitude ?? null,
+				lng: post.explicit_place?.longitude ?? null,
+				url: post.url ?? '#'
+			};
+		});
+
+		const facebookData = {
+			type: 'facebook',
+			count: posts.length,
+			icon: FacebookIcon,
+			posts: posts
+		};
+
+		socialMediaJson.push(facebookData);
+	}
+
+	function facebookMarketplaceView(data) {
+		const posts = data.data.marketplace_search.feed_units.edges.map((post) => {
+			if(post.node?.data?.title) {
+				return {
+					id: post.node.id,
+					title: post.node?.data?.title || '',
+					description: post.node?.data?.description || '',
+					image: post.node?.photo?.image?.uri || FacebookMarketPlaceIconImg,
+					lat: null,
+					lng: null,
+					url: post.node?.link ?? '#',
+					price: post.node?.data?.price?.amount_with_offset || null,
+					currency: post.node?.data?.price?.currency || null
+				};
+			}
+		}) || [];
+
+		const marketplaceData = {
+			type: 'facebook-marketplace',
+			count: posts.length,
+			icon: FacebookMarketPlaceIcon,
+			posts: posts
+		};
+
+		socialMediaJson.push(marketplaceData);
+	}
+
 	function panoidView(data) {
 		const posts = data.panoids.map((panoid) => {
 			return {
@@ -433,7 +487,7 @@
 							if (getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
 								preData.features = getDataFromURL('features[]');
 							} else {
-								preData.features = ['streetview', 'x-twitter', 'linkedin'];
+								preData.features = ['streetview', 'x-twitter', 'linkedin', 'facebook', 'facebook-marketplace'];
 							}
 							const response = await mapService.getMapResults(preData);
 							if (!response.success) {
@@ -478,6 +532,28 @@
 							const data = JSON.parse(e.data);
 						});
 
+						// Facebook.
+						source.addEventListener('facebook', function(e) {
+							const data = JSON.parse(e.data);
+							facebookView(data);
+						});
+
+						// Facebook error.
+						source.addEventListener('facebook_error', function(e) {
+							const data = JSON.parse(e.data);
+						});
+
+						// Facebook Marketplace.
+						source.addEventListener('facebook-marketplace', function(e) {
+							const data = JSON.parse(e.data);
+							facebookMarketplaceView(data);
+						});
+
+						// Facebook marketplace error.
+						source.addEventListener('facebook-marketplace_error', function(e) {
+							const data = JSON.parse(e.data);
+						});
+
 						// Twitter error.
 						source.addEventListener('x-twitter_error', function(e) {
 							const data = JSON.parse(e.data);
@@ -505,10 +581,10 @@
 						let apiService = new ApiService();
 						const res = await apiService.makeApiCall(`search-requests/${request_id}`);
 
-						if(!res.success) {
+						if (!res.success) {
 							// show MapError Dialog
 							showErrorDialog = true;
-							errorResponse = response;
+							errorResponse = res;
 							return false;
 						}
 
@@ -525,6 +601,18 @@
 							if (data.responses && data.responses['linkedin']?.response) {
 								const linkedinData = data.responses['linkedin'].response;
 								linkedInView(linkedinData);
+							}
+
+							// Facebook
+							if (data.responses && data.responses['facebook']?.response) {
+								const facebookData = data.responses['facebook'].response;
+								facebookView(facebookData);
+							}
+
+							// Facebook Marketplace
+							if (data.responses && data.responses['facebook-marketplace']?.response) {
+								const facebookMarketplaceData = data.responses['facebook-marketplace'].response;
+								facebookMarketplaceView(facebookMarketplaceData);
 							}
 
 							// panoids.
@@ -607,7 +695,7 @@
 		el.style.fontSize = MARKER_FONT_SIZE;
 		el.style.display = !isVisible ? 'none' : 'block';
 		el.style.cursor = 'pointer';
-		el.id = post.toString() ;
+		el.id = post.toString();
 
 		// Create the marker
 		const marker = new mapboxgl.Marker(el).setLngLat(coordinates).addTo(map);
@@ -643,7 +731,7 @@
 
 	function filterValidPosts(posts: { lat: number; lng: number }[], shape: any) {
 		return posts.filter((post) => {
-			if (post.lat !== null && post.lng !== null) {
+			if (post && post.lat !== null && post.lng !== null) {
 				return true;
 
 				// check if lat/lng is in the radius circle.
@@ -700,7 +788,7 @@
 
 			// Add posts marker having valid lat/lng inside the circle
 			validPosts.forEach((post) => {
-				if (pointsAdded < count) {
+				if (post && pointsAdded < count) {
 					markersForType[post.id] = createMarker(
 						socialMediaIcons[type],
 						[post.lng, post.lat],
@@ -711,10 +799,9 @@
 				}
 			});
 
-
-			const invalidPosts = posts.filter((post) => !validPosts.some((validPost) => validPost.id === post.id));
+			const invalidPosts = posts.filter((post) => post && !validPosts.some((validPost) => validPost.id === post.id));
 			invalidPosts.forEach((post) => {
-				if (pointsAdded < count) {
+				if (post && pointsAdded < count) {
 					const randomPoints = generateRandomValidPoints(1, circle);
 					const randomPoint = randomPoints[0];
 					if (randomPoint && randomPoint.length === 2) {
@@ -731,7 +818,6 @@
 
 			markers[type] = markersForType;
 		});
-
 
 		// finalizing the map
 		setTimeout(() => {
