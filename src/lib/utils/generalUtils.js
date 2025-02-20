@@ -161,3 +161,21 @@ export function sanitizeId(id) {
 	// Ensure that id is a string, or fallback to an empty string
 	return String(id).replace(/[^a-zA-Z0-9-_]/g, '-');
 }
+
+/**
+ * Checks if the user is on a mobile device.
+ * 
+ * This function determines if the user is using a mobile device based on:
+ * 1. The `navigator.userAgent` string, which detects mobile devices like iPhones, Androids, and iPads.
+ * 2. The `window.matchMedia` method, which checks if the screen width is `767px` or less.
+ * 
+ * @returns {boolean} - Returns `true` if the user is on a mobile device, otherwise `false`.
+ */
+export function isMobile() {
+	if (typeof window === "undefined" || typeof navigator === "undefined") {
+        return false; // Ensure this runs only in the browser
+    }
+
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) 
+        || window.matchMedia("(max-width: 767px)").matches;
+}

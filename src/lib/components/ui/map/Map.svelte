@@ -111,7 +111,7 @@
 			onAdd(map) {
 				this.map = map;
 				this.container = document.createElement('div');
-				this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group cyberglobes-map-control';
+				this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group cyberglobes-map-control relative bottom-9 sm:bottom-14';
 
 				const mapActiveTheme = getDataFromURL('theme');
 				const select = this.createStyleSelector(mapActiveTheme);
@@ -330,7 +330,7 @@
 			'top-right'
 		);
 
-		map.addControl(createStyleSwitcherControl(), 'top-left');
+		map.addControl(createStyleSwitcherControl(), 'bottom-right');
 		map.addControl(createFullScreenControl(), 'top-right');
 
 		map.on('load', () => {
