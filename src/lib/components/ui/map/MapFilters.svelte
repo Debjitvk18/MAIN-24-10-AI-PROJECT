@@ -23,6 +23,7 @@
 	import MapSearchBox from '$lib/components/ui/map/MapSearchBox.svelte';
 	import { getDataFromURL, removeDataFromURL } from '$lib/utils/generalUtils';
 	import { onMount } from 'svelte';
+	import { Input } from '$lib/components/ui/input';
 
 	const df = new DateFormatter('en-US', {
 		dateStyle: 'medium'
@@ -39,6 +40,7 @@
 	// Radius and Resolution slider
 	let radiusValue = $state([1]);
 	let resolutionValue = $state([5]);
+	let keywordsOrHashtags = $state('');
 
 	let selectedLocation = null;
 
@@ -46,6 +48,7 @@
 	function initializeURLData() {
   		 // check if data present in the url
 		const selectedLocationFromURL = getDataFromURL('search');
+		const selectedKeywordOrHashtags = getDataFromURL('keywords');
 		const selectedLatitudeFromURL = getDataFromURL('lat');
 		const selectedLongitudeFromURL = getDataFromURL('long');
 		const selectedFeaturesFromURL = getDataFromURL('features[]');
@@ -77,6 +80,10 @@
 		const rawResolution = getDataFromURL('resolution');
 		radiusValue = [parseInt(rawRadius, 10) || 1];
 		resolutionValue = [parseInt(rawResolution, 10) || 5];
+
+			if(selectedKeywordOrHashtags && keywordsOrHashtags == "") {
+				keywordsOrHashtags = selectedKeywordOrHashtags;
+			}
   	}
 
 	onMount(async () => {
@@ -156,7 +163,8 @@
 			resolution: resolutionValue[0],
 			start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
 			end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
-			features: selectedSource
+			features: selectedSource,
+			keywords: keywordsOrHashtags,
 		};
 
 		try {
@@ -226,6 +234,21 @@
 							redirectOnSelect={false}
 							showSearchButton={false}
 						/>
+					</div>
+				</Card.Content>
+			</Card.Root>
+
+			<!-- Keyword or Hashtag -->
+			<Card.Root class="mb-4 mt-2">
+				<Card.Header>
+					<Card.Title>Keywords or Hashtags</Card.Title>
+					<Card.Description>Enter keywords, e.g., <code class="text-pink-600">keyword1, keyword2</code>, or hashtags, e.g.,
+						<code class="text-pink-600">#ElonMusk, #chatGPT</code>, separated by commas.
+					</Card.Description>
+				</Card.Header>
+				<Card.Content>
+					<div class="space-y-4">
+						<Input placeholder="Enter keyword or hashtags" bind:value={keywordsOrHashtags} />
 					</div>
 				</Card.Content>
 			</Card.Root>
