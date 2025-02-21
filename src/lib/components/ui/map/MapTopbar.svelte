@@ -6,28 +6,20 @@
 	import MapFilters from '$lib/components/ui/map/MapFilters.svelte';
 	import SaveSearch from '$lib/components/ui/map/SaveSearch.svelte';
 	import { isLoggedIn } from '$lib/stores/authStore';
-	import { isMobile } from '$lib/utils/generalUtils.js';
+	import { getDataFromURL, isMobile } from '$lib/utils/generalUtils.js';
+	import { dataLoadingState, visibility } from '$lib/stores/mapStore';
+	import { SOCIAL_MEDIA_PLATFORMS } from '$lib/constants/constants.js';
+	import { onMount } from 'svelte';
 
-	export let isSidebarVisible; // prop
+	export let isSidebarVisible;
 	export let toggleSidebarVisibility;
 	export let socialMediaIcons = {};
 	export let toggleVisibility;
 	export let showSidebar = false;
-	export let visibility;
-
-	const SOCIAL_MEDIA_TABS = {
-		twitter: { icon: 'ri:twitter-x-fill', label: 'X (Twitter)' },
-		panoids: { icon: 'lucide:map-pinned', label: 'Panoids' },
-		linkedin: { icon: 'mdi:linkedin', label: 'Linkedin' },
-		facebook: { icon: 'lucide:facebook', label: 'Facebook' },
-		'facebook-marketplace': { icon: 'lucide:facebook', label: 'Marketplace' },
-		instagram: { icon: 'lucide:instagram', label: 'Instagram' },
-		"google-news": { icon: 'simple-icons:googlenews', label: 'Google News' },
-	};
 
 
 	$: {
-		if(isMobile() && Object.keys(socialMediaIcons).length > 0) {
+		if (isMobile() && Object.keys(socialMediaIcons).length > 0) {
 			setTimeout(() => {
 				isSidebarVisible = false;
 				toggleSidebarVisibility();
@@ -41,59 +33,74 @@
 	function toggleSettings() {
 		showSettings = !showSettings;
 	}
+
+	let features = SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => slug);
+	onMount(() => {
+		if (getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
+			features = getDataFromURL('features[]');
+		}
+	});
 </script>
 
 <div class="border-y border-gray-300 bg-white">
 	<div class="flex flex-wrap items-center justify-between px-2 py-3 shadow-md space-x-4">
-		
+
 		<!-- Wrapper for Social Media Tabs + Fixed Cog Icon -->
 		<div class="flex items-center w-full md:w-auto">
-			
+
 			<!-- Scrollable Social Media Tabs (Mobile) -->
 			<div class="flex space-x-4 md:space-x-6 overflow-x-auto md:overflow-visible scrollbar-hide w-full">
-				{#if socialMediaIcons && showSidebar}
-					{#each Object.keys(socialMediaIcons) as type, i}
-						{#if SOCIAL_MEDIA_TABS[type]}
-							<Tooltip.Root>
-								<Tooltip.Trigger>
-									<button 
-										on:click={() => toggleVisibility(type)}
-										class="flex flex-col items-center transition-all ease-in-out duration-200 
-												{visibility[type] ? 'text-gray-500 hover:text-black' : 'text-gray-300'}
-												p-0 rounded-md focus:outline-none"
-									>
-										<Icon class="w-7 h-7 md:w-6 md:h-6" icon={SOCIAL_MEDIA_TABS[type].icon} />
-										<span class="text-xs md:text-sm">{SOCIAL_MEDIA_TABS[type].label}</span>
-									</button>
-								</Tooltip.Trigger>
-								<Tooltip.Content>
-									<p>Click to toggle visibility</p>
-								</Tooltip.Content>
-							</Tooltip.Root>
-							
-							{#if i < Object.keys(socialMediaIcons).length - 1}
-								<span class="border border-gray-200"></span>
-							{/if}
+				{#if showSidebar}
+					{#each SOCIAL_MEDIA_PLATFORMS as platform}
+						{#if features.includes(platform.slug)}
+							<div
+								class="flex flex-col items-center space-y-1 {($visibility[platform.slug] && $dataLoadingState[platform.slug] !== 'loading') ? 'text-gray-500 hover:text-black' : 'text-gray-300'} cursor-pointer">
+								<Tooltip.Root>
+									<Tooltip.Trigger>
+										<div
+											role="button"
+											aria-pressed={($visibility[platform.slug] && $dataLoadingState[platform.slug] !== 'loading') ? 'true' : 'false'}
+											tabindex="0"
+											on:click={() => toggleVisibility(platform.slug)}
+											on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleVisibility(platform.slug)}
+											class="flex flex-col items-center cursor-pointer">
+										{#if $dataLoadingState && $dataLoadingState[platform.slug] === 'loading'}
+												<Icon class="w-7 h-7 md:w-6 md:h-6" icon="line-md:loading-twotone-loop" />
+											{:else if $dataLoadingState && $dataLoadingState[platform.slug] === 'error'}
+												<Icon class="w-7 h-7 md:w-6 md:h-6" icon="mdi:clock-warning" />
+											{:else if $dataLoadingState && $dataLoadingState[platform.slug] === "done"}
+												<Icon class="w-7 h-7 md:w-6 md:h-6" icon={platform.tabIcon} />
+											{:else }
+												<Icon class="w-7 h-7 md:w-6 md:h-6" icon={platform.tabIcon} />
+											{/if}
+											<span class="text-xs md:text-sm">{platform.name}</span>
+										</div>
+									</Tooltip.Trigger>
+									<Tooltip.Content>
+										<p>Click to toggle visibility</p>
+									</Tooltip.Content>
+								</Tooltip.Root>
+							</div>
 						{/if}
 					{/each}
 				{/if}
 			</div>
-			
+
 			<!-- Cog Icon (Only for Mobile & Tablet) -->
-			<button 
-				on:click={toggleSettings}
+			<button
 				class="ml-4 md:ml-6 lg:hidden flex-shrink-0 text-gray-600 hover:text-black transition-all"
+				on:click={toggleSettings}
 			>
 				<Icon class="w-7 h-7" icon="mdi:cog-outline" />
 			</button>
 		</div>
 
 		<!-- Sidebar, Filters & Save Search (Always Inline) -->
-		<div 
-			class="transition-all duration-300 ease-in-out transform w-full md:w-auto flex flex-wrap items-center space-x-4 
-			{showSettings ? 'opacity-100 scale-100 h-auto flex mt-2' : 'opacity-0 scale-95 h-0 overflow-hidden'} 
+		<div
+			class="transition-all duration-300 ease-in-out transform w-full md:w-auto flex flex-wrap items-center space-x-4
+			{showSettings ? 'opacity-100 scale-100 h-auto flex mt-2' : 'opacity-0 scale-95 h-0 overflow-hidden'}
 			lg:opacity-100 lg:scale-100 lg:h-auto lg:overflow-visible">
-			
+
 			<!-- Sidebar Visibility Toggle -->
 			{#if Object.keys(socialMediaIcons).length > 0}
 				<div class="flex items-center space-x-2">
@@ -119,15 +126,14 @@
 	</div>
 </div>
 
-
-
 <style>
-	/* Hide scrollbar for cleaner UI */
-	.scrollbar-hide::-webkit-scrollbar {
-		display: none;
-	}
-	.scrollbar-hide {
-		-ms-overflow-style: none;
-		scrollbar-width: none;
-	}
+    /* Hide scrollbar for cleaner UI */
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 </style>

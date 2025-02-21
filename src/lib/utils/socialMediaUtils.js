@@ -1,0 +1,181 @@
+import { PANOID_BASE_URL, SOCIAL_MEDIA_PLATFORMS } from '$lib/constants/constants.js';
+import PanoidsIconImg from '$lib/assets/svg/marker/panoids-pin.svg';
+import LinkedInIconImg from '$lib/assets/svg/marker/linkedin-pin.svg';
+import FacebookIconImg from '$lib/assets/svg/marker/facebook-pin.svg';
+import FacebookMarketPlaceIconImg from '$lib/assets/svg/marker/facebook-marketplace-pin.svg';
+import InstagramIconImg from '$lib/assets/svg/marker/insta-pin.svg';
+import GoogleNewsIconImg from '$lib/assets/svg/marker/google-news.svg';
+
+/**
+ * Generates a formatted object containing post data based on the input data and platform details.
+ *
+ * @param {Array} data - The array of input data to be processed into posts.
+ * @param {Object} platformDetails - Details about the platform used to map the data.
+ * @param {Function} platformDetails.mapFunction - A function to transform each item in the data array into a post.
+ * @param {string} platformDetails.type - The type of platform for which the posts are generated.
+ * @param {string} platformDetails.icon - The icon associated with the platform.
+ * @return {Object} - An object containing the type, count of posts, platform icon, and the generated posts.
+ */
+function generatePostData(data, platformDetails) {
+	const { mapFunction, type, icon } = platformDetails;
+	const posts = mapFunction(data);
+
+	return {
+		type,
+		count: posts.length,
+		icon,
+		posts
+	};
+}
+
+/**
+ * A collection of platform-specific parsers for extracting and normalizing data from various social media and mapping data sources.
+ * Each parser function processes platform-specific data and returns a normalized structure for further use.
+ *
+ * @type {Object<string, Function>}
+ *
+ * @property {Function} x-twitter - A parser for Twitter data. Processes tweet objects and returns normalized data with properties such as
+ * id, title, description, lat, lng, image, and URL.
+ *
+ * @property {Function} linkedin - A parser for LinkedIn post data. Extracts and normalizes post information including id, title, description,
+ * image, lat, lng, and URL.
+ *
+ * @property {Function} facebook - A parser for Facebook post data. Processes results of posts, normalizing id, title, description, image,
+ * lat, lng, and URL.
+ *
+ * @property {Function} facebook-marketplace - A parser for Facebook Marketplace data. Extracts product details like id, title, description,
+ * image, price, currency, and URL while normalizing them for consistent formatting.
+ *
+ * @property {Function} streetview - A parser for Google Street View data. Normalizes information from panoids to include id, title,
+ * description, image, lat, lng, and a URL for the panorama.
+ *
+ * @property {Function} google-news - A parser for Google News data. Extracts article information including id, title, image, URL, and a fallback image.
+ *
+ * @property {Function} instagram - A parser for Instagram media grid data. Processes media sections, extracting properties like id, title,
+ * description, image, URL, username, full name, profile picture URL, lat, lng, and fallback image.
+ */
+const PLATFORM_PARSERS = {
+	'x-twitter': (data) =>
+		data.tweets.map((tweetObj) => {
+			const tweet = tweetObj.tweet;
+			const user = tweet.user_details;
+			const place = tweet.place ?? null;
+			const [lng, lat] = place?.bounding_box.coordinates[0][0] || [null, null];
+
+			return {
+				id: tweetObj.entryId,
+				title: tweet.full_text,
+				description: tweet.full_text,
+				image: user.profile_image_url_https,
+				lat,
+				lng,
+				url: tweet?.url ?? '#'
+			};
+		}),
+
+	linkedin: (data) =>
+		data.posts.map((post) => ({
+			id: post.urn,
+			title: post.text,
+			description: post.text,
+			image: post.post_image || post.author.image_url || LinkedInIconImg,
+			lat: null,
+			lng: null,
+			url: post.url ?? '#'
+		})),
+
+	facebook: (data) =>
+		data.results.map((post) => ({
+			id: post.id,
+			title: post.message,
+			description: post.message,
+			image: post.actors[0]?.profile_picture || FacebookIconImg,
+			lat: post.explicit_place?.latitude ?? null,
+			lng: post.explicit_place?.longitude ?? null,
+			url: post.url ?? '#'
+		})),
+
+	'facebook-marketplace': (data) =>
+		data.data.marketplace_search.feed_units.edges
+			.map((post) => {
+				if (post.node?.data?.title) {
+					return {
+						id: post.node.id,
+						title: post.node?.data?.title || '',
+						description: post.node?.data?.description || '',
+						image: post.node?.photo?.image?.uri || FacebookMarketPlaceIconImg,
+						lat: null,
+						lng: null,
+						url: post.node?.link ?? '#',
+						price: post.node?.data?.price?.amount_with_offset || null,
+						currency: post.node?.data?.price?.currency || null
+					};
+				}
+			})
+			.filter(Boolean),
+
+	streetview: (data) =>
+		data.panoids.map((panoid) => ({
+			id: panoid.panoid,
+			title: `panoid - ${panoid.panoid}`,
+			description: `description - ${panoid.panoid}`,
+			image: PanoidsIconImg,
+			lat: panoid.lat,
+			lng: panoid.lon,
+			url: `${PANOID_BASE_URL}${panoid.panoid}`
+		})),
+
+	'google-news': (data) =>
+		data.news.map((article) => ({
+			id: article.position,
+			title: article.title,
+			image: article.imageUrl || GoogleNewsIconImg,
+			lat: null,
+			lng: null,
+			url: article.link,
+			fallback_image: GoogleNewsIconImg
+		})),
+
+	instagram: (data) =>
+		(data.media_grid?.sections || [])
+			.map((section) => {
+				const item = section?.layout_content?.one_by_two_item?.clips?.items?.[0]?.media;
+				if (item) {
+					return {
+						id: item.pk || null,
+						title: item?.caption?.text || '@' + item?.user?.username || 'Unknown',
+						description: item?.caption?.text || 'No description available',
+						image: item?.image_versions2?.candidates?.[0]?.url || InstagramIconImg,
+						url: item?.code ? `https://www.instagram.com/p/${item.code}/` : '#',
+						username: item?.user?.username || 'Unknown',
+						full_name: item?.user?.full_name || 'Unknown',
+						lat: null,
+						lng: null,
+						profile_pic_url: item?.user?.profile_pic_url || '',
+						fallback_image: InstagramIconImg
+					};
+				}
+			})
+			.filter(Boolean)
+};
+
+/**
+ * Parses the social media response data based on the specified platform.
+ *
+ * @param {Object} data - The raw response data from the social media platform.
+ * @param {string} platform - The name of the social media platform to parse the data for.
+ * @return {Object} An object containing parsed post data, platform type, icon, and post count.
+ */
+export function parseSocialMediaResponse(data, platform) {
+	const platformDetails = {
+		mapFunction: PLATFORM_PARSERS[platform],
+		type: platform,
+		icon: SOCIAL_MEDIA_PLATFORMS.find((p) => p.slug === platform)?.mapIcon
+	};
+
+	if (!platformDetails.mapFunction) {
+		return { type: platform, count: 0, icon: null, posts: [] };
+	}
+
+	return generatePostData(data, platformDetails);
+}

@@ -2,14 +2,12 @@
 	import MapNoData from '$lib/components/ui/map/MapNoData.svelte';
 	import { highlightMarker } from '$lib/utils/mapUtils.js';
 	import { sanitizeId, truncateString } from '$lib/utils/generalUtils.js';
-	import { hoveredPostId } from '$lib/stores/mapStore.ts';
+	import { hoveredPostId, socialMediaJson, visibility } from '$lib/stores/mapStore.ts';
 	import Icon from '@iconify/svelte';
-	import * as Avatar from "$lib/components/ui/avatar/index.ts";
+	import * as Avatar from '$lib/components/ui/avatar/index.ts';
 
 	export let isSidebarVisible = true; // prop
-	export let socialMediaData = [];
 	export let markers = {};
-	export let visibility;
 	export let map;
 
 	let sidebarElement;
@@ -29,6 +27,7 @@
 		}
 	});
 
+
 </script>
 
 <!-- Sidebar -->
@@ -36,14 +35,14 @@
 	<div class="dark:bg-neutral-900 w-96 p-4 pt-0 h-full overflow-y-auto shadow-lg" bind:this={sidebarElement}>
 		<div class="pb-5 h-full">
 			<div class="max-w-md mx-auto pb-5">
-				{#if !socialMediaData || Object.values(visibility).every(val => val === false) }
+				{#if !$socialMediaJson || Object.values($visibility).every(val => val === false) }
 					<MapNoData />
 				{/if}
 
-				{#if socialMediaData}
-					{#each socialMediaData as socialMedia}
+				{#if $socialMediaJson}
+					{#each $socialMediaJson.socialData as socialMedia}
 						{#each socialMedia.posts as post}
-							{#if (visibility[socialMedia.type]) && (post) && (post.id)}
+							{#if $visibility[socialMedia.type] && post && post.id}
 								<div
 									class="post-row post-{sanitizeId(post.id)} bg-white p-4 rounded-lg shadow-md mt-4 border border-gray-300"
 									class:highlighted={activeHoveredPostId === post.id}
