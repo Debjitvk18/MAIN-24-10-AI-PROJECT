@@ -40,7 +40,7 @@
 <div class="container max-w-100">
 	<div class="flex-1 space-y-4">
 		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">
-			Search <span>{slug}</span>
+			X (Twitter)
 		</h2>
 		<GetBack url={`/my-requests/${id}`} />
 		<Card.Root class="col-span-4">
