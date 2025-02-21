@@ -10,13 +10,17 @@
 	import { REFRESH_FREQUENCY_OPTIONS } from '$lib/constants/constants';
     import { Switch } from "$lib/components/ui/switch/index.js";
 	import { toast } from 'svelte-sonner';
+	import Icon from '@iconify/svelte';
 
 	export let data;
 
 	let error = data?.error || null;
 
+	let loader = false;
+
     async function updateRequest() {
     try {
+	  loader = true;
       let apiService = new ApiService();
 
       const payload = {
@@ -36,7 +40,9 @@
       goto('/saved-requests');
     } catch (err) {
       console.error('Update failed', err);
-    }
+    } finally {
+	  loader = false;
+	}
   }
 </script>
 
@@ -44,7 +50,7 @@
 	<div class="space-y-6 mx-auto">
 		<h2 class="text-3xl font-bold text-gray-900 dark:text-white">Edit Request</h2>
 		<GetBack url={'/saved-requests'} />
-		<Card.Root class="bg-white shadow-md rounded-lg p-6">
+		<Card.Root class="shadow-md rounded-lg p-6">
 			<Card.Content>
 				{#if error}
 					<NotFound message={'No saved request found!!'} />
@@ -85,7 +91,12 @@
                                 <Switch id="status" bind:checked={data.savedRequest.status} />
                             </div>
 
-							<Button type="submit" class="w-full">Update Request</Button>
+							<Button type="submit" class="w-full flex items-center justify-center gap-2" disabled={loader}>
+								Update Request
+								{#if loader}
+									<Icon icon="eos-icons:loading" class="w-5 h-5" />
+								{/if}
+							</Button>
 						</div>
 					</form>
 				{/if}

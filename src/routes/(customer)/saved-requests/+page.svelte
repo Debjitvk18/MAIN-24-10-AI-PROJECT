@@ -111,6 +111,7 @@
 				{#if error}
 					<NotFound message={'No request found!!'} />
 				{:else}
+				{console.log(savedRequests)}
 					<Table.Root>
 						<Table.Header>
 							<Table.Row>
@@ -156,7 +157,7 @@
 														<a href={`saved-requests/edit/${request.id}`}>Edit</a>
 													</DropdownMenu.Item>
 													<DropdownMenu.Item>
-														<a href={loadOnMapUrl(request)} target="_blank" >
+														<a href={loadOnMapUrl(request.search_request)} target="_blank" >
 															Load on map
 														</a>
 													</DropdownMenu.Item>

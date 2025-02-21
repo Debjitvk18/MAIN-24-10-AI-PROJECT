@@ -43,7 +43,7 @@
 	let keywordsOrHashtags = $state('');
 
 	let selectedLocation = null;
-	let timeFrame = '';
+	let timeFrame =  $state(['today']);
 
 	// Function to initialize values from URL parameters
 	function initializeURLData() {
@@ -53,7 +53,7 @@
 		const selectedLatitudeFromURL = getDataFromURL('lat');
 		const selectedLongitudeFromURL = getDataFromURL('long');
 		const selectedFeaturesFromURL = getDataFromURL('features[]');
-		timeFrame = getDataFromURL('timeframe') || "today"; 
+		timeFrame = getDataFromURL('timeframe'); 
 		
 		if (selectedLocationFromURL && selectedLatitudeFromURL && selectedLongitudeFromURL) {
 			selectedLocation = {
@@ -89,10 +89,14 @@
 		}
 	}
 
-	onMount(async () => {
-		// setTimeout(async () => {
-		await initializeURLData();
-		// },5000)
+	onMount(() => {
+		// Listen for URL changes dynamically
+		const observer = new MutationObserver(() => {
+			if (getDataFromURL('search')) {
+				initializeURLData();
+			}
+		});
+		observer.observe(document.body, { childList: true, subtree: true });
 	});
 
 	let startValue = $state<DateValue | undefined>(undefined);
@@ -153,7 +157,7 @@
 	}
 
 	async function applyFilters() {
-		await initializeURLData();
+		// await initializeURLData();
 		toggleSource(enableTwitter, 'x-twitter');
 		toggleSource(enablePanoids, 'streetview');
 		toggleSource(enableLinkedin, 'linkedin');
