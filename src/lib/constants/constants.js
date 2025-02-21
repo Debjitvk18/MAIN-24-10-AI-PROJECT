@@ -44,15 +44,14 @@ export const MARKER_DEFAULT_COLOR = 'black';
 export const SOCIAL_MARKER_CLASS = 'social-marker';
 export const MARKER_FONT_SIZE = '20px';
 
-
 export const MAP_PRIMARY_COLOR = '#2462ea';
 
 export const SOCIAL_MEDIA_PLATFORMS = [
 	{name: 'X (Twitter)', slug: 'x-twitter', tabIcon: 'ri:twitter-x-fill', mapIcon: TwitterIcon, visibility: true},
-	{name: 'Facebook', slug: 'facebook', tabIcon: 'lucide:facebook', mapIcon: FacebookIcon, visibility: true},
 	{name: 'LinkedIn', slug: 'linkedin', tabIcon: 'mdi:linkedin', mapIcon: LinkedInIcon, visibility: true},
+	{name: 'Facebook', slug: 'facebook', tabIcon: 'lucide:facebook', mapIcon: FacebookIcon, visibility: true},
 	{name: 'Marketplace', slug: 'facebook-marketplace', tabIcon: 'lucide:facebook', mapIcon: FacebookMarketPlaceIcon, visibility: true},
-	{name: 'Panoids', slug: 'streetview', tabIcon: 'lucide:map-pinned', mapIcon: PanoidsIcon, visibility: true},
 	{name: 'Instagram', slug: 'instagram', tabIcon: 'lucide:instagram', mapIcon: InstagramIcon, visibility: true},
 	{name: 'Google News', slug: 'google-news', tabIcon: 'simple-icons:googlenews', mapIcon: GoogleNewsIcon, visibility: true},
+	{name: 'Panoids', slug: 'streetview', tabIcon: 'lucide:map-pinned', mapIcon: PanoidsIcon, visibility: true},
 ];

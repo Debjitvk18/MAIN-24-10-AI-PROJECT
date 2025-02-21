@@ -4,7 +4,7 @@
 	import { sanitizeId, truncateString } from '$lib/utils/generalUtils.js';
 	import { hoveredPostId, socialMediaJson, visibility } from '$lib/stores/mapStore.ts';
 	import Icon from '@iconify/svelte';
-	import * as Avatar from "$lib/components/ui/avatar/index.ts";
+	import * as Avatar from '$lib/components/ui/avatar/index.ts';
 
 	export let isSidebarVisible = true; // prop
 	export let markers = {};
@@ -27,6 +27,7 @@
 		}
 	});
 
+
 </script>
 
 <!-- Sidebar -->
@@ -41,7 +42,7 @@
 				{#if $socialMediaJson}
 					{#each $socialMediaJson.socialData as socialMedia}
 						{#each socialMedia.posts as post}
-							{#if post && post.id}
+							{#if $visibility[socialMedia.type] && post && post.id}
 								<div
 									class="post-row post-{sanitizeId(post.id)} bg-white p-4 rounded-lg shadow-md mt-4 border border-gray-300"
 									class:highlighted={activeHoveredPostId === post.id}
@@ -75,7 +76,7 @@
 							{/if}
 						{/each}
 					{/each}
-					{/if}
+				{/if}
 			</div>
 		</div>
 	</div>

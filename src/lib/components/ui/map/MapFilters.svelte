@@ -24,6 +24,7 @@
 	import { getDataFromURL, removeDataFromURL } from '$lib/utils/generalUtils';
 	import { onMount } from 'svelte';
 	import { Input } from '$lib/components/ui/input';
+	import { SOCIAL_MEDIA_PLATFORMS } from '$lib/constants/constants';
 
 	const df = new DateFormatter('en-US', {
 		dateStyle: 'medium'
@@ -67,17 +68,6 @@
 			selectedSource = selectedFeaturesFromURL;
 		}
 
-		// const rawStartDate = getDataFromURL('start_date');
-		// const rawEndDate = getDataFromURL('end_date');
-		//
-		// const startDate = rawStartDate ? new Date(rawStartDate) : today(getLocalTimeZone());
-		// const endDate = rawEndDate ? new Date(rawEndDate) : today(getLocalTimeZone());
-		//
-		// datePickerValue = {
-		// 	start: startDate,
-		// 	end: endDate
-		// };
-
 		// Radius and resolution value parsing
 		const rawRadius = getDataFromURL('radius');
 		const rawResolution = getDataFromURL('resolution');
@@ -97,51 +87,23 @@
 
 	let startValue = $state<DateValue | undefined>(undefined);
 
-	function toggleSource(enable, source) {
-		selectedSource = Array.isArray(selectedSource)
-			? enable
-				? [...selectedSource, source].filter((v, i, a) => a.indexOf(v) === i)
-				: selectedSource.filter((s) => s !== source)
-			: enable
-				? [source]
-				: [];
-	}
-
 	// Initialize MapService
 	const mapService = new MapService();
 
 	// filter values
-	let enableTwitter = $state(true);
-	$effect(() => toggleSource(enableTwitter, 'x-twitter'));
-
-	let enablePanoids = $state(true);
-	$effect(() => toggleSource(enablePanoids, 'streetview'));
-
-	let enableLinkedin = $state(true);
-	$effect(() => toggleSource(enableLinkedin, 'linkedin'));
-
-	let enableFacebook = $state(true);
-	$effect(() => toggleSource(enableFacebook, 'facebook'));
-
-	let enableFacebookMarketPlace = $state(true);
-	$effect(() => toggleSource(enableFacebookMarketPlace, 'facebook-marketplace'));
-
-	let enableInstagram = $state(true);
-	$effect(() => toggleSource(enableInstagram, 'instagram'));
-
-	let enableGoogleNews = $state(true);
-	$effect(() => toggleSource(enableGoogleNews, 'google-news'));
-
+	let enabledPlatforms = $state(
+		Object.fromEntries(SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => [slug, true]))
+	);
 	$effect(() => {
-		const features = getDataFromURL('features[]');
-		if (Array.isArray(features) && features.length > 0) {
-			enableTwitter = features.includes('x-twitter');
-			enablePanoids = features.includes('streetview');
-			enableLinkedin = features.includes('linkedin');
-			enableFacebook = features.includes('facebook');
-			enableFacebookMarketPlace = features.includes('facebook-marketplace');
-			enableInstagram = features.includes('instagram');
-			enableGoogleNews = features.includes('google-news');
+		const features = getDataFromURL('features[]') || [];
+		if (features.length === 0) {
+			SOCIAL_MEDIA_PLATFORMS.forEach(({ slug }) => {
+				enabledPlatforms[slug] = true;
+			});
+		} else {
+			SOCIAL_MEDIA_PLATFORMS.forEach(({ slug }) => {
+				enabledPlatforms[slug] = features.includes(slug);
+			});
 		}
 	});
 
@@ -152,16 +114,18 @@
 		selectedLocation = event.detail;
 	}
 
+	function updateSelectedSources() {
+		selectedSource = SOCIAL_MEDIA_PLATFORMS
+			.filter(({ slug }) => enabledPlatforms[slug])
+			.map(({ slug }) => slug);
+	}
+	$effect(updateSelectedSources);
+
+
 	async function applyFilters() {
 		await initializeURLData();
-		toggleSource(enableTwitter, 'x-twitter');
-		toggleSource(enablePanoids, 'streetview');
-		toggleSource(enableLinkedin, 'linkedin');
-		toggleSource(enableFacebook, 'facebook');
-		toggleSource(enableFacebookMarketPlace, 'facebook-marketplace');
-		toggleSource(enableInstagram, 'instagram');
-		toggleSource(enableGoogleNews, 'google-news');
-		
+		updateSelectedSources();
+
 		removeDataFromURL('request_id');
 		removeDataFromURL('req_id');
 
@@ -170,8 +134,7 @@
 			return;
 		}
 
-		// validate, at-least one data source is selected.
-		if (!Array.isArray(selectedSource) || selectedSource.length === 0) {
+		if (!selectedSource.length) {
 			errorMessages = { features: ['Please select at least one data source to continue.'] };
 			return;
 		}
@@ -286,88 +249,17 @@
 				<Card.Content>
 					<div class="space-y-4">
 						<div class="grid gap-6">
-							<!-- Twitter -->
-							<div class="flex items-center justify-between space-x-4">
-								<div class="flex items-center space-x-4">
-									<Icon class="w-6 h-6" icon="ri:twitter-x-fill" />
-									<div>
-										<p class="text-sm font-medium leading-none">X (Twitter)</p>
+							{#each SOCIAL_MEDIA_PLATFORMS as { slug, tabIcon, name }}
+								<div class="flex items-center justify-between space-x-4">
+									<div class="flex items-center space-x-4">
+										<Icon class="w-6 h-6" icon={tabIcon} />
+										<div>
+											<p class="text-sm font-medium leading-none">{name}</p>
+										</div>
 									</div>
+									<Switch bind:checked={enabledPlatforms[slug]} on:click={() => enabledPlatforms[slug] = !enabledPlatforms[slug]} />
 								</div>
-								<Switch bind:enableTwitter checked={enableTwitter} on:click={enableTwitter = !enableTwitter} />
-							</div>
-
-							<!-- Linkedin -->
-							<div class="flex items-center justify-between space-x-4">
-								<div class="flex items-center space-x-4">
-									<Icon class="w-6 h-6" icon="mdi:linkedin" />
-									<div>
-										<p class="text-sm font-medium leading-none">Linkedin</p>
-									</div>
-								</div>
-								<Switch bind:enableLinkedin checked={enableLinkedin} on:click={enableLinkedin = !enableLinkedin} />
-							</div>
-
-							<!-- Facebook -->
-							<div class="flex items-center justify-between space-x-4">
-								<div class="flex items-center space-x-4">
-									<Icon class="w-6 h-6" icon="lucide:facebook" />
-									<div>
-										<p class="text-sm font-medium leading-none">Facebook</p>
-									</div>
-								</div>
-								<Switch bind:enableFacebook checked={enableFacebook} on:click={enableFacebook = !enableFacebook} />
-							</div>
-
-							<!-- Facebook Marketplace -->
-							<div class="flex items-center justify-between space-x-4">
-								<div class="flex items-center space-x-4">
-									<Icon class="w-6 h-6" icon="lucide:facebook" />
-									<div>
-										<p class="text-sm font-medium leading-none">Facebook Marketplace</p>
-									</div>
-								</div>
-								<Switch bind:enableFacebookMarketPlace checked={enableFacebookMarketPlace}
-												on:click={enableFacebookMarketPlace = !enableFacebookMarketPlace} />
-							</div>
-
-							<!-- Instagram -->
-							<div class="flex items-center justify-between space-x-4">
-								<div class="flex items-center space-x-4">
-									<Icon class="w-6 h-6" icon="lucide:instagram" />
-									<div>
-										<p class="text-sm font-medium leading-none">Instagram</p>
-									</div>
-								</div>
-								<Switch bind:enableInstagram checked={enableInstagram}
-												on:click={enableInstagram = !enableInstagram} />
-							</div>
-
-
-							<!-- Google news -->
-							<div class="flex items-center justify-between space-x-4">
-								<div class="flex items-center space-x-4">
-									<Icon class="w-6 h-6" icon="simple-icons:googlenews" />
-									<div>
-										<p class="text-sm font-medium leading-none">Google News</p>
-									</div>
-								</div>
-								<Switch bind:enableGoogleNews checked={enableGoogleNews}
-												on:click={enableGoogleNews = !enableGoogleNews} />
-							</div>
-
-
-							<!-- Panoids -->
-							<div class="flex items-center justify-between space-x-4">
-								<div class="flex items-center space-x-4">
-									<Icon class="w-6 h-6" icon="lucide:map-pinned" />
-									<div>
-										<p class="text-sm font-medium leading-none">Panoids</p>
-									</div>
-								</div>
-								<Switch bind:enablePanoids checked={enablePanoids} on:click={enablePanoids = !enablePanoids} />
-							</div>
-
+							{/each}
 						</div>
 					</div>
 				</Card.Content>

@@ -212,14 +212,10 @@
 	}
 
 
-
-
-
-
-
 	onMount(() => {
 		const rawRadius = getDataFromURL('radius');
 		const radiusValue = [parseInt(rawRadius, 10) || 1];
+		const radiusValueInMeters = radiusValue[0] * 1000;
 
 		mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
 		map = new mapboxgl.Map({
@@ -265,77 +261,6 @@
 		map.addControl(createStyleSwitcherControl(), 'bottom-right');
 		map.addControl(createFullScreenControl(), 'top-right');
 
-		function pulsingDotAnimation() {
-			const size = 200;
-			return {
-				width: size,
-				height: size,
-				data: new Uint8Array(size * size * 4),
-
-				// When the layer is added to the map,
-				// get the rendering context for the map canvas.
-				onAdd: function() {
-					const canvas = document.createElement('canvas');
-					canvas.width = this.width;
-					canvas.height = this.height;
-					this.context = canvas.getContext('2d');
-				},
-
-				// Call once before every frame where the icon will be used.
-				render: function() {
-					const duration = 1000;
-					const t = (performance.now() % duration) / duration;
-
-					const radius = (size / 2) * 0.3;
-					const outerRadius = (size / 2) * 0.7 * t + radius;
-					const context = this.context;
-
-					// Draw the outer circle.
-					context.clearRect(0, 0, this.width, this.height);
-					context.beginPath();
-					context.arc(
-						this.width / 2,
-						this.height / 2,
-						outerRadius,
-						0,
-						Math.PI * 2
-					);
-					context.fillStyle = `rgba(36, 198, 334, ${1 - t})`;
-					context.fill();
-
-					// Draw the inner circle.
-					context.beginPath();
-					context.arc(
-						this.width / 2,
-						this.height / 2,
-						radius,
-						0,
-						Math.PI * 2
-					);
-					context.fillStyle = 'rgba(36, 98, 234, 1)';
-					context.strokeStyle = 'white';
-					context.lineWidth = 2 + 4 * (1 - t);
-					context.fill();
-					context.stroke();
-
-					// Update this image's data with data from the canvas.
-					this.data = context.getImageData(
-						0,
-						0,
-						this.width,
-						this.height
-					).data;
-
-					// Continuously repaint the map, resulting
-					// in the smooth animation of the dot.
-					map.triggerRepaint();
-
-					// Return `true` to let the map know that the image was updated.
-					return true;
-				}
-			};
-		}
-
 		map.on('load', () => {
 			showErrorDialog = false;
 			errorResponse = {};
@@ -377,17 +302,13 @@
 			});
 
 			geocoder.on('result', async (event: any) => {
-				socialMediaJson.update((state) => ({ ...state, socialData: [] }));
-				visibility.update((state) => ({ ...state, ...Object.fromEntries(SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => [slug, false])) }));
 				if (event.result && event.result.center) {
+					resetMap(map, mapMarker);
 
 					// Set initial loading state for all platforms.
 					SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => {
 						dataLoadingState.update((state) => ({ ...state, [slug]: 'loading' }));
 					});
-
-					// Reset map
-					resetMap(map, mapMarker);
 
 					// get lat/lng, address
 					const address = event.result.place_name;
@@ -406,10 +327,10 @@
 					});
 
 					// add pulse effect
-					addPulsingDotAnimation(map, [lng, lat], pulsingDotAnimation());
+					addPulsingDotAnimation(map, [lng, lat]);
 
 					// Create radius circle
-					circle = addCircleRadius(map, [lng, lat], turf);
+					circle = addCircleRadius(map, [lng, lat], turf, radiusValueInMeters);
 
 					// make api call to fetch the data...
 					let payload = {
@@ -446,14 +367,14 @@
 					);
 					map.fitBounds(bounds, { padding: 20 });
 
+					// start the sse...
 					const searchId = response.search_id;
-
 					const source = new EventSource(`${API_BASE_URL}map/search-sse/${searchId}`);
 					let socialData = [];
 
 					// update the respective state for each platform.
 					SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => {
-						source.addEventListener(slug, function (e) {
+						source.addEventListener(slug, function(e) {
 							// update loading state
 							dataLoadingState.update((state) => ({ ...state, [slug]: 'done' }));
 
@@ -465,10 +386,9 @@
 							// Visibility
 							visibility.update((state) => ({ ...state, [slug]: true }));
 
-							// show post markers on map
 							// Add social media markers
 							socialData.forEach(({ type, count, posts }) => {
-								if(slug !== type) return;
+								if (slug !== type) return;
 								let pointsAdded = 0;
 								const validPosts = filterValidPosts(posts, circle);
 								const markersForType: mapboxgl.Marker[] = [];
@@ -487,7 +407,7 @@
 
 								const invalidPosts = posts.filter((post) => post && !validPosts.some((validPost) => validPost.id === post.id));
 								invalidPosts.forEach((post) => {
-									if(slug !== type) return;
+									if (slug !== type) return;
 									if (post && pointsAdded < count) {
 										const randomPoints = generateRandomValidPoints(1, circle);
 										const randomPoint = randomPoints[0];
@@ -510,7 +430,7 @@
 						});
 
 						// @TODO: handle platform data error.
-						source.addEventListener(`${slug}_error`, function (e) {
+						source.addEventListener(`${slug}_error`, function(e) {
 							dataLoadingState.update((state) => ({ ...state, [slug]: 'error' }));
 						});
 					});
@@ -531,9 +451,13 @@
 
 					// Done.
 					source.addEventListener('done', function(e) {
+						// close the SSE
 						source.close();
+
+						// notify user that, request fetching is done.
 						toast('🚀 All set! Explore the data now.', { position: 'bottom-center' });
 
+						// Add Static dot to indicate that response is complete.
 						map.addSource('static-dot', {
 							type: 'geojson',
 							data: {
@@ -543,14 +467,13 @@
 										type: 'Feature',
 										geometry: {
 											type: 'Point',
-											coordinates: [lng, lat], // Longitude, latitude
+											coordinates: [lng, lat] // Longitude, latitude
 										},
 										properties: {}
 									}
 								]
 							}
 						});
-
 						map.addLayer({
 							id: 'static-dot-layer',
 							source: 'static-dot',
@@ -563,6 +486,7 @@
 							}
 						});
 
+						// Remove the animation dot
 						map.removeLayer('layer-with-pulsing-dot');
 					});
 				}
@@ -693,8 +617,7 @@
 	 */
 	function toggleVisibility(type: string) {
 		// Update the visibility object
-		// visibility = { ...visibility, [type]: !visibility[type] };
-		$visibility[type] = !visibility[type];
+		$visibility[type] = !$visibility[type];
 
 		// Show or hide markers
 		Object.values(markers[type]).forEach((marker) => {

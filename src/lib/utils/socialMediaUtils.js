@@ -29,29 +29,30 @@ function generatePostData(data, platformDetails) {
 }
 
 /**
- * A collection of parsers for transforming raw data from various platforms into a standardized format.
- * Each key in the object represents a platform, and the associated value is a function that processes the input data
- * and returns an array of objects containing the parsed information.
+ * A collection of platform-specific parsers for extracting and normalizing data from various social media and mapping data sources.
+ * Each parser function processes platform-specific data and returns a normalized structure for further use.
  *
- * Platforms and their respective parsers:
- * - `x-twitter`: Processes data from Twitter, extracting information about tweets including text, user details, and geolocation if available.
- * - `linkedin`: Processes data from LinkedIn, extracting post content, associated images, and basic metadata.
- * - `facebook`: Processes data from Facebook, extracting user posts, geolocation, and associated images.
- * - `facebook-marketplace`: Processes data from Facebook Marketplace, extracting product details such as title, description, price, and currency.
- * - `streetview`: Processes data from Street View APIs, extracting panorama IDs, locations, and related information.
+ * @type {Object<string, Function>}
  *
- * Each parser function adheres to a common structure in its return objects:
- * - `id` (String): A unique identifier for the item.
- * - `title` (String): Title or main headline of the item.
- * - `description` (String): Additional descriptive text for the item.
- * - `image` (String): URL or path to a representative image.
- * - `lat` (Number | null): Latitude coordinate, if available.
- * - `lng` (Number | null): Longitude coordinate, if available.
- * - `url` (String): Link for further details about the item.
+ * @property {Function} x-twitter - A parser for Twitter data. Processes tweet objects and returns normalized data with properties such as
+ * id, title, description, lat, lng, image, and URL.
  *
- * For Facebook Marketplace parser, additional fields included:
- * - `price` (String | null): The price of the product.
- * - `currency` (String | null): The currency of the product's price.
+ * @property {Function} linkedin - A parser for LinkedIn post data. Extracts and normalizes post information including id, title, description,
+ * image, lat, lng, and URL.
+ *
+ * @property {Function} facebook - A parser for Facebook post data. Processes results of posts, normalizing id, title, description, image,
+ * lat, lng, and URL.
+ *
+ * @property {Function} facebook-marketplace - A parser for Facebook Marketplace data. Extracts product details like id, title, description,
+ * image, price, currency, and URL while normalizing them for consistent formatting.
+ *
+ * @property {Function} streetview - A parser for Google Street View data. Normalizes information from panoids to include id, title,
+ * description, image, lat, lng, and a URL for the panorama.
+ *
+ * @property {Function} google-news - A parser for Google News data. Extracts article information including id, title, image, URL, and a fallback image.
+ *
+ * @property {Function} instagram - A parser for Instagram media grid data. Processes media sections, extracting properties like id, title,
+ * description, image, URL, username, full name, profile picture URL, lat, lng, and fallback image.
  */
 const PLATFORM_PARSERS = {
 	'x-twitter': (data) =>
@@ -169,7 +170,7 @@ export function parseSocialMediaResponse(data, platform) {
 	const platformDetails = {
 		mapFunction: PLATFORM_PARSERS[platform],
 		type: platform,
-		icon: SOCIAL_MEDIA_PLATFORMS.find((p) => p.slug === platform)?.mapIcon,
+		icon: SOCIAL_MEDIA_PLATFORMS.find((p) => p.slug === platform)?.mapIcon
 	};
 
 	if (!platformDetails.mapFunction) {
