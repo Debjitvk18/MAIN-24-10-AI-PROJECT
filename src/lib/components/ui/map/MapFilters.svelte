@@ -43,6 +43,7 @@
 	let keywordsOrHashtags = $state('');
 
 	let selectedLocation = null;
+	let timeFrame = '';
 
 	// Function to initialize values from URL parameters
 	function initializeURLData() {
@@ -52,6 +53,8 @@
 		const selectedLatitudeFromURL = getDataFromURL('lat');
 		const selectedLongitudeFromURL = getDataFromURL('long');
 		const selectedFeaturesFromURL = getDataFromURL('features[]');
+		timeFrame = getDataFromURL('timeframe') || "today"; 
+		
 		if (selectedLocationFromURL && selectedLatitudeFromURL && selectedLongitudeFromURL) {
 			selectedLocation = {
 				place_name: selectedLocationFromURL,
@@ -181,19 +184,19 @@
 			longitude: longitude,
 			radius: radiusValue[0],
 			resolution: resolutionValue[0],
-			start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
-			end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
+			// start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
+			// end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
+			timeframe: timeFrame,
 			features: selectedSource,
 			keywords: keywordsOrHashtags
 		};
 
 		try {
-			const response = await mapService.getMapResults(payload);
+			const response = await mapService.validateFilters(payload);
 			if (!response.success) {
 				errorMessages = response.errors ?? null;
 			} else {
 				errorMessages = null;
-				console.log('Filters applied successfully:', response);
 				// pass payload in URL
 				const url = new URL(window.location.href);
 				// payload.request_id = response.search_id;
@@ -414,7 +417,7 @@
 			</Card.Root>
 
 			<!-- Date Range -->
-			<Card.Root class="mb-4">
+			<Card.Root class="mb-4 hidden">
 				<Card.Header>
 					<Card.Title>Choose Date Range</Card.Title>
 					<Card.Description>Select dates to include historical data within your search.</Card.Description>
@@ -458,6 +461,26 @@
 							</Popover.Content>
 						</Popover.Root>
 					</div>
+				</Card.Content>
+			</Card.Root>
+
+			<!-- Timeframe -->
+			<Card.Root class="mb-4">
+				<Card.Header>
+					<Card.Title>Select a time frame</Card.Title>
+					<Card.Description>Select time to include historical data within your search.</Card.Description>
+				</Card.Header>
+				<Card.Content>
+					<select id="time-frame" name="time-frame"
+						bind:value={timeFrame}
+						class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+						aria-label="Select a time frame">
+						
+						<option value="" disabled selected>Choose a time frame</option>
+						<option value="today">Today</option>
+						<option value="last_week">Last Week</option>
+						<option value="last_month">Last Month</option>
+					</select>
 				</Card.Content>
 			</Card.Root>
 

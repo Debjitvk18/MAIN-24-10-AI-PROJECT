@@ -328,7 +328,7 @@
 			if (item) {
 				return {
 					id: item.pk || null,
-					title: item?.caption?.text || '',
+					title: item?.caption?.text || "@"+ item?.user?.username || 'Unknown',
 					image: item?.image_versions2?.candidates?.[0]?.url || InstagramIconImg,
 					url: item?.code ? `https://www.instagram.com/p/${item.code}/` : '#',
 					username: item?.user?.username || 'Unknown',
@@ -530,12 +530,12 @@
 				}, 3000);
 
 				// make api call to get social media posts
-				if (!request_id) {
+
 					setTimeout(async () => {
 						overlayLoadingText = 'Fetching social media posts';
 						const mapService = new MapService();
 						let search_id;
-						if (!reqId) {
+						if (!reqId && !request_id) {
 							let preData = {
 								address,
 								latitude: lat,
@@ -558,8 +558,9 @@
 							}
 							search_id = response.search_id;
 						} else {
-							search_id = reqId;
+							search_id = reqId || request_id;
 							removeDataFromURL('req_id');
+							removeDataFromURL('request_id');
 						}
 
 						searchRequestID.set(Number(search_id));
@@ -655,73 +656,6 @@
 						});
 					}, 4000);
 
-				} else {
-					try {
-						let apiService = new ApiService();
-						const res = await apiService.makeApiCall(`search-requests/${request_id}`);
-
-						if (!res.success) {
-							// show MapError Dialog
-							showErrorDialog = true;
-							errorResponse = res;
-							return false;
-						}
-
-
-						if (res.success) {
-							// twitter.
-							const data = res;
-							if (data.responses && data.responses['x-twitter']?.response) {
-								const tweetsData = data.responses['x-twitter'].response;
-								twitterView(tweetsData);
-							}
-
-							// linkedin
-							if (data.responses && data.responses['linkedin']?.response) {
-								const linkedinData = data.responses['linkedin'].response;
-								linkedInView(linkedinData);
-							}
-
-							// Facebook
-							if (data.responses && data.responses['facebook']?.response) {
-								const facebookData = data.responses['facebook'].response;
-								facebookView(facebookData);
-							}
-
-							// Facebook Marketplace
-							if (data.responses && data.responses['facebook-marketplace']?.response) {
-								const facebookMarketplaceData = data.responses['facebook-marketplace'].response;
-								facebookMarketplaceView(facebookMarketplaceData);
-							}
-
-							// Instagram
-							if (data.responses && data.responses['instagram']?.response) {
-								const instagramData = data.responses['instagram'].response;
-								instagramView(instagramData);
-							}
-
-							// Google news
-							if (data.responses && data.responses['google-news']?.response) {
-								const googleNewsData = data.responses['google-news'].response;
-								googleNewsView(googleNewsData);
-							}
-
-							// panoids.
-							if (data.responses && data.responses['streetview']?.response) {
-								const panoidsData = data.responses['streetview'].response;
-								panoidView(panoidsData);
-							}
-
-							setTimeout(async () => {
-								showLoadingOverlay = false;
-								await displaySocialMediaPosts();
-							}, 4000);
-						}
-
-					} catch (error) {
-						console.error('Error in load function:', error.message);
-					}
-				}
 			});
 
 			if (searchQuery) {

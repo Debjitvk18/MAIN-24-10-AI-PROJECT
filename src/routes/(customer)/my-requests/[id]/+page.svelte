@@ -11,21 +11,34 @@
 	let searchRequest = data?.searchRequest;
 	let features = searchRequest?.request_params?.features || [];
 
+	// const icons = {
+	// 	streetview: 'lucide:map-pinned',
+	// 	'x-twitter': 'ri:twitter-x-fill',
+	// 	facebook: 'lucide:facebook',
+	// 	"google-news": 'simple-icons:googlenews',
+	// 	linkedin: 'mdi:linkedin',
+	// 	instagram: 'lucide:instagram',
+	// 	"facebook-marketplace": 'healthicons:market-stall-outline',
+	// };
+
 	const icons = {
-		streetview: 'lucide:map-pinned',
-		'x-twitter': 'ri:twitter-x-fill',
-		facebook: 'lucide:facebook',
-		googlenews: 'simple-icons:googlenews',
-		linkedin: 'mdi:linkedin',
+		"x-twitter": { icon: 'ri:twitter-x-fill', label: 'X (Twitter)' },
+		streetview: { icon: 'lucide:map-pinned', label: 'Panoids' },
+		linkedin: { icon: 'mdi:linkedin', label: 'Linkedin' },
+		facebook: { icon: 'lucide:facebook', label: 'Facebook' },
+		'facebook-marketplace': { icon: 'lucide:facebook', label: 'Marketplace' },
+		instagram: { icon: 'lucide:instagram', label: 'Instagram' },
+		"google-news": { icon: 'simple-icons:googlenews', label: 'Google News' },
 	};
+
 </script>
 
 <div class="container max-w-100">
 	<div class="flex-1 space-y-4">
 		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Search Request</h2>
 		<GetBack url={`/my-requests`} />
-		{#if data.searchRequest.length !== 0 && data.searchRequest.is_completed}
-			<a href={loadOnMapUrl(searchRequest)} class={`${buttonVariants({ variant: "outline" })} float-end`} target="_blank">
+		{#if data.searchRequest.length !== 0}
+			<a href={loadOnMapUrl(searchRequest)} class={`${buttonVariants({ variant: "outline" })} float-end`} target="">
 				<Icon icon="quill:link-out" class="me-2" /> Load on Map
 			</a>
 		{/if}
@@ -179,11 +192,11 @@
                                     hover:border-primary dark:border-gray-700 dark:hover:border-primary dark:bg-gray-900 text-center">
                                     <Card.Root>
                                         <Card.Header class="flex items-center justify-between pb-2">
-                                            <Icon icon={icons[feature] || 'lucide:help-circle'} 
+                                            <Icon icon={icons[feature].icon || 'lucide:help-circle'} 
                                                   class="text-primary text-3xl group-hover:scale-110 transition-transform" />
                                         </Card.Header>
                                         <Card.Content>
-                                            <div class="text-lg font-bold uppercase group-hover:text-primary transition-colors">{feature}</div>
+                                            <div class="text-lg font-bold uppercase group-hover:text-primary transition-colors">{icons[feature].label }</div>
                                             <p class="text-muted-foreground text-xs">View Response</p>
                                         </Card.Content>
                                     </Card.Root>

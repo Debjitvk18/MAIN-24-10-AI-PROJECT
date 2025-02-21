@@ -27,6 +27,16 @@ export class MapService {
 	}
 
 	/**
+	 * Validate filters.
+	 *
+	 * @param {Object} payload
+	 * @returns {Promise<any>}
+	 */
+	async validateFilters(payload) {
+		return this.apiService.makeApiCall('map/validate-search', payload, 'POST');
+	}
+
+	/**
 	 * Perform reverse geocoding using Mapbox Geocoding API.
 	 * @returns The place name or null if not available
 	 * @param {number} lng

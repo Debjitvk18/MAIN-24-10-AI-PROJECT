@@ -156,13 +156,11 @@
 													<DropdownMenu.Item>
 														<a href={`my-requests/${request.id}`}>View</a>
 													</DropdownMenu.Item>
-													{#if request.is_completed}
 													<DropdownMenu.Item>
 														<a href={loadOnMapUrl(request)} target="_blank" >
 															Load on map
 														</a>
 													</DropdownMenu.Item>
-													{/if}
 												</DropdownMenu.Group>
 											</DropdownMenu.Content>
 										</DropdownMenu.Root>
