@@ -1,6 +1,5 @@
 import { MARKER_DEFAULT_COLOR, MARKER_HIGHLIGHT_COLOR } from '$lib/constants/constants.js';
 import { MapService } from '$lib/services/map-service.js';
-import { getDataFromURL } from '$lib/utils/generalUtils.js';
 import { hoveredPostId } from '$lib/stores/mapStore.ts';
 
 /**
@@ -118,4 +117,62 @@ export function parseCoordinates(query) {
  */
 export function handleMarkerHover(postId) {
 	hoveredPostId.set(postId);
+}
+
+export function resetMap(map, mapMarker) {
+	if (mapMarker) mapMarker.remove();
+	if (map.getLayer('layer-with-pulsing-dot')) {
+		map.removeLayer('layer-with-pulsing-dot');
+	}
+
+	if (map.getSource('dot-point')) {
+		map.removeSource('dot-point');
+	}
+
+	if (map.hasImage('pulsing-dot')) {
+		map.removeImage('pulsing-dot');
+	}
+}
+
+export function addPulsingDotAnimation(map, coordinates, pulsingDotAnimation) {
+	map.addImage('pulsing-dot', pulsingDotAnimation, { pixelRatio: 2 });
+	map.addSource('dot-point', {
+		type: 'geojson',
+		data: {
+			type: 'FeatureCollection',
+			features: [
+				{
+					type: 'Feature',
+					geometry: {
+						type: 'Point',
+						coordinates: coordinates
+					}
+				}
+			]
+		}
+	});
+	map.addLayer({
+		id: 'layer-with-pulsing-dot',
+		type: 'symbol',
+		source: 'dot-point',
+		layout: {
+			'icon-image': 'pulsing-dot'
+		}
+	});
+}
+
+export function addCircleRadius(map, coordinates, turf, radiusInMeters = 1000) {
+	// Create a GeoJSON feature for the circle
+	const circle = turf.circle(coordinates, radiusInMeters / 1000, {
+		steps: 64,
+		units: 'kilometers'
+	});
+
+	// Update the circle source data
+	map.getSource('circle').setData({
+		type: 'FeatureCollection',
+		features: [circle]
+	});
+
+	return circle;
 }

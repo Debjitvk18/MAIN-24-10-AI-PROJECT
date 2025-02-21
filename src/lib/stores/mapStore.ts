@@ -9,3 +9,9 @@ export const searchRequestID = writable(0);
 
 // handle the mouseover on map marker
 export const hoveredPostId = writable(null);
+
+export const dataLoadingState = writable();
+
+export const socialMediaJson = writable([]);
+
+export const visibility = writable([]);

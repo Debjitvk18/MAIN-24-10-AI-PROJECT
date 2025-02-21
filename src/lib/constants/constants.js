@@ -1,4 +1,9 @@
 import { PUBLIC_API_URL } from '$env/static/public';
+import TwitterIcon from '$lib/assets/svg/marker/x-pin.svg?raw';
+import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
+import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
+import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
+import FacebookMarketPlaceIcon from '$lib/assets/svg/marker/facebook-marketplace-pin.svg?raw';
 
 // ================= API Constants =================
 export const API_BASE_URL = `${PUBLIC_API_URL}/api/v1/`;
@@ -36,3 +41,14 @@ export const MARKER_HIGHLIGHT_COLOR = '#448ee4';
 export const MARKER_DEFAULT_COLOR = 'black';
 export const SOCIAL_MARKER_CLASS = 'social-marker';
 export const MARKER_FONT_SIZE = '20px';
+
+
+export const MAP_PRIMARY_COLOR = '#2462ea';
+
+export const SOCIAL_MEDIA_PLATFORMS = [
+	{name: 'X (Twitter)', slug: 'x-twitter', tabIcon: 'ri:twitter-x-fill', mapIcon: TwitterIcon, visibility: true},
+	{name: 'Facebook', slug: 'facebook', tabIcon: 'lucide:facebook', mapIcon: FacebookIcon, visibility: true},
+	{name: 'LinkedIn', slug: 'linkedin', tabIcon: 'mdi:linkedin', mapIcon: LinkedInIcon, visibility: true},
+	{name: 'Marketplace', slug: 'facebook-marketplace', tabIcon: 'lucide:facebook', mapIcon: FacebookMarketPlaceIcon, visibility: true},
+	{name: 'Panoids', slug: 'streetview', tabIcon: 'lucide:map-pinned', mapIcon: PanoidsIcon, visibility: true},
+];

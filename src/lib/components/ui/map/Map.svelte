@@ -2,7 +2,6 @@
 	// Svelte
 	import { onDestroy, onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { ApiService } from '$lib/services/api-service';
 
 	// Mapbox
 	import mapboxgl from 'mapbox-gl';
@@ -17,45 +16,40 @@
 
 	// Constants
 	import {
-		API_BASE_URL,
+		API_BASE_URL, MAP_PRIMARY_COLOR,
 		MAPBOX_THEMES,
 		MARKER_FONT_SIZE,
-		PANOID_BASE_URL,
-		SOCIAL_MARKER_CLASS
+		SOCIAL_MARKER_CLASS, SOCIAL_MEDIA_PLATFORMS
 	} from '$lib/constants/constants';
 
 	// Utility functions
-	import { getDataFromURL, putDataInURL, removeDataFromURL, toggleFullScreen } from '$lib/utils/generalUtils';
-	import { handleMarkerHover, parseCoordinates } from '$lib/utils/mapUtils';
-
-	// SVG icons
-	import TwitterIcon from '$lib/assets/svg/marker/x-pin.svg?raw';
-	import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
-	import PanoidsIconImg from '$lib/assets/svg/marker/panoids-pin.svg';
-	import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
-	import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
-	import FacebookIconImg from '$lib/assets/svg/marker/facebook-pin.svg';
-	import FacebookMarketPlaceIcon from '$lib/assets/svg/marker/facebook-marketplace-pin.svg?raw';
-	import FacebookMarketPlaceIconImg from '$lib/assets/svg/marker/facebook-marketplace-pin.svg';
+	import { getDataFromURL, putDataInURL, toggleFullScreen } from '$lib/utils/generalUtils';
+	import {
+		addCircleRadius,
+		addPulsingDotAnimation,
+		handleMarkerHover,
+		parseCoordinates,
+		resetMap
+	} from '$lib/utils/mapUtils';
 
 	// UI Components
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
+	import { toast } from 'svelte-sonner';
 
 	// Icon Component
 	import MapTopbar from '$lib/components/ui/map/MapTopbar.svelte';
 	import MapSidebar from '$lib/components/ui/map/MapSidebar.svelte';
-	import { searchRequestID } from '$lib/stores/mapStore';
+	import { dataLoadingState, searchRequestID, socialMediaJson, visibility } from '$lib/stores/mapStore';
 	import ErrorDialog from '$lib/components/general/dialog/ErrorDialog.svelte';
+	import { parseSocialMediaResponse } from '$lib/utils/socialMediaUtils';
+
 
 	// Default Data...
 	let showLoadingOverlay = false;
 	let overlayLoadingText = 'Loading';
 	let searchQuery: string = '';
-	let socialMediaJson = [];
 	let socialMediaIcons;
-	let socialMediaData;
 	let circle;
-	let visibility: { [key: string]: boolean };
 	let map: mapboxgl.Map;
 	let mapContainer: HTMLElement;
 	let showSidebar = false;
@@ -65,6 +59,10 @@
 	let request_id: number;
 	let showErrorDialog = false;
 	let errorResponse = {};
+
+	dataLoadingState.set(
+		Object.fromEntries(SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => [slug, 'initial']))
+	);
 
 	/**
 	 * A boolean variable that indicates the visibility state of a sidebar component.
@@ -78,6 +76,9 @@
 
 	// Markers for social media types
 	let markers: { [key: string]: mapboxgl.Marker[] } = {};
+
+	// Map service
+	const mapService = new MapService();
 
 
 	/**
@@ -210,134 +211,11 @@
 		return new FullScreenControl();
 	}
 
-	function twitterView(data) {
-		const posts = data.tweets.map((tweetObj) => {
-			const tweet = tweetObj.tweet;
-			const user = tweet.user_details;
-			const place = tweet.place ?? null;
-			let lat = null;
-			let lng = null;
-			if (place) {
-				lat = place.bounding_box.coordinates[0][0][1];
-				lng = place.bounding_box.coordinates[0][0][0];
-			}
 
-			return {
-				id: tweetObj.entryId,
-				title: tweet.full_text,
-				description: tweet.full_text,
-				image: user.profile_image_url_https,
-				lat,
-				lng,
-				url: tweet?.url ?? '#'
-			};
-		});
 
-		const twitterData = {
-			type: 'twitter',
-			count: posts.length,
-			icon: TwitterIcon,
-			posts: posts
-		};
 
-		socialMediaJson.push(twitterData);
-	}
 
-	function linkedInView(data) {
-		const posts = data.posts.map((post) => {
-			return {
-				id: post.urn,
-				title: post.text,
-				description: post.text,
-				image: post.post_image || post.author.image_url,
-				lat: null,
-				lng: null,
-				url: post.url ?? '#'
-			};
-		});
 
-		const linkedInData = {
-			type: 'linkedin',
-			count: posts.length,
-			icon: LinkedInIcon,
-			posts: posts
-		};
-
-		socialMediaJson.push(linkedInData);
-	}
-
-	function facebookView(data) {
-		const posts = data.results.map((post) => {
-			return {
-				id: post.id,
-				title: post.message,
-				description: post.message,
-				image: post.actors[0]?.profile_picture || FacebookIconImg,
-				lat: post.explicit_place?.latitude ?? null,
-				lng: post.explicit_place?.longitude ?? null,
-				url: post.url ?? '#'
-			};
-		});
-
-		const facebookData = {
-			type: 'facebook',
-			count: posts.length,
-			icon: FacebookIcon,
-			posts: posts
-		};
-
-		socialMediaJson.push(facebookData);
-	}
-
-	function facebookMarketplaceView(data) {
-		const posts = data.data.marketplace_search.feed_units.edges.map((post) => {
-			if(post.node?.data?.title) {
-				return {
-					id: post.node.id,
-					title: post.node?.data?.title || '',
-					description: post.node?.data?.description || '',
-					image: post.node?.photo?.image?.uri || FacebookMarketPlaceIconImg,
-					lat: null,
-					lng: null,
-					url: post.node?.link ?? '#',
-					price: post.node?.data?.price?.amount_with_offset || null,
-					currency: post.node?.data?.price?.currency || null
-				};
-			}
-		}) || [];
-
-		const marketplaceData = {
-			type: 'facebook-marketplace',
-			count: posts.length,
-			icon: FacebookMarketPlaceIcon,
-			posts: posts
-		};
-
-		socialMediaJson.push(marketplaceData);
-	}
-
-	function panoidView(data) {
-		const posts = data.panoids.map((panoid) => {
-			return {
-				id: panoid.panoid,
-				title: `panoid - ${panoid.panoid}`,
-				description: `description - ${panoid.panoid}`,
-				image: PanoidsIconImg,
-				lat: panoid.lat,
-				lng: panoid.lon,
-				url: `${PANOID_BASE_URL}${panoid.panoid}`
-			};
-		});
-
-		const panoidsData = {
-			type: 'panoids',
-			count: posts.length,
-			icon: PanoidsIcon,
-			posts: posts
-		};
-
-		socialMediaJson.push(panoidsData);
-	}
 
 	onMount(() => {
 		const rawRadius = getDataFromURL('radius');
@@ -387,6 +265,77 @@
 		map.addControl(createStyleSwitcherControl(), 'bottom-right');
 		map.addControl(createFullScreenControl(), 'top-right');
 
+		function pulsingDotAnimation() {
+			const size = 200;
+			return {
+				width: size,
+				height: size,
+				data: new Uint8Array(size * size * 4),
+
+				// When the layer is added to the map,
+				// get the rendering context for the map canvas.
+				onAdd: function() {
+					const canvas = document.createElement('canvas');
+					canvas.width = this.width;
+					canvas.height = this.height;
+					this.context = canvas.getContext('2d');
+				},
+
+				// Call once before every frame where the icon will be used.
+				render: function() {
+					const duration = 1000;
+					const t = (performance.now() % duration) / duration;
+
+					const radius = (size / 2) * 0.3;
+					const outerRadius = (size / 2) * 0.7 * t + radius;
+					const context = this.context;
+
+					// Draw the outer circle.
+					context.clearRect(0, 0, this.width, this.height);
+					context.beginPath();
+					context.arc(
+						this.width / 2,
+						this.height / 2,
+						outerRadius,
+						0,
+						Math.PI * 2
+					);
+					context.fillStyle = `rgba(36, 198, 334, ${1 - t})`;
+					context.fill();
+
+					// Draw the inner circle.
+					context.beginPath();
+					context.arc(
+						this.width / 2,
+						this.height / 2,
+						radius,
+						0,
+						Math.PI * 2
+					);
+					context.fillStyle = 'rgba(36, 98, 234, 1)';
+					context.strokeStyle = 'white';
+					context.lineWidth = 2 + 4 * (1 - t);
+					context.fill();
+					context.stroke();
+
+					// Update this image's data with data from the canvas.
+					this.data = context.getImageData(
+						0,
+						0,
+						this.width,
+						this.height
+					).data;
+
+					// Continuously repaint the map, resulting
+					// in the smooth animation of the dot.
+					map.triggerRepaint();
+
+					// Return `true` to let the map know that the image was updated.
+					return true;
+				}
+			};
+		}
+
 		map.on('load', () => {
 			showErrorDialog = false;
 			errorResponse = {};
@@ -405,7 +354,7 @@
 				type: 'circle',
 				paint: {
 					'circle-radius': 10,
-					'circle-color': '#448ee4'
+					'circle-color': MAP_PRIMARY_COLOR
 				}
 			});
 
@@ -416,220 +365,206 @@
 					features: []
 				}
 			});
-
+			//
 			map.addLayer({
 				id: 'line',
 				source: 'circle',
 				type: 'line',
 				paint: {
-					'line-color': '#00BCD4',
+					'line-color': MAP_PRIMARY_COLOR,
 					'line-width': 2
 				}
 			});
 
 			geocoder.on('result', async (event: any) => {
-				// Show loading overlay
-				showLoadingOverlay = true;
-				if (mapMarker) mapMarker.remove(); // Remove clicked map marker
+				socialMediaJson.update((state) => ({ ...state, socialData: [] }));
+				visibility.update((state) => ({ ...state, ...Object.fromEntries(SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => [slug, false])) }));
+				if (event.result && event.result.center) {
 
-				// Get the coordinates of the search result
-				const coordinates = event.result.geometry.coordinates;
-				const address = event.result.place_name;
-				const lat = coordinates[1];
-				const lng = coordinates[0];
+					// Set initial loading state for all platforms.
+					SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => {
+						dataLoadingState.update((state) => ({ ...state, [slug]: 'loading' }));
+					});
 
-				// pass values in the url
-				putDataInURL('search', address);
-				putDataInURL('lat', lat);
-				putDataInURL('long', lng);
+					// Reset map
+					resetMap(map, mapMarker);
 
-				setTimeout(() => {
-					overlayLoadingText = 'Getting Address coordinates';
-				}, 1000);
+					// get lat/lng, address
+					const address = event.result.place_name;
+					const [lng, lat] = event.result.center;
 
-				// Set the map's center to the search result coordinates
-				setTimeout(() => {
-					overlayLoadingText = 'Setting map to address';
-					const singlePointSource = map.getSource('single-point');
-					if (singlePointSource) {
-						singlePointSource.setData(event.result.geometry);
+					// pass values in the url
+					putDataInURL('search', address);
+					putDataInURL('lat', lat);
+					putDataInURL('long', lng);
+
+					// Fly the map to the selected latitude and longitude
+					map.flyTo({
+						center: [lng, lat],
+						zoom: 14,
+						essential: true // make animation smooth
+					});
+
+					// add pulse effect
+					addPulsingDotAnimation(map, [lng, lat], pulsingDotAnimation());
+
+					// Create radius circle
+					circle = addCircleRadius(map, [lng, lat], turf);
+
+					// make api call to fetch the data...
+					let payload = {
+						address,
+						latitude: lat,
+						longitude: lng,
+						features: SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => slug)
+					};
+
+					// replace features passed in the url.
+					if (getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
+						payload.features = getDataFromURL('features[]');
 					}
-					map.flyTo({ center: coordinates });
-				}, 2000);
 
-				// create selected radius circle around the search result
-				setTimeout(() => {
-					overlayLoadingText = 'Creating radius circle to find the social media posts';
-					circle = turf.circle(coordinates, radiusValue, { units: 'kilometers' });
-					const circleSource = map.getSource('circle');
-					if (circleSource) {
-						circleSource.setData(circle);
+					const response = await mapService.getMapResults(payload);
+					if (!response.success) {
+						// show MapError Dialog
+						showErrorDialog = true;
+						errorResponse = response;
+						return false;
 					}
 
-					// Clear existing markers
-					Object.values(markers)
-						.flat()
-						.forEach((marker) => marker.remove());
-				}, 3000);
+					// show sidebar in the map.
+					showSidebar = true;
+					isSidebarVisible = true;
+					
+					// center the map
+					const bounds = circle.geometry.coordinates[0].reduce(
+						(bounds, coord) => bounds.extend(coord),
+						new mapboxgl.LngLatBounds(
+							circle.geometry.coordinates[0][0],
+							circle.geometry.coordinates[0][0]
+						)
+					);
+					map.fitBounds(bounds, { padding: 20 });
 
-				// make api call to get social media posts
-				if (!request_id) {
-					setTimeout(async () => {
-						overlayLoadingText = 'Fetching social media posts';
-						const mapService = new MapService();
-						let search_id;
-						if (!reqId) {
-							let preData = {
-								address,
-								latitude: lat,
-								longitude: lng
-							};
-							if (getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
-								preData.features = getDataFromURL('features[]');
-							} else {
-								preData.features = ['streetview', 'x-twitter', 'linkedin', 'facebook', 'facebook-marketplace'];
+					const searchId = response.search_id;
+
+					const source = new EventSource(`${API_BASE_URL}map/search-sse/${searchId}`);
+					let socialData = [];
+
+					// update the respective state for each platform.
+					SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => {
+						source.addEventListener(slug, function (e) {
+							// update loading state
+							dataLoadingState.update((state) => ({ ...state, [slug]: 'done' }));
+
+							// Parse data to display
+							const data = JSON.parse(e.data);
+							socialData.push(parseSocialMediaResponse(data, slug));
+							socialMediaJson.update((state) => ({ ...state, socialData }));
+
+							// Visibility
+							visibility.update((state) => ({ ...state, [slug]: true }));
+
+							// show post markers on map
+							// Add social media markers
+							socialData.forEach(({ type, count, posts }) => {
+								if(slug !== type) return;
+								let pointsAdded = 0;
+								const validPosts = filterValidPosts(posts, circle);
+								const markersForType: mapboxgl.Marker[] = [];
+								validPosts.forEach((post) => {
+									if (post && pointsAdded < count) {
+										markersForType[post.id] = createMarker(
+											SOCIAL_MEDIA_PLATFORMS.find(platform => platform.slug === slug)?.mapIcon,
+											[post.lng, post.lat],
+											$visibility[slug],
+											post
+										);
+
+										pointsAdded++;
+									}
+								});
+
+								const invalidPosts = posts.filter((post) => post && !validPosts.some((validPost) => validPost.id === post.id));
+								invalidPosts.forEach((post) => {
+									if(slug !== type) return;
+									if (post && pointsAdded < count) {
+										const randomPoints = generateRandomValidPoints(1, circle);
+										const randomPoint = randomPoints[0];
+										if (randomPoint && randomPoint.length === 2) {
+											markersForType[post.id] = createMarker(
+												SOCIAL_MEDIA_PLATFORMS.find(platform => platform.slug === slug)?.mapIcon,
+												[randomPoint[0], randomPoint[1]] as [number, number],
+												$visibility[slug],
+												post
+											);
+											pointsAdded++;
+										}
+									}
+								});
+
+								markers[type] = markersForType;
+
+							});
+
+						});
+
+						// @TODO: handle platform data error.
+						source.addEventListener(`${slug}_error`, function (e) {
+							dataLoadingState.update((state) => ({ ...state, [slug]: 'error' }));
+						});
+					});
+
+					// Error.
+					source.addEventListener('error', function(e) {
+						const data = JSON.parse(e.data);
+						source.close();
+						showErrorDialog = true;
+						errorResponse = {
+							success: false,
+							message: data.message,
+							error: data.error
+						};
+
+						return false;
+					});
+
+					// Done.
+					source.addEventListener('done', function(e) {
+						source.close();
+						toast('🚀 All set! Explore the data now.', { position: 'bottom-center' });
+
+						map.addSource('static-dot', {
+							type: 'geojson',
+							data: {
+								type: 'FeatureCollection',
+								features: [
+									{
+										type: 'Feature',
+										geometry: {
+											type: 'Point',
+											coordinates: [lng, lat], // Longitude, latitude
+										},
+										properties: {}
+									}
+								]
 							}
-							const response = await mapService.getMapResults(preData);
-							if (!response.success) {
-								// hide loader
-								showLoadingOverlay = false;
+						});
 
-								// show MapError Dialog
-								showErrorDialog = true;
-								errorResponse = response;
-								return false;
+						map.addLayer({
+							id: 'static-dot-layer',
+							source: 'static-dot',
+							type: 'circle',
+							paint: {
+								'circle-radius': 10,
+								'circle-color': MAP_PRIMARY_COLOR,
+								'width': 200,
+								'height': 200
 							}
-							search_id = response.search_id;
-						} else {
-							search_id = reqId;
-							removeDataFromURL('req_id');
-						}
-
-						searchRequestID.set(Number(search_id));
-
-						const source = new EventSource(`${API_BASE_URL}map/search-sse/${search_id}`);
-
-						// streeview.
-						source.addEventListener('streetview', function(e) {
-							const data = JSON.parse(e.data);
-							panoidView(data);
 						});
 
-						// twitter.
-						source.addEventListener('x-twitter', function(e) {
-							const data = JSON.parse(e.data);
-							twitterView(data);
-						});
-
-						// LinkedIn.
-						source.addEventListener('linkedin', function(e) {
-							const data = JSON.parse(e.data);
-							linkedInView(data);
-						});
-
-						// LinkedIn error.
-						source.addEventListener('linkedin_error', function(e) {
-							const data = JSON.parse(e.data);
-						});
-
-						// Facebook.
-						source.addEventListener('facebook', function(e) {
-							const data = JSON.parse(e.data);
-							facebookView(data);
-						});
-
-						// Facebook error.
-						source.addEventListener('facebook_error', function(e) {
-							const data = JSON.parse(e.data);
-						});
-
-						// Facebook Marketplace.
-						source.addEventListener('facebook-marketplace', function(e) {
-							const data = JSON.parse(e.data);
-							facebookMarketplaceView(data);
-						});
-
-						// Facebook marketplace error.
-						source.addEventListener('facebook-marketplace_error', function(e) {
-							const data = JSON.parse(e.data);
-						});
-
-						// Twitter error.
-						source.addEventListener('x-twitter_error', function(e) {
-							const data = JSON.parse(e.data);
-						});
-
-						// Error.
-						source.addEventListener('error', function(e) {
-							const data = JSON.parse(e.data);
-							source.close();
-							overlayLoadingText = 'Something went wrong, please try again';
-						});
-
-						// Done.
-						source.addEventListener('done', function(e) {
-							const data = JSON.parse(e.data);
-							source.close();
-
-							// socialMediaJson
-							displaySocialMediaPosts();
-						});
-					}, 4000);
-
-				} else {
-					try {
-						let apiService = new ApiService();
-						const res = await apiService.makeApiCall(`search-requests/${request_id}`);
-
-						if (!res.success) {
-							// show MapError Dialog
-							showErrorDialog = true;
-							errorResponse = res;
-							return false;
-						}
-
-
-						if (res.success) {
-							// twitter.
-							const data = res;
-							if (data.responses && data.responses['x-twitter']?.response) {
-								const tweetsData = data.responses['x-twitter'].response;
-								twitterView(tweetsData);
-							}
-
-							// linkedin
-							if (data.responses && data.responses['linkedin']?.response) {
-								const linkedinData = data.responses['linkedin'].response;
-								linkedInView(linkedinData);
-							}
-
-							// Facebook
-							if (data.responses && data.responses['facebook']?.response) {
-								const facebookData = data.responses['facebook'].response;
-								facebookView(facebookData);
-							}
-
-							// Facebook Marketplace
-							if (data.responses && data.responses['facebook-marketplace']?.response) {
-								const facebookMarketplaceData = data.responses['facebook-marketplace'].response;
-								facebookMarketplaceView(facebookMarketplaceData);
-							}
-
-							// panoids.
-							if (data.responses && data.responses['streetview']?.response) {
-								const panoidsData = data.responses['streetview'].response;
-								panoidView(panoidsData);
-							}
-
-							setTimeout(async () => {
-								showLoadingOverlay = false;
-								await displaySocialMediaPosts();
-							}, 4000);
-						}
-
-					} catch (error) {
-						console.error('Error in load function:', error.message);
-					}
+						map.removeLayer('layer-with-pulsing-dot');
+					});
 				}
 			});
 
@@ -733,10 +668,6 @@
 		return posts.filter((post) => {
 			if (post && post.lat !== null && post.lng !== null) {
 				return true;
-
-				// check if lat/lng is in the radius circle.
-				// const point = turf.point([post.lng, post.lat]);
-				// return turf.booleanPointInPolygon(point, shape);
 			}
 		});
 	}
@@ -754,96 +685,6 @@
 		return points;
 	}
 
-
-	/**
-	 * Displays social media posts on a map by positioning markers based on specified data types and counts.
-	 * Prioritizes posts with lat/lng inside the circle for marker placement before randomly positioning.
-	 *
-	 * @return {void} Updates the map with markers for social media posts.
-	 */
-	function displaySocialMediaPosts() {
-		socialMediaIcons = socialMediaJson.reduce((acc, { type, icon }) => {
-			acc[type] = icon;
-			return acc;
-		}, {});
-
-		// get the social media data
-		socialMediaData = socialMediaJson.map(({ type, count, posts }) => ({ type, count, posts }));
-
-		// Visibility state for social media types
-		visibility = socialMediaData.reduce((acc, { type }) => {
-			acc[type] = true;
-			return acc;
-		}, {});
-
-		markers = {};
-
-		// Add social media markers
-		socialMediaData.forEach(({ type, count, posts }) => {
-			let pointsAdded = 0;
-			const validPosts = filterValidPosts(posts, circle);
-			const markersForType: mapboxgl.Marker[] = [];
-
-			overlayLoadingText = 'Setting up the social icons on map';
-
-			// Add posts marker having valid lat/lng inside the circle
-			validPosts.forEach((post) => {
-				if (post && pointsAdded < count) {
-					markersForType[post.id] = createMarker(
-						socialMediaIcons[type],
-						[post.lng, post.lat],
-						visibility[type],
-						post
-					);
-					pointsAdded++;
-				}
-			});
-
-			const invalidPosts = posts.filter((post) => post && !validPosts.some((validPost) => validPost.id === post.id));
-			invalidPosts.forEach((post) => {
-				if (post && pointsAdded < count) {
-					const randomPoints = generateRandomValidPoints(1, circle);
-					const randomPoint = randomPoints[0];
-					if (randomPoint && randomPoint.length === 2) {
-						markersForType[post.id] = createMarker(
-							socialMediaIcons[type],
-							[randomPoint[0], randomPoint[1]] as [number, number],
-							visibility[type],
-							post
-						);
-						pointsAdded++;
-					}
-				}
-			});
-
-			markers[type] = markersForType;
-		});
-
-		// finalizing the map
-		setTimeout(() => {
-			overlayLoadingText = 'Finalizing the map';
-			const bounds = circle.geometry.coordinates[0].reduce(
-				(bounds, coord) => bounds.extend(coord),
-				new mapboxgl.LngLatBounds(
-					circle.geometry.coordinates[0][0],
-					circle.geometry.coordinates[0][0]
-				)
-			);
-			map.fitBounds(bounds, { padding: 20 });
-		}, 2000);
-
-		setTimeout(() => {
-			overlayLoadingText = 'Almost done';
-		}, 3000);
-
-		setTimeout(() => {
-			overlayLoadingText = 'Almost done';
-			showLoadingOverlay = false;
-			showSidebar = true;
-			isSidebarVisible = true;
-		}, 4000);
-	}
-
 	/**
 	 * Toggles the visibility of markers for a specified type.
 	 *
@@ -852,11 +693,12 @@
 	 */
 	function toggleVisibility(type: string) {
 		// Update the visibility object
-		visibility = { ...visibility, [type]: !visibility[type] };
+		// visibility = { ...visibility, [type]: !visibility[type] };
+		$visibility[type] = !visibility[type];
 
 		// Show or hide markers
 		Object.values(markers[type]).forEach((marker) => {
-			marker.getElement().style.display = visibility[type] ? 'block' : 'none';
+			marker.getElement().style.display = $visibility[type] ? 'block' : 'none';
 		});
 	}
 
@@ -871,6 +713,7 @@
 			map.resize();
 		}, 100);
 	}
+
 </script>
 
 <svelte:head>
@@ -891,7 +734,6 @@
 		socialMediaIcons={socialMediaIcons}
 		toggleSidebarVisibility={toggleSidebar}
 		toggleVisibility={toggleVisibility}
-		visibility={visibility}
 	/>
 
 	<div class="flex h-full flex-1 relative">
@@ -900,9 +742,7 @@
 			<div class="sidebar {isSidebarVisible ? 'visible' : ''}">
 				<MapSidebar
 					isSidebarVisible={isSidebarVisible}
-					socialMediaData={socialMediaJson}
 					markers={markers}
-					visibility={visibility}
 					map={map}
 				/>
 			</div>
