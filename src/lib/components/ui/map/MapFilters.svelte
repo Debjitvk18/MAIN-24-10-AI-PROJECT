@@ -123,6 +123,12 @@
 	let enableFacebookMarketPlace = $state(true);
 	$effect(() => toggleSource(enableFacebookMarketPlace, 'facebook-marketplace'));
 
+	let enableInstagram = $state(true);
+	$effect(() => toggleSource(enableInstagram, 'instagram'));
+
+	let enableGoogleNews = $state(true);
+	$effect(() => toggleSource(enableGoogleNews, 'google-news'));
+
 	$effect(() => {
 		const features = getDataFromURL('features[]');
 		if (Array.isArray(features) && features.length > 0) {
@@ -131,6 +137,8 @@
 			enableLinkedin = features.includes('linkedin');
 			enableFacebook = features.includes('facebook');
 			enableFacebookMarketPlace = features.includes('facebook-marketplace');
+			enableInstagram = features.includes('instagram');
+			enableGoogleNews = features.includes('google-news');
 		}
 	});
 
@@ -148,7 +156,9 @@
 		toggleSource(enableLinkedin, 'linkedin');
 		toggleSource(enableFacebook, 'facebook');
 		toggleSource(enableFacebookMarketPlace, 'facebook-marketplace');
-
+		toggleSource(enableInstagram, 'instagram');
+		toggleSource(enableGoogleNews, 'google-news');
+		
 		removeDataFromURL('request_id');
 		removeDataFromURL('req_id');
 
@@ -317,6 +327,32 @@
 								<Switch bind:enableFacebookMarketPlace checked={enableFacebookMarketPlace}
 												on:click={enableFacebookMarketPlace = !enableFacebookMarketPlace} />
 							</div>
+
+							<!-- Instagram -->
+							<div class="flex items-center justify-between space-x-4">
+								<div class="flex items-center space-x-4">
+									<Icon class="w-6 h-6" icon="lucide:instagram" />
+									<div>
+										<p class="text-sm font-medium leading-none">Instagram</p>
+									</div>
+								</div>
+								<Switch bind:enableInstagram checked={enableInstagram}
+												on:click={enableInstagram = !enableInstagram} />
+							</div>
+
+
+							<!-- Google news -->
+							<div class="flex items-center justify-between space-x-4">
+								<div class="flex items-center space-x-4">
+									<Icon class="w-6 h-6" icon="simple-icons:googlenews" />
+									<div>
+										<p class="text-sm font-medium leading-none">Google News</p>
+									</div>
+								</div>
+								<Switch bind:enableGoogleNews checked={enableGoogleNews}
+												on:click={enableGoogleNews = !enableGoogleNews} />
+							</div>
+
 
 							<!-- Panoids -->
 							<div class="flex items-center justify-between space-x-4">

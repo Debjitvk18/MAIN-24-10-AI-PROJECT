@@ -37,6 +37,10 @@
 	import FacebookIconImg from '$lib/assets/svg/marker/facebook-pin.svg';
 	import FacebookMarketPlaceIcon from '$lib/assets/svg/marker/facebook-marketplace-pin.svg?raw';
 	import FacebookMarketPlaceIconImg from '$lib/assets/svg/marker/facebook-marketplace-pin.svg';
+	import InstagramIcon from '$lib/assets/svg/marker/insta-pin.svg?raw';
+	import InstagramIconImg from '$lib/assets/svg/marker/insta-pin.svg';
+	import GoogleNewsIcon from '$lib/assets/svg/marker/google-news.svg?raw';
+	import GoogleNewsIconImg from '$lib/assets/svg/marker/google-news.svg';
 
 	// UI Components
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
@@ -316,6 +320,59 @@
 		socialMediaJson.push(marketplaceData);
 	}
 
+
+	function instagramView(data) {
+		const posts = (data.media_grid?.sections || []).map(section => {
+			const item = section?.layout_content?.one_by_two_item?.clips?.items?.[0]?.media;
+
+			if (item) {
+				return {
+					id: item.pk || null,
+					title: item?.caption?.text || '',
+					image: item?.image_versions2?.candidates?.[0]?.url || InstagramIconImg,
+					url: item?.code ? `https://www.instagram.com/p/${item.code}/` : '#',
+					username: item?.user?.username || 'Unknown',
+					full_name: item?.user?.full_name || 'Unknown',
+					lat: null,
+					lng: null,
+					profile_pic_url: item?.user?.profile_pic_url || '',
+					fallback_image : InstagramIconImg
+				};
+			}
+		}).filter(Boolean);
+
+		const instagramData = {
+			type: 'instagram',
+			count: posts.length,
+			icon: InstagramIcon,
+			posts: posts
+		};
+		socialMediaJson.push(instagramData);
+	}
+
+	function googleNewsView(data) {
+		const posts = data.news.map((article) => {
+			return {
+				id: article.position,
+				title: article.title,
+				image: article.imageUrl || GoogleNewsIconImg,
+				lat: null,
+				lng: null,
+				url: article.link,
+				fallback_image : GoogleNewsIconImg
+			};
+		});
+
+		const googleNewsData = {
+			type: 'google-news',
+			count: posts.length,
+			icon: GoogleNewsIcon,
+			posts: posts
+		};
+
+		socialMediaJson.push(googleNewsData);
+	}
+
 	function panoidView(data) {
 		const posts = data.panoids.map((panoid) => {
 			return {
@@ -487,7 +544,7 @@
 							if (getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
 								preData.features = getDataFromURL('features[]');
 							} else {
-								preData.features = ['streetview', 'x-twitter', 'linkedin', 'facebook', 'facebook-marketplace'];
+								preData.features = ['streetview', 'x-twitter', 'linkedin', 'facebook', 'facebook-marketplace', 'instagram', 'google-news',];
 							}
 							const response = await mapService.getMapResults(preData);
 							if (!response.success) {
@@ -559,6 +616,28 @@
 							const data = JSON.parse(e.data);
 						});
 
+						// Instagram.
+						source.addEventListener('instagram', function(e) {
+							const data = JSON.parse(e.data);
+							instagramView(data);
+						});
+
+						// Instagram error.
+						source.addEventListener('instagram_error', function(e) {
+							const data = JSON.parse(e.data);
+						});
+
+						// Google news.
+						source.addEventListener('google-news', function(e) {
+							const data = JSON.parse(e.data);
+							googleNewsView(data);
+						});
+
+						// Google news error.
+						source.addEventListener('google-news_error', function(e) {
+							const data = JSON.parse(e.data);
+						});
+
 						// Error.
 						source.addEventListener('error', function(e) {
 							const data = JSON.parse(e.data);
@@ -613,6 +692,18 @@
 							if (data.responses && data.responses['facebook-marketplace']?.response) {
 								const facebookMarketplaceData = data.responses['facebook-marketplace'].response;
 								facebookMarketplaceView(facebookMarketplaceData);
+							}
+
+							// Instagram
+							if (data.responses && data.responses['instagram']?.response) {
+								const instagramData = data.responses['instagram'].response;
+								instagramView(instagramData);
+							}
+
+							// Google news
+							if (data.responses && data.responses['google-news']?.response) {
+								const googleNewsData = data.responses['google-news'].response;
+								googleNewsView(googleNewsData);
 							}
 
 							// panoids.

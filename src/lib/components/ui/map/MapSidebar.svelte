@@ -52,7 +52,13 @@
 									<a href={post.url} target="_blank" class="flex items-center gap-4">
 										<Avatar.Root>
 											<Avatar.Image src="{post.image}" alt="post" />
-											<Avatar.Fallback>P</Avatar.Fallback>
+											<Avatar.Fallback>
+												{#if post.fallback_image !== undefined && post.fallback_image !== null && post.fallback_image !== ''}
+													<img src="{post.fallback_image}" alt="post" />
+												{:else}
+													P
+												{/if}
+											</Avatar.Fallback>
 										</Avatar.Root>
 										<div class="flex flex-col">
 											<strong

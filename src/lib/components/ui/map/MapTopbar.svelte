@@ -20,7 +20,9 @@
 		panoids: { icon: 'lucide:map-pinned', label: 'Panoids' },
 		linkedin: { icon: 'mdi:linkedin', label: 'Linkedin' },
 		facebook: { icon: 'lucide:facebook', label: 'Facebook' },
-		'facebook-marketplace': { icon: 'lucide:facebook', label: 'Marketplace' }
+		'facebook-marketplace': { icon: 'lucide:facebook', label: 'Marketplace' },
+		instagram: { icon: 'lucide:instagram', label: 'Instagram' },
+		"google-news": { icon: 'simple-icons:googlenews', label: 'Google News' },
 	};
 
 
