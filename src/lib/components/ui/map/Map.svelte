@@ -304,7 +304,7 @@
 					lat: null,
 					lng: null,
 					url: post.node?.link ?? '#',
-					price: post.node?.data?.price?.amount_with_offset || null,
+					price: Number(post.node?.data?.price?.amount_with_offset) / 100 || null,
 					currency: post.node?.data?.price?.currency || null
 				};
 			}

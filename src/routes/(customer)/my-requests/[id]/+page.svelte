@@ -11,16 +11,6 @@
 	let searchRequest = data?.searchRequest;
 	let features = searchRequest?.request_params?.features || [];
 
-	// const icons = {
-	// 	streetview: 'lucide:map-pinned',
-	// 	'x-twitter': 'ri:twitter-x-fill',
-	// 	facebook: 'lucide:facebook',
-	// 	"google-news": 'simple-icons:googlenews',
-	// 	linkedin: 'mdi:linkedin',
-	// 	instagram: 'lucide:instagram',
-	// 	"facebook-marketplace": 'healthicons:market-stall-outline',
-	// };
-
 	const icons = {
 		"x-twitter": { icon: 'ri:twitter-x-fill', label: 'X (Twitter)' },
 		streetview: { icon: 'lucide:map-pinned', label: 'Panoids' },
