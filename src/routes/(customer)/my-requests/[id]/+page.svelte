@@ -12,12 +12,15 @@
 	let features = searchRequest?.request_params?.features || [];
 
 	const icons = {
-		streetview: 'lucide:map-pinned',
-		'x-twitter': 'ri:twitter-x-fill',
-		facebook: 'lucide:facebook',
-		googlenews: 'simple-icons:googlenews',
-		linkedin: 'mdi:linkedin',
+		"x-twitter": { icon: 'ri:twitter-x-fill', label: 'X (Twitter)' },
+		streetview: { icon: 'lucide:map-pinned', label: 'Panoids' },
+		linkedin: { icon: 'mdi:linkedin', label: 'Linkedin' },
+		facebook: { icon: 'lucide:facebook', label: 'Facebook' },
+		'facebook-marketplace': { icon: 'lucide:facebook', label: 'Marketplace' },
+		instagram: { icon: 'lucide:instagram', label: 'Instagram' },
+		"google-news": { icon: 'simple-icons:googlenews', label: 'Google News' },
 	};
+
 </script>
 
 <div class="container max-w-100">
@@ -179,11 +182,11 @@
                                     hover:border-primary dark:border-gray-700 dark:hover:border-primary dark:bg-gray-900 text-center">
                                     <Card.Root>
                                         <Card.Header class="flex items-center justify-between pb-2">
-                                            <Icon icon={icons[feature] || 'lucide:help-circle'} 
+                                            <Icon icon={icons[feature].icon || 'lucide:help-circle'} 
                                                   class="text-primary text-3xl group-hover:scale-110 transition-transform" />
                                         </Card.Header>
                                         <Card.Content>
-                                            <div class="text-lg font-bold uppercase group-hover:text-primary transition-colors">{feature}</div>
+                                            <div class="text-lg font-bold uppercase group-hover:text-primary transition-colors">{icons[feature].label }</div>
                                             <p class="text-muted-foreground text-xs">View Response</p>
                                         </Card.Content>
                                     </Card.Root>

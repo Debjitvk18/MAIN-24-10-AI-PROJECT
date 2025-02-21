@@ -1,7 +1,6 @@
 import { MARKER_DEFAULT_COLOR, MARKER_HIGHLIGHT_COLOR } from '$lib/constants/constants.js';
 import { MapService } from '$lib/services/map-service.js';
-import { getDataFromURL } from '$lib/utils/generalUtils.js';
-import { hoveredPostId } from '$lib/stores/mapStore.ts';
+import { hoveredPostId, socialMediaJson, visibility } from '$lib/stores/mapStore.ts';
 
 /**
  * Regular expression to match and extract latitude and longitude coordinates from a string.
@@ -119,3 +118,140 @@ export function parseCoordinates(query) {
 export function handleMarkerHover(postId) {
 	hoveredPostId.set(postId);
 }
+
+/**
+ * Resets the given map by removing specific layers, sources, and markers if they exist.
+ *
+ * @param {Object} map The map object to be reset.
+ * @param {Object} [mapMarker] An optional marker object to be removed from the map.
+ * @return {void} Does not return a value.
+ */
+export function resetMap(map, mapMarker) {
+	if (mapMarker) mapMarker.remove();
+	if (map.getLayer('layer-with-pulsing-dot')) {
+		map.removeLayer('layer-with-pulsing-dot');
+	}
+
+	if (map.getSource('dot-point')) {
+		map.removeSource('dot-point');
+	}
+
+	if (map.hasImage('pulsing-dot')) {
+		map.removeImage('pulsing-dot');
+	}
+
+	// Reset the state...
+	socialMediaJson.set([]);
+	visibility.set([]);
+}
+
+/**
+ * Adds a pulsing dot animation to the specified map at the given coordinates.
+ *
+ * @param {Object} map - The map object where the pulsing dot animation will be added.
+ * @param {Array<number>} coordinates - The `[longitude, latitude]` coordinates where the pulsing dot will be rendered.
+ * @return {void} This method does not return a value.
+ */
+export function addPulsingDotAnimation(map, coordinates) {
+	map.addImage('pulsing-dot', pulsingDotAnimation(map), { pixelRatio: 2 });
+	map.addSource('dot-point', {
+		type: 'geojson',
+		data: {
+			type: 'FeatureCollection',
+			features: [
+				{
+					type: 'Feature',
+					geometry: {
+						type: 'Point',
+						coordinates: coordinates
+					}
+				}
+			]
+		}
+	});
+	map.addLayer({
+		id: 'layer-with-pulsing-dot',
+		type: 'symbol',
+		source: 'dot-point',
+		layout: {
+			'icon-image': 'pulsing-dot'
+		}
+	});
+}
+
+/**
+ * Adds a circle with a specified radius to the given map using Turf.js.
+ *
+ * @param {Object} map - The map object where the circle will be added.
+ * @param {Array<number>} coordinates - The coordinates [longitude, latitude] for the center of the circle.
+ * @param {Object} turf - The Turf.js library object used to create the circle.
+ * @param {number} [radiusInMeters=1000] - The radius of the circle in meters. Default is 1000 meters.
+ * @return {Object} - A GeoJSON feature representing the created circle.
+ */
+export function addCircleRadius(map, coordinates, turf, radiusInMeters = 1000) {
+	// Create a GeoJSON feature for the circle
+	const circle = turf.circle(coordinates, radiusInMeters / 1000, {
+		steps: 64,
+		units: 'kilometers'
+	});
+
+	// Update the circle source data
+	map.getSource('circle').setData({
+		type: 'FeatureCollection',
+		features: [circle]
+	});
+
+	return circle;
+}
+
+/**
+ * Creates a pulsing dot animation for the given map. The animation consists of a dot
+ * that expands and fades in and out repeatedly to create a pulsing effect.
+ *
+ * @param {Object} map - The map object to which the animation is applied.
+ * @return {Object} An object containing the animation configuration, rendering logic,
+ * and required data for the pulsing dot animation.
+ */
+export function pulsingDotAnimation(map) {
+	const size = 200;
+	return {
+		width: size,
+		height: size,
+		data: new Uint8Array(size * size * 4),
+
+		onAdd: function () {
+			const canvas = document.createElement('canvas');
+			canvas.width = this.width;
+			canvas.height = this.height;
+			this.context = canvas.getContext('2d');
+		},
+
+		render: function () {
+			const duration = 1000;
+			const t = (performance.now() % duration) / duration;
+			const radius = (size / 2) * 0.3;
+			const outerRadius = (size / 2) * 0.7 * t + radius;
+			const context = this.context;
+
+			context.clearRect(0, 0, this.width, this.height);
+			context.beginPath();
+			context.arc(this.width / 2, this.height / 2, outerRadius, 0, Math.PI * 2);
+			context.fillStyle = `rgba(36, 198, 334, ${1 - t})`;
+			context.fill();
+
+			context.beginPath();
+			context.arc(this.width / 2, this.height / 2, radius, 0, Math.PI * 2);
+			context.fillStyle = 'rgba(36, 98, 234, 1)';
+			context.strokeStyle = 'white';
+			context.lineWidth = 2 + 4 * (1 - t);
+			context.fill();
+			context.stroke();
+
+			this.data = context.getImageData(0, 0, this.width, this.height).data;
+
+			map.triggerRepaint();
+			return true;
+		}
+	};
+}
+

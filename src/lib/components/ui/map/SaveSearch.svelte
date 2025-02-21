@@ -80,8 +80,8 @@
 
 <Dialog.Root bind:open={isOpen}>
 	<Dialog.Trigger class={buttonVariants({ variant: "outline" })} on:click={() => isOpen = true}>
-		<Icon class="w-6 h-6 me-2" icon="carbon:save" />
-		Save search
+		<Icon class="md:me-2 sm:me-0 w-6 h-6" icon="carbon:save" />
+		<span class="hidden md:inline">Save search</span>
 	</Dialog.Trigger>
 	<Dialog.Content>
 		<Dialog.Header>
