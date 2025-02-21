@@ -362,6 +362,22 @@
 						payload.features = getDataFromURL('features[]');
 					}
 
+					if(getDataFromURL('radius')) {
+						payload.radius = getDataFromURL('radius');
+					}
+
+					if(getDataFromURL('resolution')) {
+						payload.resolution = getDataFromURL('resolution');
+					}
+
+					if(getDataFromURL('timeframe')) {
+						payload.timeframe = getDataFromURL('timeframe');
+					}
+
+					if(getDataFromURL('keywords')) {
+						payload.keywords = getDataFromURL('keywords');
+					}
+
 					let searchId = 0;
 					if(!request_id && !reqId) {
 						// Fetch data
