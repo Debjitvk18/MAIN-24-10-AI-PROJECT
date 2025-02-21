@@ -305,34 +305,51 @@
 				if (event.result && event.result.center) {
 					resetMap(map, mapMarker);
 
-					// Set initial loading state for all platforms.
-					SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => {
+					// Clear previous markers
+					Object.keys(markers).forEach((key) => {
+						markers[key].forEach((marker) => marker.remove());
+					});
+					markers = {};
+
+					// Clear previous markers
+					Object.keys(markers).forEach((key) => {
+						markers[key].forEach((marker) => marker.remove());
+					});
+					markers = {};
+
+					// Reset visibility
+					SOCIAL_MEDIA_PLATFORMS.forEach(({ slug }) => {
+						visibility.update((state) => ({ ...state, [slug]: false }));
+					});
+
+					// Set loading state
+					SOCIAL_MEDIA_PLATFORMS.forEach(({ slug }) => {
 						dataLoadingState.update((state) => ({ ...state, [slug]: 'loading' }));
 					});
 
-					// get lat/lng, address
+					// extract lat/lng, address
 					const address = event.result.place_name;
 					const [lng, lat] = event.result.center;
 
-					// pass values in the url
+					// update url
 					putDataInURL('search', address);
 					putDataInURL('lat', lat);
 					putDataInURL('long', lng);
 
-					// Fly the map to the selected latitude and longitude
+					// Fly to new location
 					map.flyTo({
 						center: [lng, lat],
 						zoom: 14,
 						essential: true // make animation smooth
 					});
 
-					// add pulse effect
+					// Add pulsing dot effect
 					addPulsingDotAnimation(map, [lng, lat]);
 
 					// Create radius circle
 					circle = addCircleRadius(map, [lng, lat], turf, radiusValueInMeters);
 
-					// make api call to fetch the data...
+					// Prepare payload for API request
 					let payload = {
 						address,
 						latitude: lat,
@@ -340,24 +357,38 @@
 						features: SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => slug)
 					};
 
-					// replace features passed in the url.
+					// Use features from URL if available
 					if (getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
 						payload.features = getDataFromURL('features[]');
 					}
 
-					const response = await mapService.getMapResults(payload);
-					if (!response.success) {
-						// show MapError Dialog
-						showErrorDialog = true;
-						errorResponse = response;
-						return false;
+					let searchId = 0;
+					if(!request_id && !reqId) {
+						// Fetch data
+						const response = await mapService.getMapResults(payload);
+						if (!response.success) {
+							// show MapError Dialog
+							showErrorDialog = true;
+							errorResponse = response;
+							return false;
+						}
+
+						searchId = response.search_id;
 					}
 
-					// show sidebar in the map.
+					if(reqId && reqId > 0) {
+						searchId = reqId;
+					}
+
+					if(request_id && request_id > 0) {
+						searchId = request_id;
+					}
+
+					// Show sidebar
 					showSidebar = true;
 					isSidebarVisible = true;
 
-					// center the map
+					// Fit map bounds
 					const bounds = circle.geometry.coordinates[0].reduce(
 						(bounds, coord) => bounds.extend(coord),
 						new mapboxgl.LngLatBounds(
@@ -367,8 +398,18 @@
 					);
 					map.fitBounds(bounds, { padding: 20 });
 
-					// start the sse...
-					const searchId = response.search_id;
+					if(searchId < 1) {
+						// show MapError Dialog
+						showErrorDialog = true;
+						errorResponse = {
+							success: false,
+							message: 'No search results found.',
+							error: 'No search results found.'
+						};
+						return false;
+					}
+
+					// Start SSE
 					const source = new EventSource(`${API_BASE_URL}map/search-sse/${searchId}`);
 					let socialData = [];
 
@@ -386,12 +427,19 @@
 							// Visibility
 							visibility.update((state) => ({ ...state, [slug]: true }));
 
-							// Add social media markers
+							// Clear existing markers for the platform before adding new ones
+							if (markers[slug]) {
+								markers[slug].forEach((marker) => marker.remove());
+							}
+							markers[slug] = [];
+
+							let markersForType: mapboxgl.Marker[] = [];
+
+							// Add markers
 							socialData.forEach(({ type, count, posts }) => {
 								if (slug !== type) return;
 								let pointsAdded = 0;
 								const validPosts = filterValidPosts(posts, circle);
-								const markersForType: mapboxgl.Marker[] = [];
 								validPosts.forEach((post) => {
 									if (post && pointsAdded < count) {
 										markersForType[post.id] = createMarker(
@@ -429,13 +477,13 @@
 
 						});
 
-						// @TODO: handle platform data error.
+						// Handle errors
 						source.addEventListener(`${slug}_error`, function(e) {
 							dataLoadingState.update((state) => ({ ...state, [slug]: 'error' }));
 						});
 					});
 
-					// Error.
+					// SSE global error handler
 					source.addEventListener('error', function(e) {
 						const data = JSON.parse(e.data);
 						source.close();
@@ -449,7 +497,7 @@
 						return false;
 					});
 
-					// Done.
+					// SSE complete event
 					source.addEventListener('done', function(e) {
 						// close the SSE
 						source.close();

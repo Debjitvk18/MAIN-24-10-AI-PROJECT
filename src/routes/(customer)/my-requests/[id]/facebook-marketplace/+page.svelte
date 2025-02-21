@@ -19,7 +19,6 @@
 		try {
 			let apiService = new ApiService();
 			let res = await apiService.makeApiCall(`search-requests/${id}/${slug}`);
-			console.log(res, 'res');
 			if (!res.success) {
 				throw new Error(res.error);
 			}

@@ -24,8 +24,6 @@
 				throw new Error(res.error);
 			}
 
-            console.log(res)
-
 			news = [...(res?.response?.response?.news || [])];
 
 		} catch (err) {

@@ -111,7 +111,6 @@
 				{#if error}
 					<NotFound message={'No request found!!'} />
 				{:else}
-				{console.log(savedRequests)}
 					<Table.Root>
 						<Table.Header>
 							<Table.Row>

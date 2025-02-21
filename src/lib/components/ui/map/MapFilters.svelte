@@ -44,7 +44,7 @@
 	let keywordsOrHashtags = $state('');
 
 	let selectedLocation = null;
-	let timeFrame =  $state(['today']);
+	let timeFrame =  $state('today');
 
 	// Function to initialize values from URL parameters
 	function initializeURLData() {
@@ -362,16 +362,16 @@
 			<!-- Timeframe -->
 			<Card.Root class="mb-4">
 				<Card.Header>
-					<Card.Title>Select a time frame</Card.Title>
+					<Card.Title>Select a timeframe</Card.Title>
 					<Card.Description>Select time to include historical data within your search.</Card.Description>
 				</Card.Header>
 				<Card.Content>
 					<select id="time-frame" name="time-frame"
 						bind:value={timeFrame}
 						class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-						aria-label="Select a time frame">
+						aria-label="Select a timeframe">
 						
-						<option value="" disabled selected>Choose a time frame</option>
+						<option value="" disabled selected>Choose a timeframe</option>
 						<option value="today">Today</option>
 						<option value="last_week">Last Week</option>
 						<option value="last_month">Last Month</option>
