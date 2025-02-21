@@ -9,16 +9,15 @@
 	import { page } from '$app/stores';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import Icon from '@iconify/svelte';
-	// import { Button } from "$lib/components/ui/button/index.js";
 
-	export let data;
-	let meta = data?.searchRequests?.meta || {};
-	let searchRequests = data?.searchRequests?.data || [];
+    export let data;
+	let meta = data?.savedRequests?.meta || {};
+	let savedRequests = data?.savedRequests?.data || [];
 	let error = data?.error || null;
 	let queryParam;
 	$: queryParam = $page.url.searchParams.get('page');
 
-	function getPaginationNumbers() {
+    function getPaginationNumbers() {
 		if (!meta || !meta.current_page || !meta.last_page) return [];
 
 		const { current_page, last_page } = meta;
@@ -51,29 +50,29 @@
 		return pages;
 	}
 
-	async function fetchSearchRequests(pageNumber = 1) {
+    async function fetchSavedRequests(pageNumber = 1) {
 		try {
 			if (meta?.current_page == pageNumber) return;
 
 			let apiService = new ApiService();
-			const response = await apiService.makeApiCall(`search-requests?page=${pageNumber}`);
+			const response = await apiService.makeApiCall(`saved-requests?page=${pageNumber}`);
 
 			if (response.error) {
 				throw new Error(response.error);
 			}
 
-			searchRequests = [...(response.search_requests?.data || [])];
-			meta = { ...(response.search_requests?.meta || {}) };
+			savedRequests = [...(response.saved_requests?.data || [])];
+			meta = { ...(response.saved_requests?.meta || {}) };
 		} catch (err) {
 			error = err.message;
 			console.error('Pagination Error:', err);
 		}
 	}
 
-	async function goToPage(pageNumber) {
+    async function goToPage(pageNumber) {
 		if (meta.current_page !== pageNumber) {
 			goto(`?page=${pageNumber}`, { noScroll: true });
-			await fetchSearchRequests(pageNumber);
+			await fetchSavedRequests(pageNumber);
 
 			if (typeof window !== 'undefined') {
 				setTimeout(() => {
@@ -84,22 +83,22 @@
 	}
 
 	$: if (!queryParam || error) {
-		fetchSearchRequests();
+		fetchSavedRequests();
 	}
 
 </script>
 
 <div class="container max-w-100">
 	<div class="flex-1 space-y-4">
-		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Request</h2>
+		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Saved Request</h2>
 
 		<div class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700">
 			<ul class="flex flex-wrap -mb-px">
 				<li class="me-2">
-					<a href="/my-requests" class="inline-block p-4 text-primary border-b-2 border-primary rounded-t-lg active dark:text-primary dark:border-primary" aria-current="page">My Request</a>
+					<a href="/my-requests" class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" aria-current="page">My Request</a>
 				</li>
 				<li class="me-2">
-					<a href="/saved-requests" class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300">Saved Request</a>
+					<a href="/saved-requests" class="inline-block p-4 text-primary border-b-2 border-primary rounded-t-lg active dark:text-primary dark:border-primary">Saved Request</a>
 				</li>
 			</ul>
 		</div>
@@ -115,37 +114,34 @@
 					<Table.Root>
 						<Table.Header>
 							<Table.Row>
-								<Table.Head class="w-[300px]">Address</Table.Head>
-								<Table.Head>Coordinate</Table.Head>
-								<Table.Head>Origin</Table.Head>
-								<Table.Head>Credits</Table.Head>
+								<Table.Head class="w-[300px]">Title</Table.Head>
+								<Table.Head>Frequency</Table.Head>
+								<Table.Head>notify</Table.Head>
 								<Table.Head>Status</Table.Head>
-								<Table.Head>Date</Table.Head>
+								<Table.Head>Executed at</Table.Head>
 								<Table.Head>Action</Table.Head>
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
-							{#each searchRequests as request}
+							{#each savedRequests as request}
 								<Table.Row>
-									<Table.Cell class="font-medium">{request.address || 'N/A'}</Table.Cell>
-									<Table.Cell
-										>{request.request_params.latitude}, {request.request_params
-											.longitude}</Table.Cell
-									>
-									<Table.Cell>{request.request_origin}</Table.Cell>
-									<Table.Cell>{request.api_credits}</Table.Cell>
+									<Table.Cell class="font-medium">{request.title || 'N/A'}</Table.Cell>
 									<Table.Cell>
-										{#if request.is_completed}
-											<Badge class="bg-primary">Complete</Badge>
-										{:else}
-											<Badge
-												class="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
-												>Pending</Badge
-											>
-										{/if}
-									</Table.Cell>
-									<Table.Cell>{formatDate(request.created_at)}</Table.Cell>
-
+                                        {request.frequency}
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <span class={`px-2 py-1 text-xs font-semibold rounded-md ${request.notify ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                            {request.notify ? 'Yes' : 'No'}
+                                        </span>
+                                    </Table.Cell>
+                                    
+                                    <Table.Cell>
+                                        <span class={`px-2 py-1 text-xs font-semibold rounded-md ${request.status ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'}`}>
+                                            {request.status ? 'Active' : 'Deactivated'}
+                                        </span>
+                                    </Table.Cell>
+                                    
+									<Table.Cell>{request.executed_at ? formatDate(request.executed_at) : 'N/A'}</Table.Cell>
 									<Table.Cell class="text-right">
 										<DropdownMenu.Root>
 											<DropdownMenu.Trigger>
@@ -155,6 +151,9 @@
 												<DropdownMenu.Group>
 													<DropdownMenu.Item>
 														<a href={`my-requests/${request.id}`}>View</a>
+													</DropdownMenu.Item>
+                                                    <DropdownMenu.Item>
+														<a href={`saved-requests/edit/${request.id}`}>Edit</a>
 													</DropdownMenu.Item>
 													<DropdownMenu.Item>
 														<a href={loadOnMapUrl(request)} target="_blank" >

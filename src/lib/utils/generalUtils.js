@@ -116,12 +116,13 @@ export function formatDate(isoString) {
 
 export function loadOnMapUrl(request) {
 	const { id, request_params, address } = request;
-	const { latitude, longitude, radius, features, start_date, end_date } = request_params;
+	const { latitude, longitude, radius, features, start_date, end_date, timeframe } = request_params;
 
 	let params = new URLSearchParams({
 		request_id: id,
 		lat: latitude,
 		long: longitude,
+		timeframe,
 		radius // search : address
 	});
 
@@ -131,8 +132,8 @@ export function loadOnMapUrl(request) {
 	}
 
 	// Add optional parameters if they are not null
-	if (start_date) params.append('start_date', start_date);
-	if (end_date) params.append('end_date', end_date);
+	// if (start_date) params.append('start_date', start_date);
+	// if (end_date) params.append('end_date', end_date);
 
 	return `/try-demo/?${params.toString()}`;
 }

@@ -43,6 +43,7 @@
 	let keywordsOrHashtags = $state('');
 
 	let selectedLocation = null;
+	let timeFrame = '';
 
 	// Function to initialize values from URL parameters
 	function initializeURLData() {
@@ -52,6 +53,8 @@
 		const selectedLatitudeFromURL = getDataFromURL('lat');
 		const selectedLongitudeFromURL = getDataFromURL('long');
 		const selectedFeaturesFromURL = getDataFromURL('features[]');
+		timeFrame = getDataFromURL('timeframe') || "today"; 
+		
 		if (selectedLocationFromURL && selectedLatitudeFromURL && selectedLongitudeFromURL) {
 			selectedLocation = {
 				place_name: selectedLocationFromURL,
@@ -123,6 +126,12 @@
 	let enableFacebookMarketPlace = $state(true);
 	$effect(() => toggleSource(enableFacebookMarketPlace, 'facebook-marketplace'));
 
+	let enableInstagram = $state(true);
+	$effect(() => toggleSource(enableInstagram, 'instagram'));
+
+	let enableGoogleNews = $state(true);
+	$effect(() => toggleSource(enableGoogleNews, 'google-news'));
+
 	$effect(() => {
 		const features = getDataFromURL('features[]');
 		if (Array.isArray(features) && features.length > 0) {
@@ -131,6 +140,8 @@
 			enableLinkedin = features.includes('linkedin');
 			enableFacebook = features.includes('facebook');
 			enableFacebookMarketPlace = features.includes('facebook-marketplace');
+			enableInstagram = features.includes('instagram');
+			enableGoogleNews = features.includes('google-news');
 		}
 	});
 
@@ -148,7 +159,9 @@
 		toggleSource(enableLinkedin, 'linkedin');
 		toggleSource(enableFacebook, 'facebook');
 		toggleSource(enableFacebookMarketPlace, 'facebook-marketplace');
-
+		toggleSource(enableInstagram, 'instagram');
+		toggleSource(enableGoogleNews, 'google-news');
+		
 		removeDataFromURL('request_id');
 		removeDataFromURL('req_id');
 
@@ -171,19 +184,19 @@
 			longitude: longitude,
 			radius: radiusValue[0],
 			resolution: resolutionValue[0],
-			start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
-			end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
+			// start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
+			// end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
+			timeframe: timeFrame,
 			features: selectedSource,
 			keywords: keywordsOrHashtags
 		};
 
 		try {
-			const response = await mapService.getMapResults(payload);
+			const response = await mapService.validateFilters(payload);
 			if (!response.success) {
 				errorMessages = response.errors ?? null;
 			} else {
 				errorMessages = null;
-				console.log('Filters applied successfully:', response);
 				// pass payload in URL
 				const url = new URL(window.location.href);
 				// payload.request_id = response.search_id;
@@ -214,9 +227,9 @@
 <Sheet.Root>
 	<Sheet.Trigger>
 		<Button
-			class="py-2.5 px-5 me-2 text-sm text-gray-500 hover:text-black bg-white hover:bg-gray-100 border rounded-lg border-gray-300 hover:border-black inline-flex items-center">
-			<Icon class="w-6 h-6 me-2" icon="mage:filter" />
-			Filters
+		variant="outline">
+			<Icon class="w-6 h-6 md:me-2 sm:me-0" icon="mage:filter" />
+			<span class="hidden md:inline">Filters</span> 
 		</Button>
 	</Sheet.Trigger>
 	<Sheet.Content class="flex flex-col h-full" side="right">
@@ -318,6 +331,32 @@
 												on:click={enableFacebookMarketPlace = !enableFacebookMarketPlace} />
 							</div>
 
+							<!-- Instagram -->
+							<div class="flex items-center justify-between space-x-4">
+								<div class="flex items-center space-x-4">
+									<Icon class="w-6 h-6" icon="lucide:instagram" />
+									<div>
+										<p class="text-sm font-medium leading-none">Instagram</p>
+									</div>
+								</div>
+								<Switch bind:enableInstagram checked={enableInstagram}
+												on:click={enableInstagram = !enableInstagram} />
+							</div>
+
+
+							<!-- Google news -->
+							<div class="flex items-center justify-between space-x-4">
+								<div class="flex items-center space-x-4">
+									<Icon class="w-6 h-6" icon="simple-icons:googlenews" />
+									<div>
+										<p class="text-sm font-medium leading-none">Google News</p>
+									</div>
+								</div>
+								<Switch bind:enableGoogleNews checked={enableGoogleNews}
+												on:click={enableGoogleNews = !enableGoogleNews} />
+							</div>
+
+
 							<!-- Panoids -->
 							<div class="flex items-center justify-between space-x-4">
 								<div class="flex items-center space-x-4">
@@ -378,7 +417,7 @@
 			</Card.Root>
 
 			<!-- Date Range -->
-			<Card.Root class="mb-4">
+			<Card.Root class="mb-4 hidden">
 				<Card.Header>
 					<Card.Title>Choose Date Range</Card.Title>
 					<Card.Description>Select dates to include historical data within your search.</Card.Description>
@@ -422,6 +461,26 @@
 							</Popover.Content>
 						</Popover.Root>
 					</div>
+				</Card.Content>
+			</Card.Root>
+
+			<!-- Timeframe -->
+			<Card.Root class="mb-4">
+				<Card.Header>
+					<Card.Title>Select a time frame</Card.Title>
+					<Card.Description>Select time to include historical data within your search.</Card.Description>
+				</Card.Header>
+				<Card.Content>
+					<select id="time-frame" name="time-frame"
+						bind:value={timeFrame}
+						class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+						aria-label="Select a time frame">
+						
+						<option value="" disabled selected>Choose a time frame</option>
+						<option value="today">Today</option>
+						<option value="last_week">Last Week</option>
+						<option value="last_month">Last Month</option>
+					</select>
 				</Card.Content>
 			</Card.Root>
 

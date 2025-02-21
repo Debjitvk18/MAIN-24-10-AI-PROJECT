@@ -4,6 +4,8 @@ import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
 import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
 import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
 import FacebookMarketPlaceIcon from '$lib/assets/svg/marker/facebook-marketplace-pin.svg?raw';
+import InstagramIcon from '$lib/assets/svg/marker/insta-pin.svg?raw';
+import GoogleNewsIcon from '$lib/assets/svg/marker/google-news.svg?raw';
 
 // ================= API Constants =================
 export const API_BASE_URL = `${PUBLIC_API_URL}/api/v1/`;
@@ -51,4 +53,6 @@ export const SOCIAL_MEDIA_PLATFORMS = [
 	{name: 'LinkedIn', slug: 'linkedin', tabIcon: 'mdi:linkedin', mapIcon: LinkedInIcon, visibility: true},
 	{name: 'Marketplace', slug: 'facebook-marketplace', tabIcon: 'lucide:facebook', mapIcon: FacebookMarketPlaceIcon, visibility: true},
 	{name: 'Panoids', slug: 'streetview', tabIcon: 'lucide:map-pinned', mapIcon: PanoidsIcon, visibility: true},
+	{name: 'Instagram', slug: 'instagram', tabIcon: 'lucide:instagram', mapIcon: InstagramIcon, visibility: true},
+	{name: 'Google News', slug: 'google-news', tabIcon: 'simple-icons:googlenews', mapIcon: GoogleNewsIcon, visibility: true},
 ];

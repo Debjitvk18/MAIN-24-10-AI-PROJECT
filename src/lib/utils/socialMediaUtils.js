@@ -3,6 +3,8 @@ import PanoidsIconImg from '$lib/assets/svg/marker/panoids-pin.svg';
 import LinkedInIconImg from '$lib/assets/svg/marker/linkedin-pin.svg';
 import FacebookIconImg from '$lib/assets/svg/marker/facebook-pin.svg';
 import FacebookMarketPlaceIconImg from '$lib/assets/svg/marker/facebook-marketplace-pin.svg';
+import InstagramIconImg from '$lib/assets/svg/marker/insta-pin.svg';
+import GoogleNewsIconImg from '$lib/assets/svg/marker/google-news.svg';
 
 /**
  * Generates a formatted object containing post data based on the input data and platform details.
@@ -69,6 +71,7 @@ const PLATFORM_PARSERS = {
 				url: tweet?.url ?? '#'
 			};
 		}),
+
 	linkedin: (data) =>
 		data.posts.map((post) => ({
 			id: post.urn,
@@ -79,6 +82,7 @@ const PLATFORM_PARSERS = {
 			lng: null,
 			url: post.url ?? '#'
 		})),
+
 	facebook: (data) =>
 		data.results.map((post) => ({
 			id: post.id,
@@ -89,6 +93,7 @@ const PLATFORM_PARSERS = {
 			lng: post.explicit_place?.longitude ?? null,
 			url: post.url ?? '#'
 		})),
+
 	'facebook-marketplace': (data) =>
 		data.data.marketplace_search.feed_units.edges
 			.map((post) => {
@@ -107,6 +112,7 @@ const PLATFORM_PARSERS = {
 				}
 			})
 			.filter(Boolean),
+
 	streetview: (data) =>
 		data.panoids.map((panoid) => ({
 			id: panoid.panoid,
@@ -116,7 +122,40 @@ const PLATFORM_PARSERS = {
 			lat: panoid.lat,
 			lng: panoid.lon,
 			url: `${PANOID_BASE_URL}${panoid.panoid}`
-		}))
+		})),
+
+	'google-news': (data) =>
+		data.news.map((article) => ({
+			id: article.position,
+			title: article.title,
+			image: article.imageUrl || GoogleNewsIconImg,
+			lat: null,
+			lng: null,
+			url: article.link,
+			fallback_image: GoogleNewsIconImg
+		})),
+
+	instagram: (data) =>
+		(data.media_grid?.sections || [])
+			.map((section) => {
+				const item = section?.layout_content?.one_by_two_item?.clips?.items?.[0]?.media;
+				if (item) {
+					return {
+						id: item.pk || null,
+						title: item?.caption?.text || '@' + item?.user?.username || 'Unknown',
+						description: item?.caption?.text || 'No description available',
+						image: item?.image_versions2?.candidates?.[0]?.url || InstagramIconImg,
+						url: item?.code ? `https://www.instagram.com/p/${item.code}/` : '#',
+						username: item?.user?.username || 'Unknown',
+						full_name: item?.user?.full_name || 'Unknown',
+						lat: null,
+						lng: null,
+						profile_pic_url: item?.user?.profile_pic_url || '',
+						fallback_image: InstagramIconImg
+					};
+				}
+			})
+			.filter(Boolean)
 };
 
 /**

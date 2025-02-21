@@ -365,7 +365,7 @@
 					features: []
 				}
 			});
-			//
+
 			map.addLayer({
 				id: 'line',
 				source: 'circle',
@@ -435,7 +435,7 @@
 					// show sidebar in the map.
 					showSidebar = true;
 					isSidebarVisible = true;
-					
+
 					// center the map
 					const bounds = circle.geometry.coordinates[0].reduce(
 						(bounds, coord) => bounds.extend(coord),
@@ -713,7 +713,6 @@
 			map.resize();
 		}, 100);
 	}
-
 </script>
 
 <svelte:head>

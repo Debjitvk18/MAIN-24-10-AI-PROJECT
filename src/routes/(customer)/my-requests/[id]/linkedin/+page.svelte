@@ -23,7 +23,6 @@
 			}
 
 			posts = [...(res?.response?.response?.posts || [])];
-            console.log(posts,'=========================')
 
 		} catch (err) {
 			console.error('Pagination Error:', err);

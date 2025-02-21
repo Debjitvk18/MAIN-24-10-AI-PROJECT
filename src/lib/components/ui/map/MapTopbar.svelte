@@ -26,8 +26,6 @@
 		}
 	}
 
-		$:	console.log(Object.keys(socialMediaIcons).length, 'here')
-
 	// Reactive settings visibility for mobile
 	let showSettings = false;
 
@@ -37,10 +35,10 @@
 </script>
 
 <div class="border-y border-gray-300 bg-white">
-	<div class="flex items-center justify-between px-2 py-2 shadow-md md:flex-row flex-col md:space-x-6 space-y-0 md:space-y-0">
+	<div class="flex flex-wrap items-center justify-between px-2 py-3 shadow-md space-x-4">
 		
 		<!-- Wrapper for Social Media Tabs + Fixed Cog Icon -->
-		<div class="flex items-center w-full">
+		<div class="flex items-center w-full md:w-auto">
 			
 			<!-- Scrollable Social Media Tabs (Mobile) -->
 			<div class="flex space-x-4 md:space-x-6 overflow-x-auto md:overflow-visible scrollbar-hide w-full">
@@ -68,44 +66,44 @@
 					{/each}
 				{/if}
 			</div>
-
-
-			<!-- Cog Icon (Only Visible on Mobile) -->
+			
+			<!-- Cog Icon (Only for Mobile & Tablet) -->
 			<button 
 				on:click={toggleSettings}
-				class="ml-4 md:hidden flex-shrink-0 text-gray-600 hover:text-black transition-all"
+				class="ml-4 md:ml-6 lg:hidden flex-shrink-0 text-gray-600 hover:text-black transition-all"
 			>
 				<Icon class="w-7 h-7" icon="mdi:cog-outline" />
 			</button>
 		</div>
 
-		<!-- Sidebar Settings (Always visible on desktop, toggled on mobile) -->
+		<!-- Sidebar, Filters & Save Search (Always Inline) -->
 		<div 
-		class="transition-all duration-300 ease-in-out transform
-			{showSettings ? 'opacity-100 scale-100 h-auto flex pt-2' : 'opacity-0 scale-95 h-0 overflow-hidden'} 
-			md:opacity-100 md:scale-100 md:h-auto md:overflow-visible md:flex 
-			items-center md:space-x-4 sm:space-x-2 md:w-auto w-full 
-			justify-between md:justify-center">
+			class="transition-all duration-300 ease-in-out transform w-full md:w-auto flex flex-wrap items-center space-x-4
+			{showSettings ? 'opacity-100 scale-100 h-auto flex mt-2' : 'opacity-0 scale-95 h-0 overflow-hidden'}
+			lg:opacity-100 lg:scale-100 lg:h-auto lg:overflow-visible">
+
 			<!-- Sidebar Visibility Toggle -->
-			<div class="flex md:flex-row flex-col items-center space-x-0 md:space-x-2 space-y-1 md:space-y-0">
-				<Switch
-					bind:checked={isSidebarVisible}
-					class="cursor-pointer"
-					id="sidebar-visibility"
-					on:click={() => toggleSidebarVisibility()}
-				/>
-				<Label class="cursor-pointer text-sm md:text-base" for="sidebar-visibility">Sidebar</Label>
-			</div>
-		
+			{#if Object.keys(socialMediaIcons).length > 0}
+				<div class="flex items-center space-x-2">
+					<Switch
+						bind:checked={isSidebarVisible}
+						class="cursor-pointer"
+						id="sidebar-visibility"
+						on:click={() => toggleSidebarVisibility()}
+					/>
+					<Label class="cursor-pointer text-sm md:text-base" for="sidebar-visibility">Sidebar</Label>
+				</div>
+			{/if}
+
 			<!-- Filters -->
 			<MapFilters />
-		
+
 			<!-- Save Search (Only for Logged-in Users) -->
 			{#if $isLoggedIn}
 				<SaveSearch />
 			{/if}
 		</div>
-		
+
 	</div>
 </div>
 
