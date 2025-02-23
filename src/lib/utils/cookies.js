@@ -1,15 +1,20 @@
 /**
  * Set a cookie with a given name, value, and expiration days.
- * 
+ *
  * @param {string} cname - The name of the cookie.
  * @param {string} cvalue - The value of the cookie.
  * @param {number} [exdays=7] - Expiration time in days (default is 7 days).
  */
 export function setCookie(cname, cvalue, exdays = 7) {
+    let secureFlag = false;
+    if(location.protocol === 'https:') {
+        secureFlag = true;
+    }
+
     const d = new Date();
     d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
     const expires = `expires=${d.toUTCString()}`;
-    document.cookie = `${cname}=${encodeURIComponent(cvalue)}; ${expires}; path=/; SameSite=Strict; Secure`;
+    document.cookie = `${cname}=${encodeURIComponent(cvalue)}; ${expires}; path=/; SameSite=Strict; ${secureFlag ? 'Secure' : ''}`;
 }
 
 /**
