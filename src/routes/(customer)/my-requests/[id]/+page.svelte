@@ -6,10 +6,15 @@
 	import { formatDate, loadOnMapUrl } from '$lib/utils/generalUtils';
 	import { buttonVariants } from "$lib/components/ui/button";
 	import GetBack from '$lib/components/general/GetBack.svelte';
+	import {ApiService} from "$lib/services/api-service";
+	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 
 	export let data;
 	let searchRequest = data?.searchRequest;
 	let features = searchRequest?.request_params?.features || [];
+	$: id = $page.params.id;
+	let error = data?.error || null;
 
 	const icons = {
 		"x-twitter": { icon: 'ri:twitter-x-fill', label: 'X (Twitter)' },
@@ -21,20 +26,48 @@
 		"google-news": { icon: 'simple-icons:googlenews', label: 'Google News' },
 	};
 
+	async function fetchMyRequestByID() {
+		try {
+			let apiService = new ApiService();
+			const response = await apiService.makeApiCall(`search-requests/${id}`, {}, 'GET', 'json');
+
+			if (response.error) {
+				throw new Error(response.error);
+			}
+
+			if(!response.success) {
+				error = response.message;
+				return false;
+			}
+
+			searchRequest = response.search_request;
+			features = searchRequest?.request_params?.features || [];
+			error = null;
+		} catch (err) {
+			error = err.message;
+			console.error('Error:', err);
+		}
+	}
+
+	onMount(() => {
+		if(error) {
+			fetchMyRequestByID();
+		}
+	});
 </script>
 
 <div class="container max-w-100">
 	<div class="flex-1 space-y-4">
 		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Search Request</h2>
 		<GetBack url={`/my-requests`} />
-		{#if data.searchRequest.length !== 0}
+		{#if !error}
 			<a href={loadOnMapUrl(searchRequest)} class={`${buttonVariants({ variant: "outline" })} float-end`} target="">
 				<Icon icon="quill:link-out" class="me-2" /> Load on Map
 			</a>
 		{/if}
 		<Card.Root class="col-span-4">
 			<Card.Content>
-				{#if data.searchRequest.length == 0}
+				{#if error}
 					<NotFound message={'No request found!!'} />
 				{:else}
 					<div class="grid gap-4">

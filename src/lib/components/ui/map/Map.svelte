@@ -425,6 +425,8 @@
 						return false;
 					}
 
+					searchRequestID.set(Number(searchId));
+
 					// Start SSE
 					const source = new EventSource(`${API_BASE_URL}map/search-sse/${searchId}`);
 					let socialData = [];

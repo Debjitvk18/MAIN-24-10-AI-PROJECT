@@ -1,12 +1,11 @@
 import { ApiService } from '$lib/services/api-service';
+import {AUTH_TOKEN} from "$lib/constants/constants.js";
 
 export async function load({ fetch, cookies, url, params }) {
-
     try {
-
         let apiService = new ApiService();
 
-        const accessToken = cookies.get('serviceapp-token');
+        const accessToken = cookies.get(AUTH_TOKEN);
 
         if (!accessToken) {
             throw new Error('No authentication token found. Please log in.');

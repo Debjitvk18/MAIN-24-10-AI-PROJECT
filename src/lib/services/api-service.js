@@ -12,7 +12,7 @@ export class ApiService {
 	async makeApiCall(endpoint, payload = {}, method = 'GET', requestType = 'json', access_token = false) {
 		let headers;
 		let fetchOptions;
-		let userToken = access_token || localStorage.getItem(AUTH_TOKEN)
+		let userToken = access_token || localStorage.getItem(AUTH_TOKEN) || false;
 		
 		if (requestType !== 'formdata') {
 			headers = {
@@ -33,9 +33,8 @@ export class ApiService {
 			};
 		}
 
-		const token = userToken;
-		if (token) {
-			headers.Authorization = `Bearer ${token}`;
+		if (userToken) {
+			headers.Authorization = `Bearer ${userToken}`;
 		}
 
 		if (method !== 'GET') {
@@ -46,7 +45,7 @@ export class ApiService {
 
 		if (requestType === 'blob') {
 			return await response.blob();
-		} 
+		}
 
 		return response.json();
 	}
