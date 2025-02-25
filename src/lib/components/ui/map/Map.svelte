@@ -725,16 +725,18 @@
 	/>
 
 	<div class="flex h-full flex-1 relative">
-		{#if showSidebar}
-			<!-- Sidebar -->
-			<div class="sidebar {isSidebarVisible ? 'visible' : ''}">
-				<MapSidebar
-					isSidebarVisible={isSidebarVisible}
-					markers={markers}
-					map={map}
-				/>
-			</div>
-		{/if}
+		<!--{#if showSidebar}-->
+		<!--	&lt;!&ndash; Sidebar &ndash;&gt;-->
+		<!--	<div class="sidebar {isSidebarVisible ? 'visible' : ''}">-->
+		<!--		<MapSidebar-->
+		<!--			isSidebarVisible={isSidebarVisible}-->
+		<!--			markers={markers}-->
+		<!--			map={map}-->
+		<!--		/>-->
+		<!--	</div>-->
+		<!--{/if}-->
+
+		<MapSidebar />
 
 		<div class="h-full relative flex-1">
 			<!-- Map Area -->
