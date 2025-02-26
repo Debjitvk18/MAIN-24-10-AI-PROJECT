@@ -85,8 +85,7 @@ on:leave={handleLeave}
         >
             <Tabs.Trigger
                 on:click={() => handleTabClick('panoramas')}
-                class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center
-                    data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+                class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
                 value="panoramas"
             >
                 Panoramic Street
@@ -94,8 +93,7 @@ on:leave={handleLeave}
         
             <Tabs.Trigger
                 on:click={() => handleTabClick('revserse-lookup')}
-                class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center
-                    data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+                class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
                 value="revserse-lookup"
             >
                 Reverse Lookup Services
@@ -103,8 +101,7 @@ on:leave={handleLeave}
         
             <Tabs.Trigger
                 on:click={() => handleTabClick('social-media')}
-                class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center
-                    data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+                class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
                 value="social-media"
             >
                 Social Media Live Updates
