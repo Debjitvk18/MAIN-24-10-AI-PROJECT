@@ -1,37 +1,29 @@
-<section>
-	<div class="relative mx-auto max-w-screen-xl my-20">
-		<div
-			class="rounded-xl p-1 bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500"
-		>
-			<div class="rounded-lg bg-black/80 backdrop-blur">
-				<div
-					class="flex w-full flex-wrap items-center justify-between gap-4 px-8 py-10 sm:px-16 lg:flex-nowrap"
-				>
-					<div class="lg:max-w-xl">
-						<h2
-							class="block w-full pb-2 bg-gradient-to-b from-white to-gray-400 bg-clip-text font-bold text-transparent text-3xl sm:text-4xl"
-						>
-							Lorem Ipsum is simply dummy text of the printing
-						</h2>
-						<p class="my-4 bg-transparent font-medium leading-relaxed tracking-wide text-gray-400">
-							Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
-							has been the industry's standard dummy text ever since the 1500s, when an unknown
-							printer industry's standard dummy text
-						</p>
-					</div>
-					<div class="flex flex-wrap items-center justify-center gap-6">
-						<a
-						href="/try-demo"
-							class="bg-[#2C7BE5] text-white button-text flex items-center justify-center whitespace-nowrap rounded-md transition-all duration-300 px-8 py-3 text-xs sm:text-sm"
-							>Get Started</a
-						>
-						<a href="/register"
-							class="flex items-center justify-center whitespace-nowrap rounded-md border border-zinc-700 bg-zinc-900 text-center text-white backdrop-blur transition-all hover:bg-zinc-800 px-8 py-3 text-xs sm:text-sm"
-							>Sign Up</a
-						>
-					</div>
-				</div>
+<script>
+	import CTABanner from '$lib/assets/general/cta-layer.png';
+</script>
+
+<section class="container relative mb-16 md:mb-[120px] mt-24 md:mt-[200px] px-4">
+	<div class="bg-[#f2f4fb] py-12 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between rounded-lg shadow-xlg relative z-10">
+		<div class="text-center md:text-left">
+			<h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+				Grow Your Business<br>With cyberglobes.ai
+			</h2>
+			<p class="text-gray-600 my-4 lg:my-6 text-lg sm:text-xl md:text-2xl">
+				Try our dashboard for free
+			</p>
+			<div class="mt-4 flex flex-col sm:flex-row gap-3">
+				<a href="/try-demo" class="bg-primary text-white px-5 py-2 rounded-md shadow-md hover:bg-primary-700 text-sm sm:text-base font-medium">
+					Get a Demo
+				</a>
+				<a href="/register" class="border border-gray-400 text-gray-700 px-5 py-2 rounded-md shadow-sm hover:bg-gray-200 text-sm sm:text-base font-medium">
+					Sign Up Free
+				</a>
 			</div>
 		</div>
+	</div>
+
+	<!-- Responsive Image -->
+	<div class="absolute right-0 bottom-0 w-[50vw] max-w-[250px] sm:max-w-[300px] md:max-w-[400px] z-10 hidden sm:block">
+		<img src="{CTABanner}" alt="Placer.ai Illustration" class="w-full h-auto">
 	</div>
 </section>

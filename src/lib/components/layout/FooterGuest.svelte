@@ -3,7 +3,7 @@
 	import Logo from "../general/Logo.svelte";
 
 </script>
-<footer class="p-4 bg-white sm:p-6 dark:bg-gray-800">
+<footer class="p-4 sm:p-6 dark:bg-gray-800">
     <div class="mx-auto max-w-screen-xl">
         <div class="md:flex md:justify-between">
             <div class="mb-6 md:mb-0">
