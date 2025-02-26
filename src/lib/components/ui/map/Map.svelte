@@ -439,8 +439,14 @@
 
 							// Parse data to display
 							const data = JSON.parse(e.data);
-							socialData.push(parseSocialMediaResponse(data, slug));
-							socialMediaJson.update((state) => ({ ...state, socialData }));
+
+							const parsedData = parseSocialMediaResponse(data, slug);
+							socialData.push(parsedData);
+							socialMediaJson.update((state) => {
+								const updatedSocialData = [...(state.socialData || []), parsedData];
+								return { ...state, socialData: updatedSocialData };
+							});
+
 
 							// Visibility
 							visibility.update((state) => ({ ...state, [slug]: true }));
@@ -725,18 +731,16 @@
 	/>
 
 	<div class="flex h-full flex-1 relative">
-		<!--{#if showSidebar}-->
-		<!--	&lt;!&ndash; Sidebar &ndash;&gt;-->
-		<!--	<div class="sidebar {isSidebarVisible ? 'visible' : ''}">-->
-		<!--		<MapSidebar-->
-		<!--			isSidebarVisible={isSidebarVisible}-->
-		<!--			markers={markers}-->
-		<!--			map={map}-->
-		<!--		/>-->
-		<!--	</div>-->
-		<!--{/if}-->
-
-		<MapSidebar />
+		{#if showSidebar}
+			<!-- Sidebar -->
+			<div class="sidebar {isSidebarVisible ? 'visible' : ''}">
+				<MapSidebar
+					isSidebarVisible={isSidebarVisible}
+					markers={markers}
+					map={map}
+				/>
+			</div>
+		{/if}
 
 		<div class="h-full relative flex-1">
 			<!-- Map Area -->
@@ -793,7 +797,7 @@
     }
 
     .sidebar {
-        width: 24rem;
+        width: 30vw;
         top: 0;
         left: 0;
         height: 100%;
@@ -818,7 +822,7 @@
     }
 
     .sidebar-visible #map {
-        width: calc(100% - 24rem);
-        margin-left: 24rem; /* Same width as the sidebar */
+        width: calc(100% - 30vw);
+        margin-left: 30vw; /* Same width as the sidebar */
     }
 </style>

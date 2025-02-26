@@ -1,5 +1,5 @@
 <script>
-    import Tweet from "$lib/components/ui/map/social-cards/twitter/Tweet.svelte";
+    import Tweet from "$lib/components/ui/map/social-cards/x-twitter/Tweet.svelte";
 
     export let tweets = [];
 

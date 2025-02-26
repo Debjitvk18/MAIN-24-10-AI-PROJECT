@@ -55,23 +55,41 @@ function generatePostData(data, platformDetails) {
  * description, image, URL, username, full name, profile picture URL, lat, lng, and fallback image.
  */
 const PLATFORM_PARSERS = {
-	'x-twitter': (data) =>
-		data.tweets.map((tweetObj) => {
-			const tweet = tweetObj.tweet;
-			const user = tweet.user_details;
-			const place = tweet.place ?? null;
-			const [lng, lat] = place?.bounding_box.coordinates[0][0] || [null, null];
+	'x-twitter': (data) => {
+		const tweetData = Object.entries(data)[0];
+		const tweetType = tweetData[0];
+		const tweetObjects = tweetData[1];
 
+		const getTweetDetails = (tweetObject) => {
+			const {tweet = {}} = tweetObject;
+			const {user_details: user, place, extended_entities} = tweet;
+			const [lng, lat] = place?.bounding_box?.coordinates?.[0]?.[0] ?? [null, null];
+
+			const mediaDetails = extended_entities?.media?.[0] || {};
+			const postType = mediaDetails.type || "text";
+			const media = mediaDetails.media_url_https || null;
 			return {
-				id: tweetObj.entryId,
-				title: tweet.full_text,
-				description: tweet.full_text,
-				image: user.profile_image_url_https,
+				id: tweetObject.entryId,
+				content: tweet.full_text,
+				url: tweet.url ?? '#',
+				type: postType,
+				postMedia: media,
+				isUserVerified: user.verified,
+				userName: user.name,
+				userScreenName: user.screen_name,
+				userProfilePhoto: user.profile_image_url_https,
 				lat,
 				lng,
-				url: tweet?.url ?? '#'
+				tweetType,
+				favoriteCount: tweet.favorite_count,
+				replyCount: tweet.reply_count,
+				retweetCount: tweet.retweet_count,
+				postTime: tweet.created_at,
 			};
-		}),
+		};
+
+		return {[tweetType]: tweetObjects.tweets.map(getTweetDetails)};
+	},
 
 	linkedin: (data) =>
 		data.posts.map((post) => ({
@@ -178,4 +196,15 @@ export function parseSocialMediaResponse(data, platform) {
 	}
 
 	return generatePostData(data, platformDetails);
+}
+
+/**
+ * Retrieves the social media tabs associated with a specified platform.
+ *
+ * @param {string} socialMediaPlatformSlug - The slug identifier of the social media platform.
+ * @return {Array} An array of tabs for the specified social media platform. Returns an empty array if the platform is not found.
+ */
+export function getSocialMediaTabs(socialMediaPlatformSlug) {
+	const socialMediaPlatform = SOCIAL_MEDIA_PLATFORMS.find(platform => platform.slug === socialMediaPlatformSlug);
+	return socialMediaPlatform ? socialMediaPlatform.tabs : [];
 }

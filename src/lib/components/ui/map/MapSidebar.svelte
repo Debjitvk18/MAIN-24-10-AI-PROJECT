@@ -1,17 +1,118 @@
 <script>
-	import TwitterCard from "$lib/components/ui/map/social-cards/twitter/TwitterCard.svelte";
+	import MapNoData from '$lib/components/ui/map/MapNoData.svelte';
+	import { highlightMarker } from '$lib/utils/mapUtils.js';
+	import { sanitizeId, truncateString } from '$lib/utils/generalUtils.js';
+	import {activeSocialMedia, hoveredPostId, socialMediaJson, visibility} from '$lib/stores/mapStore.ts';
+	import Icon from '@iconify/svelte';
+	import * as Avatar from '$lib/components/ui/avatar/index.ts';
+	import TwitterCard from "$lib/components/ui/map/social-cards/x-twitter/TwitterCard.svelte";
+
+	export let isSidebarVisible = true;
+	export let markers = {};
+	export let map;
+
+	let sidebarElement;
+
+	// Reactively store the hovered post ID
+	let activeHoveredPostId = null;
+	hoveredPostId.subscribe((id) => {
+		activeHoveredPostId = id;
+
+		if (sidebarElement && id !== null) {
+			// Scroll to the highlighted post in the sidebar
+			const sanitizedId = `post-${sanitizeId(id)}`;
+			const postElement = sidebarElement.querySelector(`.${sanitizedId}`);
+			if (postElement) {
+				postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}
+		}
+	});
+
+	function handleScroll(event) {
+		const sections = event.target.querySelectorAll('.post-section');
+		let active = null;
+
+		sections.forEach((section) => {
+			const { top, bottom } = section.getBoundingClientRect();
+
+			// Check if the section is in the viewport
+			if (top <= window.innerHeight / 2 && bottom >= window.innerHeight / 2) {
+				active = section.dataset.type;
+			}
+		});
+
+		// Update the active social media store
+		activeSocialMedia.update((prev) => {
+			if (prev !== active) {
+				return active;
+			}
+			return prev;
+		});
+	}
+
+	let twitterData;
+	$: twitterData = $socialMediaJson?.socialData?.find(socialMedia => socialMedia.type === 'x-twitter');
 </script>
 
 <!-- Sidebar -->
-<div class="dark:bg-neutral-900 w-96 p-4 pt-0 h-full overflow-y-auto shadow-lg" bind:this={sidebarElement}>
-	<div class="pb-5 h-full">
-		<div class="max-w-md mx-auto pb-5">
+{#if isSidebarVisible}
+	<div class="dark:bg-neutral-900 w-100 p-4 pt-0 h-full overflow-y-auto shadow-lg sidebar-content" bind:this={sidebarElement}>
+		<div class="pb-5 h-full">
+			<div class="w-full mx-auto pb-5">
+				{#if !$socialMediaJson || Object.values($visibility).every(val => val === false) }
+					<MapNoData />
+				{/if}
 
-			<TwitterCard />
+				{#if $socialMediaJson}
+					{#if twitterData}
+						<TwitterCard />
+					{/if}
 
+					<!-- Call other data here -->
+					{#each $socialMediaJson.socialData as socialMedia}
+						{#if socialMedia.type !== 'x-twitter'}
+							{#each socialMedia.posts as post}
+								{#if $visibility[socialMedia.type] && post && post.id}
+									<div
+										data-type="{socialMedia.type}"
+										class="post-row post-{sanitizeId(post.id)} bg-white p-4 rounded-lg shadow-md mt-4 border border-gray-300 post-section"
+										class:highlighted={activeHoveredPostId === post.id}
+										on:mouseover={() => highlightMarker(markers[socialMedia.type]?.[post.id], map, true)}
+										on:mouseleave={() => highlightMarker(markers[socialMedia.type]?.[post.id], map, false)}>
+										<a href={post.url} target="_blank" class="flex items-center gap-4">
+											<Avatar.Root>
+												<Avatar.Image src="{post.image}" alt="post" />
+												<Avatar.Fallback>
+													{#if post.fallback_image !== undefined && post.fallback_image !== null && post.fallback_image !== ''}
+														<img src="{post.fallback_image}" alt="post" />
+													{:else}
+														P
+													{/if}
+												</Avatar.Fallback>
+											</Avatar.Root>
+											<div class="flex flex-col">
+												<strong
+														class="text-sm font-medium text-gray-900 dark:text-gray-200">{truncateString(post.title, 50)}</strong>
+												<span class="text-sm font-medium text-gray-500 dark:text-gray-400">
+													{truncateString(post.description, 250)}
+												</span>
+												{#if post.price}
+													<span class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1">
+														<Icon icon="grommet-icons:money" /> {post.currency}{post.price}
+													</span>
+												{/if}
+											</div>
+										</a>
+									</div>
+								{/if}
+							{/each}
+						{/if}
+					{/each}
+				{/if}
+			</div>
 		</div>
 	</div>
-</div>
+{/if}
 <style>
 	.post-row:hover,
 	.highlighted {
