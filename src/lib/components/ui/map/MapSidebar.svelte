@@ -64,7 +64,7 @@
 				{/if}
 
 				{#if $socialMediaJson}
-					{#if twitterData}
+					{#if twitterData && $visibility["x-twitter"]}
 						<TwitterCard />
 					{/if}
 

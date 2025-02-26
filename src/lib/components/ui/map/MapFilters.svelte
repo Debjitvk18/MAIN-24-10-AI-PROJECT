@@ -39,7 +39,7 @@
 	let selectedSource = [];
 
 	// Radius and Resolution slider
-	let radiusValue = $state([1]);
+	let radiusValue = $state([10]);
 	let resolutionValue = $state([5]);
 	let keywordsOrHashtags = $state('');
 
@@ -71,7 +71,7 @@
 		// Radius and resolution value parsing
 		const rawRadius = getDataFromURL('radius');
 		const rawResolution = getDataFromURL('resolution');
-		radiusValue = [parseInt(rawRadius, 10) || 1];
+		radiusValue = [parseInt(rawRadius, 10) || 10];
 		resolutionValue = [parseInt(rawResolution, 10) || 5];
 
 		if (selectedKeywordOrHashtags && keywordsOrHashtags == '') {
@@ -287,8 +287,8 @@
 							ariaLabel="Radius"
 							bind:value={radiusValue}
 							id="radius"
-							max={50}
-							min={1}
+							max={100}
+							min={10}
 							step={1} />
 					</div>
 
