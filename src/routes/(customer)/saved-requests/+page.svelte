@@ -63,6 +63,7 @@
 
 			savedRequests = [...(response.saved_requests?.data || [])];
 			meta = { ...(response.saved_requests?.meta || {}) };
+			error = null;
 		} catch (err) {
 			error = err.message;
 			console.error('Pagination Error:', err);

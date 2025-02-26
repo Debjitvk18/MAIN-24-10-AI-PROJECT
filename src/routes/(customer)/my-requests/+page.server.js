@@ -1,7 +1,7 @@
-import { ApiService } from '$lib/services/api-service';
+import { RequestService } from '$lib/services/request-service';
 
 export async function load({ fetch, cookies, url }) {
-    let apiService = new ApiService();
+    let requestService = new RequestService();
     const queryParams = Object.fromEntries(url.searchParams);
     try {
         const accessToken = cookies.get('serviceapp-token');
@@ -14,7 +14,7 @@ export async function load({ fetch, cookies, url }) {
             pageNumber = '?page='+queryParams.page;
         }
 
-        const res = await apiService.makeApiCall(`search-requests${pageNumber}`, {}, 'GET', 'json', accessToken);
+        const res = await requestService.getRequests(pageNumber, accessToken);
 
         if (!res.success) {
             throw new Error(res.message || 'API request failed.');

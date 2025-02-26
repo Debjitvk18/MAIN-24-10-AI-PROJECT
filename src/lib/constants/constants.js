@@ -5,7 +5,7 @@ import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
 import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
 import FacebookMarketPlaceIcon from '$lib/assets/svg/marker/facebook-marketplace-pin.svg?raw';
 import InstagramIcon from '$lib/assets/svg/marker/insta-pin.svg?raw';
-import GoogleNewsIcon from '$lib/assets/svg/marker/google-news.svg?raw';
+import GoogleNewsIcon from '$lib/assets/svg/marker/google-news-pin.svg?raw';
 
 // ================= API Constants =================
 export const API_BASE_URL = `${PUBLIC_API_URL}/api/v1/`;
@@ -47,11 +47,11 @@ export const MARKER_FONT_SIZE = '20px';
 export const MAP_PRIMARY_COLOR = '#2462ea';
 
 export const SOCIAL_MEDIA_PLATFORMS = [
-	{name: 'X (Twitter)', slug: 'x-twitter', tabIcon: 'ri:twitter-x-fill', mapIcon: TwitterIcon, visibility: true},
-	{name: 'LinkedIn', slug: 'linkedin', tabIcon: 'mdi:linkedin', mapIcon: LinkedInIcon, visibility: true},
-	{name: 'Facebook', slug: 'facebook', tabIcon: 'lucide:facebook', mapIcon: FacebookIcon, visibility: true},
-	{name: 'Marketplace', slug: 'facebook-marketplace', tabIcon: 'lucide:facebook', mapIcon: FacebookMarketPlaceIcon, visibility: true},
-	{name: 'Instagram', slug: 'instagram', tabIcon: 'lucide:instagram', mapIcon: InstagramIcon, visibility: true},
-	{name: 'Google News', slug: 'google-news', tabIcon: 'simple-icons:googlenews', mapIcon: GoogleNewsIcon, visibility: true},
-	{name: 'Panoids', slug: 'streetview', tabIcon: 'lucide:map-pinned', mapIcon: PanoidsIcon, visibility: true},
+	{name: 'X (Twitter)', slug: 'x-twitter', tabIcon: 'ri:twitter-x-fill', mapIcon: TwitterIcon, visibility: true, tabs: ["Top", "Latest"]},
+	{name: 'LinkedIn', slug: 'linkedin', tabIcon: 'mdi:linkedin', mapIcon: LinkedInIcon, visibility: true, tabs: []},
+	{name: 'Facebook', slug: 'facebook', tabIcon: 'lucide:facebook', mapIcon: FacebookIcon, visibility: true, tabs: []},
+	{name: 'Marketplace', slug: 'facebook-marketplace', tabIcon: 'lucide:facebook', mapIcon: FacebookMarketPlaceIcon, visibility: true, tabs: []},
+	{name: 'Instagram', slug: 'instagram', tabIcon: 'lucide:instagram', mapIcon: InstagramIcon, visibility: true, tabs: []},
+	{name: 'Google News', slug: 'google-news', tabIcon: 'simple-icons:googlenews', mapIcon: GoogleNewsIcon, visibility: true, tabs: []},
+	{name: 'Panoids', slug: 'streetview', tabIcon: 'lucide:map-pinned', mapIcon: PanoidsIcon, visibility: true, tabs: []},
 ];

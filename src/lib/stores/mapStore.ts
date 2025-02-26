@@ -15,3 +15,5 @@ export const dataLoadingState = writable();
 export const socialMediaJson = writable([]);
 
 export const visibility = writable([]);
+
+export const activeSocialMedia = writable(null);

@@ -7,7 +7,7 @@
 	import SaveSearch from '$lib/components/ui/map/SaveSearch.svelte';
 	import { isLoggedIn } from '$lib/stores/authStore';
 	import { getDataFromURL, isMobile } from '$lib/utils/generalUtils.js';
-	import { dataLoadingState, visibility } from '$lib/stores/mapStore';
+	import { dataLoadingState, visibility, activeSocialMedia } from '$lib/stores/mapStore';
 	import { SOCIAL_MEDIA_PLATFORMS } from '$lib/constants/constants.js';
 	import { onMount } from 'svelte';
 
@@ -42,7 +42,7 @@
 	});
 </script>
 
-<div class="border-y border-gray-300 bg-white">
+<div class="border-y border-gray-300 bg-white sticky top-0 z-10">
 	<div class="flex flex-wrap items-center justify-between px-2 py-3 shadow-md space-x-4">
 
 		<!-- Wrapper for Social Media Tabs + Fixed Cog Icon -->
@@ -54,7 +54,8 @@
 					{#each SOCIAL_MEDIA_PLATFORMS as platform}
 						{#if features.includes(platform.slug)}
 							<div
-								class="flex flex-col items-center space-y-1 {($visibility[platform.slug] && $dataLoadingState[platform.slug] !== 'loading') ? 'text-gray-500 hover:text-black' : 'text-gray-300'} cursor-pointer">
+								class="flex flex-col items-center space-y-1 {$activeSocialMedia} {($visibility[platform.slug] && $dataLoadingState[platform.slug] !== 'loading') ? 'text-gray-500 hover:text-black' : 'text-gray-300'} cursor-pointer"
+								class:active={$visibility[platform.slug] && $dataLoadingState[platform.slug] !== 'loading' && $activeSocialMedia === platform.slug}>
 								<Tooltip.Root>
 									<Tooltip.Trigger>
 										<div
@@ -64,7 +65,7 @@
 											on:click={() => toggleVisibility(platform.slug)}
 											on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleVisibility(platform.slug)}
 											class="flex flex-col items-center cursor-pointer">
-										{#if $dataLoadingState && $dataLoadingState[platform.slug] === 'loading'}
+											{#if $dataLoadingState && $dataLoadingState[platform.slug] === 'loading'}
 												<Icon class="w-7 h-7 md:w-6 md:h-6" icon="line-md:loading-twotone-loop" />
 											{:else if $dataLoadingState && $dataLoadingState[platform.slug] === 'error'}
 												<Icon class="w-7 h-7 md:w-6 md:h-6" icon="mdi:clock-warning" />
@@ -136,4 +137,32 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
+
+	.active.x-twitter {
+		color: var(--color-x-twitter);
+	}
+
+	.active.facebook {
+		color: var(--color-facebook);
+	}
+
+	.active.instagram {
+		color: var(--color-instagram);
+	}
+
+	.active.facebook-marketplace {
+		color: var(--color-facebook);
+	}
+
+	.active.linkedin {
+		color: var(--color-linkedin);
+	}
+
+	.active.google-news {
+		color: var(--color-google-news);
+	}
+
+	.active.streetview {
+		color: var(--color-streetview);
+	}
 </style>

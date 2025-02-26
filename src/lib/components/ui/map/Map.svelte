@@ -214,7 +214,7 @@
 
 	onMount(() => {
 		const rawRadius = getDataFromURL('radius');
-		const radiusValue = [parseInt(rawRadius, 10) || 1];
+		const radiusValue = [parseInt(rawRadius, 10) || 10];
 		const radiusValueInMeters = radiusValue[0] * 1000;
 
 		mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
@@ -425,54 +425,52 @@
 						return false;
 					}
 
+					searchRequestID.set(Number(searchId));
+
 					// Start SSE
 					const source = new EventSource(`${API_BASE_URL}map/search-sse/${searchId}`);
 					let socialData = [];
 
+					let addedPostIds = [];
 					// update the respective state for each platform.
 					SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => {
+						// Clear existing markers for the platform before adding new ones
+						if (markers[slug]) {
+							markers[slug].forEach((marker) => marker.remove());
+						}
+						markers[slug] = [];
+
+						let markersForType: mapboxgl.Marker[] = [];
+
 						source.addEventListener(slug, function(e) {
 							// update loading state
 							dataLoadingState.update((state) => ({ ...state, [slug]: 'done' }));
 
 							// Parse data to display
 							const data = JSON.parse(e.data);
-							socialData.push(parseSocialMediaResponse(data, slug));
-							socialMediaJson.update((state) => ({ ...state, socialData }));
+
+							const parsedData = parseSocialMediaResponse(data, slug);
+							socialData.push(parsedData);
+							socialMediaJson.update((state) => {
+								const updatedSocialData = [...(state.socialData || []), parsedData];
+								return { ...state, socialData: updatedSocialData };
+							});
+
 
 							// Visibility
 							visibility.update((state) => ({ ...state, [slug]: true }));
 
-							// Clear existing markers for the platform before adding new ones
-							if (markers[slug]) {
-								markers[slug].forEach((marker) => marker.remove());
-							}
-							markers[slug] = [];
-
-							let markersForType: mapboxgl.Marker[] = [];
-
 							// Add markers
 							socialData.forEach(({ type, count, posts }) => {
 								if (slug !== type) return;
+
 								let pointsAdded = 0;
-								const validPosts = filterValidPosts(posts, circle);
-								validPosts.forEach((post) => {
-									if (post && pointsAdded < count) {
-										markersForType[post.id] = createMarker(
-											SOCIAL_MEDIA_PLATFORMS.find(platform => platform.slug === slug)?.mapIcon,
-											[post.lng, post.lat],
-											$visibility[slug],
-											post
-										);
+								if(slug === 'x-twitter') {
+									const twitterPosts = Object.entries(posts);
+									twitterPosts[0][1].forEach((post) => {
+										if (slug !== type) return;
+										if (addedPostIds.includes(post.id)) return false;
 
-										pointsAdded++;
-									}
-								});
-
-								const invalidPosts = posts.filter((post) => post && !validPosts.some((validPost) => validPost.id === post.id));
-								invalidPosts.forEach((post) => {
-									if (slug !== type) return;
-									if (post && pointsAdded < count) {
 										const randomPoints = generateRandomValidPoints(1, circle);
 										const randomPoint = randomPoints[0];
 										if (randomPoint && randomPoint.length === 2) {
@@ -483,11 +481,46 @@
 												post
 											);
 											pointsAdded++;
-										}
-									}
-								});
 
-								markers[type] = markersForType;
+											addedPostIds.push(post.id);
+										}
+									});
+									markers[type] = markersForType;
+								} else {
+									const validPosts = filterValidPosts(posts, circle);
+									validPosts.forEach((post) => {
+										if (post && pointsAdded < count) {
+											markersForType[post.id] = createMarker(
+													SOCIAL_MEDIA_PLATFORMS.find(platform => platform.slug === slug)?.mapIcon,
+													[post.lng, post.lat],
+													$visibility[slug],
+													post
+											);
+
+											pointsAdded++;
+										}
+									});
+
+									const invalidPosts = posts.filter((post) => post && !validPosts.some((validPost) => validPost.id === post.id));
+									invalidPosts.forEach((post) => {
+										if (slug !== type) return;
+										if (post && pointsAdded < count) {
+											const randomPoints = generateRandomValidPoints(1, circle);
+											const randomPoint = randomPoints[0];
+											if (randomPoint && randomPoint.length === 2) {
+												markersForType[post.id] = createMarker(
+														SOCIAL_MEDIA_PLATFORMS.find(platform => platform.slug === slug)?.mapIcon,
+														[randomPoint[0], randomPoint[1]] as [number, number],
+														$visibility[slug],
+														post
+												);
+												pointsAdded++;
+											}
+										}
+									});
+
+									markers[type] = markersForType;
+								}
 
 							});
 
@@ -621,35 +654,7 @@
 		el.id = post.toString();
 
 		// Create the marker
-		const marker = new mapboxgl.Marker(el).setLngLat(coordinates).addTo(map);
-
-		// Create the popup with post.id
-		const popup = new mapboxgl.Popup({
-			closeButton: false,
-			closeOnClick: false,
-			offset: 25 // Moves popup above marker
-		}).setHTML(`
-			<div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-    		<img src="${post.image}" style="width: 50px; height: 50px; border-radius: 50%;" alt="post"/>
-    		<p style="margin-top: 8px;">${post.title}</p>
-  	</div>
-		`);
-
-		// Attach popup to marker
-		marker.setPopup(popup);
-
-		// Show popup on hover
-		marker.getElement().addEventListener('mouseenter', () => {
-			marker.togglePopup();
-			handleMarkerHover(post.id);
-		});
-
-		marker.getElement().addEventListener('mouseleave', () => {
-			marker.togglePopup();
-			handleMarkerHover(null);
-		});
-
-		return marker;
+		return new mapboxgl.Marker(el).setLngLat(coordinates).addTo(map);
 	}
 
 	function filterValidPosts(posts: { lat: number; lng: number }[], shape: any) {
@@ -789,7 +794,7 @@
     }
 
     .sidebar {
-        width: 24rem;
+        width: 30vw;
         top: 0;
         left: 0;
         height: 100%;
@@ -814,7 +819,7 @@
     }
 
     .sidebar-visible #map {
-        width: calc(100% - 24rem);
-        margin-left: 24rem; /* Same width as the sidebar */
+        width: calc(100% - 30vw);
+        margin-left: 30vw; /* Same width as the sidebar */
     }
 </style>

@@ -64,6 +64,8 @@
 
 			searchRequests = [...(response.search_requests?.data || [])];
 			meta = { ...(response.search_requests?.meta || {}) };
+
+			error = null;
 		} catch (err) {
 			error = err.message;
 			console.error('Pagination Error:', err);
