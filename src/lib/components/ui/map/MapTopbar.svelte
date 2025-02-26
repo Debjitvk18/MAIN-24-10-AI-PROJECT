@@ -55,7 +55,7 @@
 						{#if features.includes(platform.slug)}
 							<div
 								class="flex flex-col items-center space-y-1 {$activeSocialMedia} {($visibility[platform.slug] && $dataLoadingState[platform.slug] !== 'loading') ? 'text-gray-500 hover:text-black' : 'text-gray-300'} cursor-pointer"
-								class:active={$activeSocialMedia === platform.slug}>
+								class:active={$visibility[platform.slug] && $dataLoadingState[platform.slug] !== 'loading' && $activeSocialMedia === platform.slug}>
 								<Tooltip.Root>
 									<Tooltip.Trigger>
 										<div
