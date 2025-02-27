@@ -216,7 +216,7 @@
 
     onMount(() => {
         const rawRadius = getDataFromURL('radius');
-        const radiusValue = [parseInt(rawRadius, 10) || 10];
+        const radiusValue = [parseInt(rawRadius, 10) || 1];
         const radiusValueInMeters = radiusValue[0] * 1000;
 
         mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
