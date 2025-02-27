@@ -25,7 +25,7 @@
         <div class="absolute top-3 right-2 z-50">
             <Tooltip.Root>
                 <Tooltip.Trigger>
-                    <span on:click={() => flyToMarker(marker, map)}><Icon icon="uil:map-marker" class="h-7 w-7 text-gray-500" /></span>
+                    <span on:click={() => flyToMarker(marker, map)}><Icon icon="uil:map-marker" class="h-7 w-7 text-gray-500"/></span>
                 </Tooltip.Trigger>
                 <Tooltip.Content>
                     Locate the marker on the map.
@@ -34,19 +34,22 @@
         </div>
     {/if}
     <a href={tweet.url} target="_blank">
-       <div class="flex items-start space-x-4 relative">
-           <!-- Profile Section -->
-           <img alt="Profile" class={profileImageClass} src={tweet.userProfilePhoto}/>
-           <div class="w-full">
-               <!-- User Information Section -->
-               <div class="flex items-center space-x-1">
-                   <span class={userClass}>{tweet.userName}</span>
-                   {#if tweet.isUserVerified}
-                       <Icon icon="bitcoin-icons:verify-filled" class={verifyIconClass}/>
-                   {/if}
-               </div>
+        <div class="flex items-start space-x-4 relative">
+            <!-- Profile Section -->
+            <img alt="Profile" class={profileImageClass} src={tweet.userProfilePhoto}/>
+            <div class="w-full">
+                <!-- User Information Section -->
+                <div class="flex items-center space-x-1">
+                    <span class={userClass}>{tweet.userName}</span>
+                    {#if tweet.isUserVerified}
+                        <Icon icon="bitcoin-icons:verify-filled" class={verifyIconClass}/>
+                    {/if}
+                    {#if !tweet.historical}
+                        <Icon icon="ic:outline-fiber-new" class="w-6 h-6 text-primary"></Icon>
+                    {/if}
+                </div>
 
-               <div class="flex items-center space-x-1">
+                <div class="flex items-center space-x-1">
                    <span class={mutedTextClass}>@{tweet.userScreenName} ·
                         <Tooltip.Root>
                             <Tooltip.Trigger>
@@ -57,26 +60,26 @@
                             </Tooltip.Content>
                         </Tooltip.Root>
                     </span>
-               </div>
+                </div>
 
-               <!-- Post Content Section -->
-               {#if tweet.type === "video"}
-                   <VideoTweet content={tweet.content} media={tweet.postMedia}/>
-               {:else if tweet.type === "photo"}
-                   <ImageTweet content={tweet.content} media={tweet.postMedia}/>
-               {:else}
-                   <TextTweet content={tweet.content} />
-               {/if}
+                <!-- Post Content Section -->
+                {#if tweet.type === "video"}
+                    <VideoTweet content={tweet.content} media={tweet.postMedia}/>
+                {:else if tweet.type === "photo"}
+                    <ImageTweet content={tweet.content} media={tweet.postMedia}/>
+                {:else}
+                    <TextTweet content={tweet.content}/>
+                {/if}
 
-               <!-- Actions Section -->
-               <div class={actionsClass}>
-                   <TweetTooltip count={tweet.replyCount} icon="lineicons:comment-1" text="Reply"/>
-                   <TweetTooltip count={tweet.retweetCount} icon="garden:arrow-retweet-stroke-16" text="Repost"/>
-                   <TweetTooltip count={tweet.favoriteCount} icon="material-symbols:favorite-outline-rounded" text="Like"/>
-               </div>
-           </div>
-       </div>
-   </a>
+                <!-- Actions Section -->
+                <div class={actionsClass}>
+                    <TweetTooltip count={tweet.replyCount} icon="lineicons:comment-1" text="Reply"/>
+                    <TweetTooltip count={tweet.retweetCount} icon="garden:arrow-retweet-stroke-16" text="Repost"/>
+                    <TweetTooltip count={tweet.favoriteCount} icon="material-symbols:favorite-outline-rounded" text="Like"/>
+                </div>
+            </div>
+        </div>
+    </a>
 
 </div>
 

@@ -476,8 +476,9 @@
                                         const randomPoints = generateRandomValidPoints(1, circle);
                                         const randomPoint = randomPoints[0];
                                         if (randomPoint && randomPoint.length === 2) {
+                                            const mapIcon = post?.historical ? SOCIAL_MEDIA_PLATFORMS.find(platform => platform.slug === slug)?.mapIconHistorical : SOCIAL_MEDIA_PLATFORMS.find(platform => platform.slug === slug)?.mapIcon
                                             markersForType[post.id] = createMarker(
-                                                SOCIAL_MEDIA_PLATFORMS.find(platform => platform.slug === slug)?.mapIcon,
+                                                mapIcon,
                                                 [randomPoint[0], randomPoint[1]] as [number, number],
                                                 $visibility[slug],
                                                 post
@@ -657,6 +658,12 @@
         el.style.display = !isVisible ? 'none' : 'block';
         el.style.cursor = 'pointer';
         el.id = post.toString();
+
+        // Ensure the map instance is valid before adding marker
+        if (!map || !map.getCanvasContainer()) {
+            console.error("Map instance is not ready.");
+            return null;
+        }
 
         // Create the marker
         return new mapboxgl.Marker(el).setLngLat(coordinates).addTo(map);

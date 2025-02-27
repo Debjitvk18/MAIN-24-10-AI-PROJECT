@@ -1,5 +1,6 @@
 import { PUBLIC_API_URL } from '$env/static/public';
 import TwitterIcon from '$lib/assets/svg/marker/x-pin.svg?raw';
+import TwitterIconHistorical from '$lib/assets/svg/marker/x-pin-historical.svg?raw';
 import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
 import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
 import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
@@ -47,7 +48,7 @@ export const MARKER_FONT_SIZE = '20px';
 export const MAP_PRIMARY_COLOR = '#2462ea';
 
 export const SOCIAL_MEDIA_PLATFORMS = [
-	{name: 'X (Twitter)', slug: 'x-twitter', tabIcon: 'ri:twitter-x-fill', mapIcon: TwitterIcon, visibility: true, tabs: ["Top", "Latest"]},
+	{name: 'X (Twitter)', slug: 'x-twitter', tabIcon: 'ri:twitter-x-fill', mapIcon: TwitterIcon, mapIconHistorical: TwitterIconHistorical, visibility: true, tabs: ["Top", "Latest"]},
 	{name: 'LinkedIn', slug: 'linkedin', tabIcon: 'mdi:linkedin', mapIcon: LinkedInIcon, visibility: true, tabs: []},
 	{name: 'Facebook', slug: 'facebook', tabIcon: 'lucide:facebook', mapIcon: FacebookIcon, visibility: true, tabs: []},
 	{name: 'Marketplace', slug: 'facebook-marketplace', tabIcon: 'lucide:facebook', mapIcon: FacebookMarketPlaceIcon, visibility: true, tabs: []},

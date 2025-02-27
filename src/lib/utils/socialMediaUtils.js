@@ -85,6 +85,7 @@ const PLATFORM_PARSERS = {
 				replyCount: tweet.reply_count,
 				retweetCount: tweet.retweet_count,
 				postTime: tweet.created_at,
+				historical: data?.historical || false,
 			};
 		};
 
