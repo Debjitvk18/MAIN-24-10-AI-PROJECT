@@ -213,6 +213,66 @@
         return new FullScreenControl();
     }
 
+    // Add Reset Map to Center controller
+    function createResetMapControl() {
+        class ResetMapControl {
+            onAdd(map) {
+                this.map = map;
+                this.container = document.createElement('div');
+                this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group cyberglobes-map-control';
+                const button = this.createResetMapControlBtn();
+                this.container.appendChild(button);
+                return this.container;
+            }
+
+            createResetMapControlBtn() {
+                const button = document.createElement('button');
+                button.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-resetBtn cyberglobes-map-control-btn';
+                button.type = 'button';
+                button.title = 'Center Results';
+                button.style.padding = '2px';
+                button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 16v-2.5q0-.625.438-1.062T13.5 12H16v1.5h-2.5V16zm1.5 6q-.625 0-1.062-.437T12 20.5V18h1.5v2.5H16V22zm7-6v-2.5H18V12h2.5q.625 0 1.063.438T22 13.5V16zM18 22v-1.5h2.5V18H22v2.5q0 .625-.437 1.063T20.5 22zm2.775-12H18.7q-.65-2.2-2.475-3.6T12 5Q9.075 5 7.037 7.038T5 12q0 1.8.813 3.3T8 17.75V15h2v6H4v-2h2.35Q4.8 17.75 3.9 15.938T3 12q0-1.875.713-3.512t1.924-2.85t2.85-1.925T12 3q3.225 0 5.663 1.988T20.775 10"/></svg>`;
+
+                button.onclick = () => {
+                    centerMapOnCircle();
+                };
+
+                return button;
+            }
+
+            onRemove() {
+                this.container.parentNode.removeChild(this.container);
+                this.map = undefined;
+            }
+        }
+
+        return new ResetMapControl();
+    }
+
+    /**
+     * Centers the map view on a circular area defined by coordinates.
+     * This method ensures the map displays the entire circular area
+     * by fitting its bounds to the map view with padding applied.
+     *
+     * @return {void} No return value. Logs an error if the `circle` object
+     *                or its required properties are undefined or invalid.
+     */
+    function centerMapOnCircle() {
+        if (!circle || !circle.geometry || !circle.geometry.coordinates) {
+            console.error('Error: circle is undefined or missing required properties.');
+            return;
+        }
+
+        // Fit map bounds
+        const bounds = circle.geometry.coordinates[0].reduce(
+            (bounds, coord) => bounds.extend(coord),
+            new mapboxgl.LngLatBounds(
+                circle.geometry.coordinates[0][0],
+                circle.geometry.coordinates[0][0]
+            )
+        );
+        map.fitBounds(bounds, {padding: 20});
+    }
 
     onMount(() => {
         const rawRadius = getDataFromURL('radius');
@@ -357,6 +417,8 @@
                     // Create radius circle
                     circle = addCircleRadius(map, [lng, lat], turf, radiusValueInMeters);
 
+                    map.addControl(createResetMapControl(), 'top-right');
+
                     // Prepare payload for API request
                     let payload = {
                         address,
@@ -412,15 +474,7 @@
                     showSidebar = true;
                     isSidebarVisible = true;
 
-                    // Fit map bounds
-                    const bounds = circle.geometry.coordinates[0].reduce(
-                        (bounds, coord) => bounds.extend(coord),
-                        new mapboxgl.LngLatBounds(
-                            circle.geometry.coordinates[0][0],
-                            circle.geometry.coordinates[0][0]
-                        )
-                    );
-                    map.fitBounds(bounds, {padding: 20});
+                    centerMapOnCircle();
 
                     if (searchId < 1) {
                         // show MapError Dialog
