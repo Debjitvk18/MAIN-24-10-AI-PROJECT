@@ -35,8 +35,6 @@
     // UI Components
     import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
     import {toast} from 'svelte-sonner';
-    import Icon from '@iconify/svelte';
-    import * as Tooltip from '$lib/components/ui/tooltip';
 
     // Icon Component
     import MapTopbar from '$lib/components/ui/map/MapTopbar.svelte';
@@ -44,7 +42,7 @@
     import {dataLoadingState, searchRequestID, socialMediaJson, visibility} from '$lib/stores/mapStore';
     import ErrorDialog from '$lib/components/general/dialog/ErrorDialog.svelte';
     import {parseSocialMediaResponse} from '$lib/utils/socialMediaUtils';
-    import {Button} from "$lib/components/ui/button";
+    import MapExportJson from "$lib/components/ui/map/MapExportJson.svelte";
 
 
     // Default Data...
@@ -749,16 +747,7 @@
     </div>
 </div>
 
-<!-- Floating Export JSON Button -->
-<Button
-		aria-label="Export JSON"
-		class="fixed bottom-4 right-4 z-50 w-12 h-12 p-0 rounded-full bg-primary text-white shadow-md hover:shadow-lg transition-transform duration-200 transform hover:scale-110"
-		variant="primary"
-		title="Export JSON">
-	<Icon aria-hidden="true" class="w-6 h-6 text-white" icon="line-md:downloading"/>
-	<span class="sr-only">Export JSON</span>
-</Button>
-
+<MapExportJson />
 
 <style>
     .social-marker {
