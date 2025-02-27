@@ -39,7 +39,7 @@
     // Icon Component
     import MapTopbar from '$lib/components/ui/map/MapTopbar.svelte';
     import MapSidebar from '$lib/components/ui/map/MapSidebar.svelte';
-    import {dataLoadingState, searchRequestID, socialMediaJson, visibility} from '$lib/stores/mapStore';
+    import {dataLoadingState, searchRequestID, socialMediaJson, visibility, hoveredPostId} from '$lib/stores/mapStore';
     import ErrorDialog from '$lib/components/general/dialog/ErrorDialog.svelte';
     import {parseSocialMediaResponse} from '$lib/utils/socialMediaUtils';
     import MapExportJson from "$lib/components/ui/map/MapExportJson.svelte";
@@ -238,6 +238,12 @@
         map.addControl(geocoder);
 
         map.on('click', (e) => {
+            const mapFeatures = map.queryRenderedFeatures(e.point);
+            // Ignore the click if it's on a marker
+            if (mapFeatures.some((feature) => feature.layer?.type === 'symbol')) {
+                return;
+            }
+
             if (mapMarker) mapMarker.remove();
 
             // Add a marker at the clicked location
@@ -664,6 +670,13 @@
             console.error("Map instance is not ready.");
             return null;
         }
+
+        // Add click event to highlight the associated sidebar item
+        el.addEventListener('click', (event) => {
+            event.stopPropagation();
+            hoveredPostId.set(post.id);
+        });
+
 
         // Create the marker
         return new mapboxgl.Marker(el).setLngLat(coordinates).addTo(map);
