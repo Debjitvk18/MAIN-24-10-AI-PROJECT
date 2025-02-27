@@ -1,7 +1,12 @@
 <script>
     import Tweet from "$lib/components/ui/map/social-cards/x-twitter/Tweet.svelte";
     import { getSocialMediaTabs } from "$lib/utils/socialMediaUtils.js";
-    import { socialMediaJson } from '$lib/stores/mapStore.ts';
+    import {hoveredPostId, socialMediaJson} from '$lib/stores/mapStore.ts';
+    import {highlightMarker} from "$lib/utils/mapUtils.js";
+    import {sanitizeId} from "$lib/utils/generalUtils.js";
+
+    export let markers;
+    export let map;
 
     // Get the X (Twitter) platform
     const xTwitterTabs = getSocialMediaTabs('x-twitter');
@@ -39,7 +44,7 @@
 <div class="tweets">
     <div>
         <!-- Tabs Header -->
-        <div class="flex justify-start border-b border-gray-300 bg-white sticky top-0 z-10">
+        <div class="flex justify-start border-b border-gray-300 bg-white sticky top-0 z-[100]">
             {#each xTwitterTabs as tab}
                 <div
                         class="cursor-pointer px-4 py-3 text-lg font-semibold text-gray-500 border-b-2 border-transparent transition-colors duration-200"
@@ -55,7 +60,14 @@
         <div>
             {#if posts[activeTab.toLowerCase()]}
                 {#each posts[activeTab.toLowerCase()] as post}
-                    <Tweet tweet={post} key={post.id}/>
+                    <div
+                        data-type="x-twitter"
+                        class="post-row post-{sanitizeId(post.id)}"
+                         class:highlighted={$hoveredPostId === post.id}
+                         on:mouseover={() => highlightMarker(markers["x-twitter"]?.[post.id], map, true)}
+                         on:mouseleave={() => highlightMarker(markers["x-twitter"]?.[post.id], map, false)}>
+                        <Tweet tweet={post} map={map} marker={markers["x-twitter"]?.[post.id]} />
+                    </div>
                 {/each}
             {/if}
         </div>

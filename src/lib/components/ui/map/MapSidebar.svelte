@@ -68,7 +68,7 @@
 				{#if $socialMediaJson}
 					{#if twitterData && $visibility["x-twitter"]}
 						<div class="social-media-block" data-type="x-twitter">
-							<TwitterCard />
+							<TwitterCard markers="{markers}" map="{map}" />
 						</div>
 					{/if}
 

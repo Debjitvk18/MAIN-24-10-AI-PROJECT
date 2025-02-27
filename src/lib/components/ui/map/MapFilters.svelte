@@ -224,22 +224,6 @@
 				</Card.Content>
 			</Card.Root>
 
-			<!-- Keyword or Hashtag -->
-			<!-- <Card.Root class="mb-4 mt-2">
-				<Card.Header>
-					<Card.Title>Keywords or Hashtags</Card.Title>
-					<Card.Description>Enter keywords, e.g., <code class="text-pink-600">keyword1, keyword2</code>, or
-						hashtags, e.g.,
-						<code class="text-pink-600">#ElonMusk, #chatGPT</code>, separated by commas.
-					</Card.Description>
-				</Card.Header>
-				<Card.Content>
-					<div class="space-y-4">
-						<Input bind:value={keywordsOrHashtags} placeholder="Enter keyword or hashtags" />
-					</div>
-				</Card.Content>
-			</Card.Root> -->
-
 			<!-- Social Media Selector -->
 			<Card.Root class="mb-4 mt-2">
 				<Card.Header>
