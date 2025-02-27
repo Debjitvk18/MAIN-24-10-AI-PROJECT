@@ -208,3 +208,54 @@ export function getSocialMediaTabs(socialMediaPlatformSlug) {
 	const socialMediaPlatform = SOCIAL_MEDIA_PLATFORMS.find(platform => platform.slug === socialMediaPlatformSlug);
 	return socialMediaPlatform ? socialMediaPlatform.tabs : [];
 }
+
+/**
+ * Removes duplicate posts from an array based on their unique `id`.
+ *
+ * @param {Array<Object>} posts - The array of posts to deduplicate.
+ * @return {Array<Object>} The deduplicated array of posts.
+ */
+function deduplicatePosts(posts) {
+	return posts.filter((post, index, self) => self.findIndex(p => p.id === post.id) === index);
+}
+
+/**
+ * Processes and groups posts for Twitter by type (top and latest).
+ *
+ * @param {Object} twitterData - The Twitter data object containing posts.
+ * @param {Object} acc - The accumulator object to group data.
+ */
+function processTwitterPosts(twitterData, acc) {
+	const { type, posts } = twitterData;
+	acc[type] = acc[type] || { top: [], latest: [] };
+
+	if (posts?.top) {
+		acc[type].top.push(...posts.top);
+		acc[type].top = deduplicatePosts(acc[type].top);
+	}
+	if (posts?.latest) {
+		acc[type].latest.push(...posts.latest);
+		acc[type].latest = deduplicatePosts(acc[type].latest);
+	}
+}
+
+/**
+ * Groups social media data based on their type and organizes posts accordingly.
+ *
+ * @param {Array<Object>} data - An array of social media data objects, each containing a `type` property
+ * and optional `posts` property with `top` and/or `latest` posts.
+ * @return {Object} An object where keys represent social media types, and values contain grouped
+ * and deduplicated posts for each type. For `x-twitter`, posts are further divided into `top` and `latest` categories.
+ */
+export function groupSocialMediaData(data) {
+	return data.reduce((acc, { type, posts }) => {
+		if (type === 'x-twitter') {
+			processTwitterPosts({ type, posts }, acc);
+		} else {
+			acc[type] = acc[type] || [];
+			acc[type].push(...(posts || []));
+			acc[type] = deduplicatePosts(acc[type]);
+		}
+		return acc;
+	}, {});
+}
