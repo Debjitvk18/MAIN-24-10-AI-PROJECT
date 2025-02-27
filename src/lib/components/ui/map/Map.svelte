@@ -60,6 +60,7 @@
     let request_id: number;
     let showErrorDialog = false;
     let errorResponse = {};
+    let showExportDataButton = false;
 
     dataLoadingState.set(
         Object.fromEntries(SOCIAL_MEDIA_PLATFORMS.map(({slug}) => [slug, 'initial']))
@@ -552,6 +553,9 @@
                         // close the SSE
                         source.close();
 
+                        // show button to export the data into the JSON
+                        showExportDataButton = true;
+
                         // notify user that, request fetching is done.
                         toast('🚀 All set! Explore the data now.', {position: 'bottom-center'});
 
@@ -747,7 +751,9 @@
     </div>
 </div>
 
-<MapExportJson />
+{#if showExportDataButton}
+    <MapExportJson />
+{/if}
 
 <style>
     .social-marker {
