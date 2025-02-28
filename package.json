@@ -61,6 +61,7 @@
 		"@turf/turf": "^7.2.0",
 		"apexcharts": "^4.4.0",
 		"embla-carousel-autoplay": "^8.5.2",
-		"mapbox-gl": "^3.9.3"
+		"mapbox-gl": "^3.9.3",
+		"marked": "^15.0.7"
 	}
 }
