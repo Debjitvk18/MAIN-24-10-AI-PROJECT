@@ -25,7 +25,12 @@
 	} from '$lib/constants/constants';
 
 	// Utility functions
-	import { getDataFromURL, putDataInURL, toggleFullScreen } from '$lib/utils/generalUtils';
+	import {
+		getDataFromURL,
+		putDataInURL,
+		removeDataFromURL,
+		toggleFullScreen
+	} from '$lib/utils/generalUtils';
 	import {
 		addCircleRadius,
 		addPulsingDotAnimation,
@@ -53,6 +58,7 @@
 	import { parseSocialMediaResponse } from '$lib/utils/socialMediaUtils';
 	import MapExportJson from '$lib/components/ui/map/MapExportJson.svelte';
 	import MapDataInsights from './MapDataInsights.svelte';
+	import { user } from '$lib/stores/authStore';
 
 	// Default Data...
 	let showLoadingOverlay = false;
@@ -450,8 +456,22 @@
 						payload.timeframe = getDataFromURL('timeframe');
 					}
 
-					if (getDataFromURL('keywords')) {
-						payload.keywords = getDataFromURL('keywords');
+					// xFilters from url
+					// check if features are in url and contains x-twitter
+					if (payload.features && payload.features.includes('x-twitter')) {
+						if (getDataFromURL('xKeywords')) {
+							payload.xKeywords = getDataFromURL('xKeywords');
+						}
+						if (getDataFromURL('xUsernames')) {
+							payload.xUsernames = getDataFromURL('xUsernames');
+						}
+						if (getDataFromURL('xPostTypes[]') && getDataFromURL('xPostTypes[]').length > 0) {
+							payload.xPostTypes = getDataFromURL('xPostTypes[]');
+						}
+					} else {
+						removeDataFromURL('xKeywords');
+						removeDataFromURL('xUsernames');
+						removeDataFromURL('xPostTypes[]');
 					}
 
 					let searchId = 0;
@@ -837,7 +857,7 @@
 	</div>
 </div>
 
-{#if showExportDataButton}
+{#if showExportDataButton && $user}
 	<MapExportJson />
 	<MapDataInsights />
 {/if}

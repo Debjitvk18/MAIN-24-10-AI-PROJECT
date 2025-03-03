@@ -17,7 +17,6 @@
 	export let toggleVisibility;
 	export let showSidebar = false;
 
-
 	$: {
 		if (isMobile() && Object.keys(socialMediaIcons).length > 0) {
 			setTimeout(() => {
@@ -44,34 +43,46 @@
 
 <div class="border-y border-gray-300 bg-white sticky top-0 z-10">
 	<div class="flex flex-wrap items-center justify-between px-2 py-3 shadow-md space-x-4">
-
 		<!-- Wrapper for Social Media Tabs + Fixed Cog Icon -->
 		<div class="flex items-center w-full md:w-auto">
-
 			<!-- Scrollable Social Media Tabs (Mobile) -->
-			<div class="flex space-x-4 md:space-x-6 overflow-x-auto md:overflow-visible scrollbar-hide w-full">
+			<div
+				class="flex space-x-4 md:space-x-6 overflow-x-auto md:overflow-visible scrollbar-hide w-full"
+			>
 				{#if showSidebar}
 					{#each SOCIAL_MEDIA_PLATFORMS as platform}
 						{#if features.includes(platform.slug)}
 							<div
-								class="flex flex-col items-center space-y-1 {$activeSocialMedia} {($visibility[platform.slug] && $dataLoadingState[platform.slug] !== 'loading') ? 'text-gray-500 hover:text-black' : 'text-gray-300'} cursor-pointer"
-								class:active={$visibility[platform.slug] && $dataLoadingState[platform.slug] !== 'loading' && $activeSocialMedia === platform.slug}>
+								class="flex flex-col items-center space-y-1 {$activeSocialMedia} {$visibility[
+									platform.slug
+								] && $dataLoadingState[platform.slug] !== 'loading'
+									? 'text-gray-500 hover:text-black'
+									: 'text-gray-300'} cursor-pointer"
+								class:active={$visibility[platform.slug] &&
+									$dataLoadingState[platform.slug] !== 'loading' &&
+									$activeSocialMedia === platform.slug}
+							>
 								<Tooltip.Root>
 									<Tooltip.Trigger>
 										<div
 											role="button"
-											aria-pressed={($visibility[platform.slug] && $dataLoadingState[platform.slug] !== 'loading') ? 'true' : 'false'}
+											aria-pressed={$visibility[platform.slug] &&
+											$dataLoadingState[platform.slug] !== 'loading'
+												? 'true'
+												: 'false'}
 											tabindex="0"
 											on:click={() => toggleVisibility(platform.slug)}
-											on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleVisibility(platform.slug)}
-											class="flex flex-col items-center cursor-pointer">
+											on:keydown={(e) =>
+												(e.key === 'Enter' || e.key === ' ') && toggleVisibility(platform.slug)}
+											class="flex flex-col items-center cursor-pointer"
+										>
 											{#if $dataLoadingState && $dataLoadingState[platform.slug] === 'loading'}
 												<Icon class="w-7 h-7 md:w-6 md:h-6" icon="line-md:loading-twotone-loop" />
 											{:else if $dataLoadingState && $dataLoadingState[platform.slug] === 'error'}
 												<Icon class="w-7 h-7 md:w-6 md:h-6" icon="mdi:clock-warning" />
-											{:else if $dataLoadingState && $dataLoadingState[platform.slug] === "done"}
+											{:else if $dataLoadingState && $dataLoadingState[platform.slug] === 'done'}
 												<Icon class="w-7 h-7 md:w-6 md:h-6" icon={platform.tabIcon} />
-											{:else }
+											{:else}
 												<Icon class="w-7 h-7 md:w-6 md:h-6" icon={platform.tabIcon} />
 											{/if}
 											<span class="text-xs md:text-sm">{platform.name}</span>
@@ -100,10 +111,10 @@
 		<div
 			class="transition-all duration-300 ease-in-out transform w-full md:w-auto flex flex-wrap items-center space-x-4
 			{showSettings ? 'opacity-100 scale-100 h-auto flex mt-2' : 'opacity-0 scale-95 h-0 overflow-hidden'}
-			lg:opacity-100 lg:scale-100 lg:h-auto lg:overflow-visible">
-
+			lg:opacity-100 lg:scale-100 lg:h-auto lg:overflow-visible"
+		>
 			<!-- Sidebar Visibility Toggle -->
-			{#if Object.keys(socialMediaIcons).length > 0}
+			{#if showSidebar}
 				<div class="flex items-center space-x-2">
 					<Switch
 						bind:checked={isSidebarVisible}
@@ -111,7 +122,8 @@
 						id="sidebar-visibility"
 						on:click={() => toggleSidebarVisibility()}
 					/>
-					<Label class="cursor-pointer text-sm md:text-base" for="sidebar-visibility">Sidebar</Label>
+					<Label class="cursor-pointer text-sm md:text-base" for="sidebar-visibility">Sidebar</Label
+					>
 				</div>
 			{/if}
 
@@ -119,24 +131,23 @@
 			<MapFilters />
 
 			<!-- Save Search (Only for Logged-in Users) -->
-			{#if $isLoggedIn}
+			{#if $isLoggedIn && showSidebar}
 				<SaveSearch />
 			{/if}
 		</div>
-
 	</div>
 </div>
 
 <style>
-    /* Hide scrollbar for cleaner UI */
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-    }
+	/* Hide scrollbar for cleaner UI */
+	.scrollbar-hide::-webkit-scrollbar {
+		display: none;
+	}
 
-    .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
+	.scrollbar-hide {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
 
 	.active.x-twitter {
 		color: var(--color-x-twitter);

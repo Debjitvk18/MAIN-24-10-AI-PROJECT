@@ -60,23 +60,21 @@ export function toggleFullScreen(elementId) {
  * Get data from the URL.
  *
  * @param {string} queryString - The query string to get data from.
- * @returns {string} The data from the URL.
+ * @returns {string | string[]} The data from the URL.
  */
-
 export function getDataFromURL(queryString) {
-	const url = new URL(window.location.href);
+	if (typeof window === 'undefined' || typeof URL === 'undefined') {
+		return '';
+	}
 
+	const url = new URL(window.location.href);
 	const values = url.searchParams.getAll(queryString);
 
-	if (queryString === 'features[]') {
+	if (queryString.includes('[]')) {
 		return values;
 	}
 
-	if (values.length === 1) {
-		return values[0];
-	}
-
-	return '';
+	return values.length === 1 ? values[0] : '';
 }
 
 /**
@@ -180,9 +178,9 @@ export function sanitizeId(id) {
  */
 export function isMobile() {
 	if (typeof window === "undefined" || typeof navigator === "undefined") {
-        return false; // Ensure this runs only in the browser
-    }
+		return false; // Ensure this runs only in the browser
+	}
 
-    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) 
-        || window.matchMedia("(max-width: 767px)").matches;
+	return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+		|| window.matchMedia("(max-width: 767px)").matches;
 }
