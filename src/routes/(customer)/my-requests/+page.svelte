@@ -129,7 +129,12 @@
 						<Table.Body>
 							{#each searchRequests as request}
 								<Table.Row>
-									<Table.Cell class="font-medium">{request.address || 'N/A'}</Table.Cell>
+									<Table.Cell class="font-medium">
+										<a href={loadOnMapUrl(request)} target="_blank" >
+											{request.address || 'N/A'}
+											<Icon icon="line-md:map-marker-radius" class="text-blue-500 h-5 w-5 inline" />
+										</a>
+									</Table.Cell>
 									<Table.Cell
 										>{request.request_params.latitude}, {request.request_params
 											.longitude}</Table.Cell
@@ -156,10 +161,10 @@
 											<DropdownMenu.Content>
 												<DropdownMenu.Group>
 													<DropdownMenu.Item>
-														<a href={`my-requests/${request.id}`}>View</a>
+														<a href={`my-requests/${request.id}`} class="w-full">View</a>
 													</DropdownMenu.Item>
 													<DropdownMenu.Item>
-														<a href={loadOnMapUrl(request)} target="_blank" >
+														<a href={loadOnMapUrl(request)} target="_blank"  class="w-full">
 															Load on map
 														</a>
 													</DropdownMenu.Item>

@@ -193,7 +193,7 @@
 		<div class="relative bg-gray-200 rounded-lg">
 			<!-- Marker 1 -->
 			<div
-				class="hidden lg:block absolute bottom-1/4 left-1/4 transform -translate-x-1/2 -translate-y-1/2 group poi-1"
+				class="hidden xl:block absolute bottom-1/4 left-1/4 transform -translate-x-1/2 -translate-y-1/2 group poi-1"
 			>
 				<div
 					class="w-10 h-10 cursor-pointer group-hover:animate-bounce transition-all duration-200 ease-in-out"
@@ -213,7 +213,7 @@
 
 			<!-- Marker 2 -->
 			<div
-				class="hidden lg:block absolute bottom-1/3 left-3/4 transform -translate-x-1/2 -translate-y-1/2 group poi-2"
+				class="hidden xl:block absolute bottom-1/3 left-3/4 transform -translate-x-1/2 -translate-y-1/2 group poi-2"
 			>
 				<div
 					class="w-10 h-10 cursor-pointer group-hover:animate-bounce transition-all duration-200 ease-in-out"
@@ -232,7 +232,7 @@
 
 			<!-- Marker 3 -->
 			<div
-				class="hidden lg:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-3"
+				class="hidden xl:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-3"
 			>
 				<div class="w-10 h-10 group-hover:animate-bounce transition-all duration-200 ease-in-out">
 					<!-- Location 3 Popup -->
@@ -248,7 +248,7 @@
 			
 			<!-- Marker 4 -->
 			<div
-				class="hidden lg:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-4"
+				class="hidden xl:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-4"
 			>
 				<div class="w-10 h-10 group-hover:animate-bounce transition-all duration-200 ease-in-out">
 					<!-- Location 7 Popup -->
@@ -264,7 +264,7 @@
 
 			<!-- Marker 5 -->
 			<div
-			class="hidden lg:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-5"
+			class="hidden xl:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-5"
 		>
 			<div class="w-10 h-10 group-hover:animate-bounce transition-all duration-200 ease-in-out">
 				{@html GoogleNewsIcon}
@@ -279,7 +279,7 @@
 		</div>
 
 		<div
-			class="grid max-w-screen-xl px-4 py-8 mx-auto lg:gap-8 gap-8 xl:gap-0 lg:py-[100px] lg:pt-[60px] lg:pb-[130px] lg:grid-cols-12"
+			class="grid max-w-screen-xl text-center xl:text-left px-4 py-8 mx-auto lg:gap-8 gap-8 xl:gap-0 lg:py-[100px] lg:pt-[60px] lg:pb-[130px] lg:grid-cols-12"
 		>
 			<div class="place-self-center lg:col-span-6 h-auto md:h-[350px] lg:h-[350px]">
 				<Tabs.Root value="address">
@@ -318,11 +318,11 @@
 						Live Market Location Intelligence
 						</div>
 						<div
-							class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600"
+							class="max-w-2xl w-f mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600"
 						>
 						Leverage advanced location analytics to gain real-time insights, optimize site selection, understand customer behavior, and drive data-driven growth.
 						</div>
-						<form class="max-w-md">
+						<form class="max-w-md w-full">
 							<div
 								class="flex items-center justify-center w-full"
 								on:drop={handleDrop}

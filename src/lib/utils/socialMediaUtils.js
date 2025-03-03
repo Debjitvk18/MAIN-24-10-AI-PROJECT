@@ -16,7 +16,7 @@ import GoogleNewsIconImg from '$lib/assets/svg/marker/google-news.svg';
  * @param {string} platformDetails.icon - The icon associated with the platform.
  * @return {Object} - An object containing the type, count of posts, platform icon, and the generated posts.
  */
-function generatePostData(data, platformDetails) {
+export function generatePostData(data, platformDetails) {
 	const { mapFunction, type, icon } = platformDetails;
 	const posts = mapFunction(data);
 
