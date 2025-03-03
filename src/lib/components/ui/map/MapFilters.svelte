@@ -6,12 +6,7 @@
 	import * as Card from '$lib/components/ui/card';
 	import * as Sheet from '$lib/components/ui/sheet';
 
-	import {
-		DateFormatter,
-		type DateValue,
-		getLocalTimeZone,
-		today
-	} from '@internationalized/date';
+	import { DateFormatter, type DateValue, getLocalTimeZone, today } from '@internationalized/date';
 	import { RangeCalendar } from '$lib/components/ui/range-calendar/index.ts';
 
 	import { cn } from '$lib/utils.ts';
@@ -25,6 +20,7 @@
 	import { onMount } from 'svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { SOCIAL_MEDIA_PLATFORMS } from '$lib/constants/constants';
+	import XTwitterFilters from './social-filters/XTwitterFilters.svelte';
 
 	const df = new DateFormatter('en-US', {
 		dateStyle: 'medium'
@@ -39,23 +35,30 @@
 	let selectedSource = [];
 
 	// Radius and Resolution slider
-	let radiusValue = $state([10]);
+	let radiusValue = $state([1]);
 	let resolutionValue = $state([5]);
 	let keywordsOrHashtags = $state('');
 
 	let selectedLocation = null;
-	let timeFrame =  $state('today');
+	let timeFrame = $state('today');
+
+	// X-Twitter filters
+	let xKeywords = '';
+	let xUsernames = '';
+	let xPostTypes = [
+		{ label: 'Top', description: 'Most popular tweets', enabled: true },
+		{ label: 'Latest', description: 'Most recent tweets', enabled: true }
+	];
 
 	// Function to initialize values from URL parameters
 	function initializeURLData() {
 		// check if data present in the url
 		const selectedLocationFromURL = getDataFromURL('search');
-		const selectedKeywordOrHashtags = getDataFromURL('keywords');
 		const selectedLatitudeFromURL = getDataFromURL('lat');
 		const selectedLongitudeFromURL = getDataFromURL('long');
 		const selectedFeaturesFromURL = getDataFromURL('features[]');
-		timeFrame = getDataFromURL('timeframe'); 
-		
+		timeFrame = getDataFromURL('timeframe');
+
 		if (selectedLocationFromURL && selectedLatitudeFromURL && selectedLongitudeFromURL) {
 			selectedLocation = {
 				place_name: selectedLocationFromURL,
@@ -71,11 +74,29 @@
 		// Radius and resolution value parsing
 		const rawRadius = getDataFromURL('radius');
 		const rawResolution = getDataFromURL('resolution');
-		radiusValue = [parseInt(rawRadius, 10) || 10];
+		radiusValue = [parseInt(rawRadius, 10) || 1];
 		resolutionValue = [parseInt(rawResolution, 10) || 5];
 
-		if (selectedKeywordOrHashtags && keywordsOrHashtags == '') {
-			keywordsOrHashtags = selectedKeywordOrHashtags;
+		// X-Twitter filters from URL
+		const selectedXKeywordsFromURL = getDataFromURL('xKeywords');
+		const selectedXUsernamesFromURL = getDataFromURL('xUsernames');
+		const selectedXPostTypesFromURL = getDataFromURL('xPostTypes[]');
+		if (selectedXKeywordsFromURL && xKeywords == '') {
+			xKeywords = selectedXKeywordsFromURL;
+		}
+		if (selectedXUsernamesFromURL && xUsernames == '') {
+			xUsernames = selectedXUsernamesFromURL;
+		}
+		if (selectedXPostTypesFromURL) {
+			xPostTypes = xPostTypes.map((postType) => {
+				if (selectedXPostTypesFromURL.includes(postType.label.toLowerCase())) {
+					postType.enabled = true;
+				} else {
+					postType.enabled = false;
+				}
+
+				return postType;
+			});
 		}
 	}
 
@@ -119,12 +140,11 @@
 	}
 
 	function updateSelectedSources() {
-		selectedSource = SOCIAL_MEDIA_PLATFORMS
-			.filter(({ slug }) => enabledPlatforms[slug])
-			.map(({ slug }) => slug);
+		selectedSource = SOCIAL_MEDIA_PLATFORMS.filter(({ slug }) => enabledPlatforms[slug]).map(
+			({ slug }) => slug
+		);
 	}
 	$effect(updateSelectedSources);
-
 
 	async function applyFilters() {
 		updateSelectedSources();
@@ -144,7 +164,7 @@
 
 		const { place_name, latitude, longitude } = selectedLocation;
 
-		const payload = {
+		let payload = {
 			address: place_name,
 			latitude: latitude,
 			longitude: longitude,
@@ -153,9 +173,16 @@
 			// start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
 			// end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
 			timeframe: timeFrame,
-			features: selectedSource,
-			keywords: keywordsOrHashtags
+			features: selectedSource
 		};
+
+		if (enabledPlatforms['x-twitter']) {
+			payload.xKeywords = xKeywords;
+			payload.xUsernames = xUsernames;
+			payload.xPostTypes = xPostTypes
+				.filter((postType) => postType.enabled)
+				.map((postType) => postType.label.toLowerCase());
+		}
 
 		try {
 			const response = await mapService.validateFilters(payload);
@@ -170,7 +197,12 @@
 					if (key === 'features') {
 						url.searchParams.delete('features[]');
 						if (value?.length) {
-							value.forEach(v => url.searchParams.append('features[]', v));
+							value.forEach((v) => url.searchParams.append('features[]', v));
+						}
+					} else if (key === 'xPostTypes') {
+						url.searchParams.delete('xPostTypes[]');
+						if (value?.length) {
+							value.forEach((v) => url.searchParams.append('xPostTypes[]', v));
 						}
 					} else {
 						if (key === 'longitude') key = 'long';
@@ -180,6 +212,13 @@
 						url.searchParams.set(key, value);
 					}
 				});
+
+				// Remove X-Twitter filters if X-Twitter is disabled
+				if (!payload.features.includes('x-twitter') && !enabledPlatforms['x-twitter']) {
+					removeDataFromURL('xKeywords');
+					removeDataFromURL('xUsernames');
+					removeDataFromURL('xPostTypes[]');
+				}
 				window.history.replaceState({}, '', url);
 
 				window.location.reload();
@@ -190,19 +229,19 @@
 		}
 	}
 </script>
+
 <Sheet.Root>
 	<Sheet.Trigger>
-		<Button
-		variant="outline">
+		<Button variant="outline">
 			<Icon class="w-6 h-6 md:me-2 sm:me-0" icon="mage:filter" />
-			<span class="hidden md:inline">Filters</span> 
+			<span class="hidden md:inline">Filters</span>
 		</Button>
 	</Sheet.Trigger>
 	<Sheet.Content class="flex flex-col h-full" side="right">
 		<Sheet.Header class="mb-4">
 			<Sheet.Title>Refine Your Search</Sheet.Title>
 			<Sheet.Description>
-				Adjust the filters below to customize your search results. Click "Apply Filters" once you are finished.
+				Adjust the filters below to customize your search results. Click "Apply Filters" once you
 			</Sheet.Description>
 		</Sheet.Header>
 
@@ -227,27 +266,13 @@
 				</Card.Content>
 			</Card.Root>
 
-			<!-- Keyword or Hashtag -->
-			<Card.Root class="mb-4 mt-2">
-				<Card.Header>
-					<Card.Title>Keywords or Hashtags</Card.Title>
-					<Card.Description>Enter keywords, e.g., <code class="text-pink-600">keyword1, keyword2</code>, or hashtags,
-						e.g.,
-						<code class="text-pink-600">#ElonMusk, #chatGPT</code>, separated by commas.
-					</Card.Description>
-				</Card.Header>
-				<Card.Content>
-					<div class="space-y-4">
-						<Input bind:value={keywordsOrHashtags} placeholder="Enter keyword or hashtags" />
-					</div>
-				</Card.Content>
-			</Card.Root>
-
 			<!-- Social Media Selector -->
 			<Card.Root class="mb-4 mt-2">
 				<Card.Header>
 					<Card.Title>Select Data Source</Card.Title>
-					<Card.Description>Choose the platforms you want to include in your data view.</Card.Description>
+					<Card.Description
+						>Choose the platforms you want to include in your data view.</Card.Description
+					>
 				</Card.Header>
 				<Card.Content>
 					<div class="space-y-4">
@@ -260,8 +285,14 @@
 											<p class="text-sm font-medium leading-none">{name}</p>
 										</div>
 									</div>
-									<Switch bind:checked={enabledPlatforms[slug]} on:click={() => enabledPlatforms[slug] = !enabledPlatforms[slug]} />
+									<Switch
+										bind:checked={enabledPlatforms[slug]}
+										on:click={() => (enabledPlatforms[slug] = !enabledPlatforms[slug])}
+									/>
 								</div>
+								{#if slug === 'x-twitter' && enabledPlatforms[slug]}
+									<XTwitterFilters bind:xKeywords bind:xUsernames bind:xPostTypes />
+								{/if}
 							{/each}
 						</div>
 					</div>
@@ -279,8 +310,9 @@
 						<div class="flex items-center justify-between">
 							<Label for="radius">Search Radius</Label>
 							<span
-								class="text-muted-foreground hover:border-border w-24 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
-										{radiusValue[0]} KM
+								class="text-muted-foreground hover:border-border w-24 rounded-md border border-transparent px-2 py-0.5 text-right text-sm"
+							>
+								{radiusValue[0]} KM
 							</span>
 						</div>
 						<Slider
@@ -288,15 +320,17 @@
 							bind:value={radiusValue}
 							id="radius"
 							max={100}
-							min={10}
-							step={1} />
+							min={1}
+							step={1}
+						/>
 					</div>
 
 					<div class="grid gap-2 pt-2">
 						<div class="flex items-center justify-between">
 							<Label for="resolution">Search Resolution</Label>
 							<span
-								class="text-muted-foreground hover:border-border w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
+								class="text-muted-foreground hover:border-border w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm"
+							>
 								{resolutionValue[0]}
 							</span>
 						</div>
@@ -306,7 +340,8 @@
 							id="resolution"
 							max={100}
 							min={5}
-							step={5} />
+							step={5}
+						/>
 					</div>
 				</Card.Content>
 			</Card.Root>
@@ -315,7 +350,9 @@
 			<Card.Root class="mb-4 hidden">
 				<Card.Header>
 					<Card.Title>Choose Date Range</Card.Title>
-					<Card.Description>Select dates to include historical data within your search.</Card.Description>
+					<Card.Description
+						>Select dates to include historical data within your search.</Card.Description
+					>
 				</Card.Header>
 				<Card.Content>
 					<div class="grid gap-2">
@@ -324,16 +361,17 @@
 								<Button
 									builders={[builder]}
 									class={cn(
-										"justify-start text-left font-normal",
-										!datePickerValue && "text-muted-foreground"
+										'justify-start text-left font-normal',
+										!datePickerValue && 'text-muted-foreground'
 									)}
-									variant="outline">
+									variant="outline"
+								>
 									<Icon class="mr-2 h-4 w-4" icon="lucide:calendar-days" />
 									{#if datePickerValue && datePickerValue.start}
 										{#if datePickerValue.end}
 											{df.format(datePickerValue.start.toDate(getLocalTimeZone()))} - {df.format(
-											datePickerValue.end.toDate(getLocalTimeZone())
-										)}
+												datePickerValue.end.toDate(getLocalTimeZone())
+											)}
 										{:else}
 											{df.format(datePickerValue.start.toDate(getLocalTimeZone()))}
 										{/if}
@@ -363,14 +401,18 @@
 			<Card.Root class="mb-4">
 				<Card.Header>
 					<Card.Title>Select a timeframe</Card.Title>
-					<Card.Description>Select time to include historical data within your search.</Card.Description>
+					<Card.Description
+						>Select time to include historical data within your search.</Card.Description
+					>
 				</Card.Header>
 				<Card.Content>
-					<select id="time-frame" name="time-frame"
+					<select
+						id="time-frame"
+						name="time-frame"
 						bind:value={timeFrame}
 						class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-						aria-label="Select a timeframe">
-						
+						aria-label="Select a timeframe"
+					>
 						<option value="" disabled selected>Choose a timeframe</option>
 						<option value="today">Today</option>
 						<option value="last_week">Last Week</option>
@@ -378,7 +420,6 @@
 					</select>
 				</Card.Content>
 			</Card.Root>
-
 		</div>
 
 		<Sheet.Footer>

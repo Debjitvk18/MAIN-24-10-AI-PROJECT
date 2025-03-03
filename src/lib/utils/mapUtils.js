@@ -24,10 +24,10 @@ export const COORDINATES_REGEXP =
  *
  * @param {Object} marker The marker object to be highlighted. Must have methods like `getElement` and `getLngLat`.
  * @param {Object} mapInstance The map instance on which the marker resides. Must support `flyTo` method.
- * @param {boolean} [flyTo=false] Determines whether the map should animate to the marker's location.
+ * @param {boolean} [highlightMarker=false] Determines whether the marker should highlight.
  * @return {void}
  */
-export function highlightMarker(marker, mapInstance, flyTo = false) {
+export function highlightMarker(marker, mapInstance, highlightMarker = false) {
 	if (!marker || !mapInstance) return;
 
 	const element = marker.getElement();
@@ -37,23 +37,38 @@ export function highlightMarker(marker, mapInstance, flyTo = false) {
 	if (!svgElement) return;
 
 	// Highlight the marker visually
-	if (flyTo) {
+	if (highlightMarker) {
 		highlightSvgElement(svgElement);
 	} else {
 		resetSvgElement(svgElement);
 	}
+}
 
-	if (flyTo) {
-		// Fly to marker's location
-		const [lng, lat] = marker.getLngLat().toArray();
-		mapInstance.flyTo({
-			center: [lng, lat],
-			zoom: 18.5,
-			speed: 1.2, // Adjust speed if necessary
-			curve: 1.5,
-			essential: true
-		});
-	}
+/**
+ * Animates the map's view to center and zoom in on the specified marker location.
+ *
+ * @param {Object} marker - The marker object to fly to. Must have a `getElement` method and `getLngLat` method to retrieve its position.
+ * @param {Object} mapInstance - The map instance on which the action is to be performed. Must support the `flyTo` method.
+ * @return {void} This function does not return a value.
+ */
+export function flyToMarker(marker, mapInstance) {
+	if (!marker || !mapInstance) return;
+
+	const element = marker.getElement();
+
+	// Find the SVG element inside the marker
+	const svgElement = element.querySelector('svg');
+	if (!svgElement) return;
+
+	// Fly to marker's location
+	const [lng, lat] = marker.getLngLat().toArray();
+	mapInstance.flyTo({
+		center: [lng, lat],
+		zoom: 18.5,
+		speed: 1.2, // Adjust speed if necessary
+		curve: 1.5,
+		essential: true
+	});
 }
 
 /**

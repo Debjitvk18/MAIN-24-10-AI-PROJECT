@@ -61,4 +61,28 @@ export class MapService {
 			return null;
 		}
 	}
+
+	/**
+	 * Get Insights.
+	 *
+	 * @param {Object} payload
+	 * @returns {Promise<any>}
+	 */
+	async getInsights(payload) {
+		return this.apiService.makeApiCall('insights/initiate', payload, 'POST');
+	}
+
+	/**
+	 * Get Prompt Insights.
+	 */
+	async getPromptInsights(payload, collectionID) {
+		return this.apiService.makeApiCall(`insights/generate/${collectionID}`, payload, 'POST');
+	}
+
+	/**
+	 * Get past insights.
+	 */
+	async getInsightsHistory(collectionID) {
+		return this.apiService.makeApiCall(`insights/retrieve/${collectionID}`);
+	}
 }
