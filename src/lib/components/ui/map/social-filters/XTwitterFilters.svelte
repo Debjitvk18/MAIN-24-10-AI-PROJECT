@@ -3,9 +3,10 @@
 	import * as Card from '$lib/components/ui/card';
 	import { Input } from '$lib/components/ui/input';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import { DateFormatter, getLocalTimeZone, today } from '@internationalized/date';
 
-	let { xKeywords, xUsernames, xPostTypes } = $props();
+	export let xKeywords = '';
+	export let xUsernames = '';
+	export let xPostTypes = [];
 </script>
 
 <Card.Root class="bg-blue-50 shadow-lg rounded-lg">
