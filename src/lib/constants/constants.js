@@ -48,11 +48,24 @@ export const MARKER_FONT_SIZE = '20px';
 export const MAP_PRIMARY_COLOR = '#2462ea';
 
 export const SOCIAL_MEDIA_PLATFORMS = [
-	{name: 'X (Twitter)', slug: 'x-twitter', tabIcon: 'ri:twitter-x-fill', mapIcon: TwitterIcon, mapIconHistorical: TwitterIconHistorical, visibility: true, tabs: ["Top", "Latest"]},
-	{name: 'LinkedIn', slug: 'linkedin', tabIcon: 'mdi:linkedin', mapIcon: LinkedInIcon, visibility: true, tabs: []},
-	{name: 'Facebook', slug: 'facebook', tabIcon: 'lucide:facebook', mapIcon: FacebookIcon, visibility: true, tabs: []},
-	{name: 'Marketplace', slug: 'facebook-marketplace', tabIcon: 'lucide:facebook', mapIcon: FacebookMarketPlaceIcon, visibility: true, tabs: []},
-	{name: 'Instagram', slug: 'instagram', tabIcon: 'lucide:instagram', mapIcon: InstagramIcon, visibility: true, tabs: []},
-	{name: 'Google News', slug: 'google-news', tabIcon: 'simple-icons:googlenews', mapIcon: GoogleNewsIcon, visibility: true, tabs: []},
-	{name: 'Panoids', slug: 'streetview', tabIcon: 'lucide:map-pinned', mapIcon: PanoidsIcon, visibility: true, tabs: []},
+	{ name: 'X (Twitter)', slug: 'x-twitter', tabIcon: 'ri:twitter-x-fill', mapIcon: TwitterIcon, mapIconHistorical: TwitterIconHistorical, visibility: true, tabs: ["Top", "Latest"] },
+	{ name: 'LinkedIn', slug: 'linkedin', tabIcon: 'mdi:linkedin', mapIcon: LinkedInIcon, visibility: true, tabs: [] },
+	{ name: 'Facebook', slug: 'facebook', tabIcon: 'lucide:facebook', mapIcon: FacebookIcon, visibility: true, tabs: [] },
+	{ name: 'Marketplace', slug: 'facebook-marketplace', tabIcon: 'lucide:facebook', mapIcon: FacebookMarketPlaceIcon, visibility: true, tabs: [] },
+	{ name: 'Instagram', slug: 'instagram', tabIcon: 'lucide:instagram', mapIcon: InstagramIcon, visibility: true, tabs: [] },
+	{ name: 'Google News', slug: 'google-news', tabIcon: 'simple-icons:googlenews', mapIcon: GoogleNewsIcon, visibility: true, tabs: [] },
+	{ name: 'Panoids', slug: 'streetview', tabIcon: 'lucide:map-pinned', mapIcon: PanoidsIcon, visibility: true, tabs: [] },
+];
+
+export const DATE_RANGE_OPTIONS = [
+	{ label: '1 hour', value: '1_hour' },
+	{ label: '12 hours', value: '12_hours' },
+	{ label: '24 hours', value: '24_hours' },
+	{ label: '72 hours', value: '72_hours' },
+	{ label: '1 week', value: '1_week' },
+	{ label: '2 weeks', value: '2_weeks' },
+	{ label: '1 month', value: '1_month' },
+	{ label: '6 months', value: '6_months' },
+	{ label: '1 year', value: '1_year' },
+	{ label: 'Custom', value: 'custom' }
 ];

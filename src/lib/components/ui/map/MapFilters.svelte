@@ -19,7 +19,7 @@
 	import { getDataFromURL, removeDataFromURL } from '$lib/utils/generalUtils';
 	import { onMount } from 'svelte';
 	import { Input } from '$lib/components/ui/input';
-	import { SOCIAL_MEDIA_PLATFORMS } from '$lib/constants/constants';
+	import { SOCIAL_MEDIA_PLATFORMS, DATE_RANGE_OPTIONS } from '$lib/constants/constants';
 	import XTwitterFilters from './social-filters/XTwitterFilters.svelte';
 
 	const df = new DateFormatter('en-US', {
@@ -37,10 +37,9 @@
 	// Radius and Resolution slider
 	let radiusValue = $state([1]);
 	let resolutionValue = $state([5]);
-	let keywordsOrHashtags = $state('');
 
 	let selectedLocation = null;
-	let timeFrame = $state('today');
+	let timeFrame = $state('1_hour');
 
 	// X-Twitter filters
 	let xKeywords = '';
@@ -57,7 +56,6 @@
 		const selectedLatitudeFromURL = getDataFromURL('lat');
 		const selectedLongitudeFromURL = getDataFromURL('long');
 		const selectedFeaturesFromURL = getDataFromURL('features[]');
-		timeFrame = getDataFromURL('timeframe');
 
 		if (selectedLocationFromURL && selectedLatitudeFromURL && selectedLongitudeFromURL) {
 			selectedLocation = {
@@ -97,6 +95,18 @@
 
 				return postType;
 			});
+		}
+
+		// Fetch timeframe, from, and to
+		timeFrame = getDataFromURL('timeframe');
+		const fromDate = getDataFromURL('from');
+		const toDate = getDataFromURL('to');
+
+		if (timeFrame === 'custom' && fromDate && toDate) {
+			datePickerValue = {
+				start: new DateValue(fromDate),
+				end: new DateValue(toDate)
+			};
 		}
 	}
 
@@ -170,11 +180,23 @@
 			longitude: longitude,
 			radius: radiusValue[0],
 			resolution: resolutionValue[0],
-			// start_date: datePickerValue?.start?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
-			// end_date: datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0] ?? '',
 			timeframe: timeFrame,
 			features: selectedSource
 		};
+
+		// If timeframe is not 'custom', remove 'from' and 'to'
+		if (timeFrame !== 'custom') {
+			removeDataFromURL('from');
+			removeDataFromURL('to');
+		} else {
+			const fromDate = datePickerValue?.start
+				?.toDate(getLocalTimeZone())
+				.toISOString()
+				.split('T')[0];
+			const toDate = datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0];
+			payload.from = fromDate;
+			payload.to = toDate;
+		}
 
 		if (enabledPlatforms['x-twitter']) {
 			payload.xKeywords = xKeywords;
@@ -218,6 +240,7 @@
 					removeDataFromURL('xKeywords');
 					removeDataFromURL('xUsernames');
 					removeDataFromURL('xPostTypes[]');
+					removeDataFromURL('xDateRange');
 				}
 				window.history.replaceState({}, '', url);
 
@@ -413,11 +436,52 @@
 						class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 						aria-label="Select a timeframe"
 					>
-						<option value="" disabled selected>Choose a timeframe</option>
-						<option value="today">Today</option>
-						<option value="last_week">Last Week</option>
-						<option value="last_month">Last Month</option>
+						<option value="" disabled selected>Choose a date option</option>
+						{#each DATE_RANGE_OPTIONS as option}
+							<option value={option.value}>{option.label}</option>
+						{/each}
 					</select>
+					{#if timeFrame === 'custom'}
+						<div class="grid gap-2 mt-4">
+							<Popover.Root openFocus>
+								<Popover.Trigger asChild let:builder>
+									<Button
+										builders={[builder]}
+										class={cn(
+											'justify-start text-left font-normal',
+											!datePickerValue && 'text-muted-foreground'
+										)}
+										variant="outline"
+									>
+										<Icon class="mr-2 h-4 w-4" icon="lucide:calendar-days" />
+										{#if datePickerValue && datePickerValue.start}
+											{#if datePickerValue.end}
+												{df.format(datePickerValue.start.toDate(getLocalTimeZone()))} - {df.format(
+													datePickerValue.end.toDate(getLocalTimeZone())
+												)}
+											{:else}
+												{df.format(datePickerValue.start.toDate(getLocalTimeZone()))}
+											{/if}
+										{:else if startValue}
+											{df.format(startValue.toDate(getLocalTimeZone()))}
+										{:else}
+											Pick a date
+										{/if}
+									</Button>
+								</Popover.Trigger>
+								<Popover.Content align="start" class="w-auto p-0">
+									<RangeCalendar
+										bind:startValue
+										bind:value={datePickerValue}
+										initialFocus
+										maxValue={todayDate}
+										numberOfMonths={2}
+										placeholder={datePickerValue?.start}
+									/>
+								</Popover.Content>
+							</Popover.Root>
+						</div>
+					{/if}
 				</Card.Content>
 			</Card.Root>
 		</div>
