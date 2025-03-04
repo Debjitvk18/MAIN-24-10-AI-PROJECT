@@ -85,4 +85,8 @@ export class MapService {
 	async getInsightsHistory(collectionID) {
 		return this.apiService.makeApiCall(`insights/retrieve/${collectionID}`);
 	}
+
+	async downloadPanoid(requestID, panoid) {
+		return this.apiService.makeApiCall(`search-requests/${requestID}/${panoid}/download`, {}, 'GET', 'blob');
+	}
 }

@@ -6,11 +6,15 @@
 		activeSocialMedia,
 		hoveredPostId,
 		socialMediaJson,
-		visibility
+		visibility,
+		searchRequestID
 	} from '$lib/stores/mapStore.ts';
 	import Icon from '@iconify/svelte';
 	import * as Avatar from '$lib/components/ui/avatar/index.ts';
 	import TwitterCard from '$lib/components/ui/map/social-cards/x-twitter/TwitterCard.svelte';
+	import * as Tooltip from '$lib/components/ui/tooltip';
+	import { MapService } from '$lib/services/map-service';
+	import { toast } from 'svelte-sonner';
 
 	export let isSidebarVisible = true;
 	export let markers = {};
@@ -53,6 +57,55 @@
 			}
 			return prev;
 		});
+	}
+
+	let downloadIcons = {};
+	async function downloadPanoid(panoidID) {
+		try {
+			updateDownloadIcon(panoidID, 'line-md:downloading-loop');
+			const response = await fetchPanoidData(panoidID);
+
+			const url = createBlobUrl(response);
+			triggerDownload(url, panoidID);
+			URL.revokeObjectURL(url);
+
+			updateDownloadIcon(panoidID, 'ic:round-download-done');
+			toast.success('Downloaded successfully');
+
+			resetDownloadIcon(panoidID);
+		} catch (error) {
+			console.error(error);
+			toast.error('Download failed');
+		}
+	}
+
+	function updateDownloadIcon(panoidID, icon) {
+		downloadIcons[panoidID] = icon;
+	}
+
+	async function fetchPanoidData(panoidID) {
+		const mapService = new MapService();
+		return await mapService.downloadPanoid($searchRequestID, panoidID);
+	}
+
+	function createBlobUrl(data) {
+		const blob = new Blob([data], { type: 'image/jpeg' });
+		return URL.createObjectURL(blob);
+	}
+
+	function triggerDownload(url, panoidID) {
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `${panoidID}.jpg`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+	}
+
+	function resetDownloadIcon(panoidID) {
+		setTimeout(() => {
+			updateDownloadIcon(panoidID, 'line-md:downloading');
+		}, 2000);
 	}
 
 	let twitterData;
@@ -98,34 +151,51 @@
 											on:mouseleave={() =>
 												highlightMarker(markers[socialMedia.type]?.[post.id], map, false)}
 										>
-											<a href={post.url} target="_blank" class="flex items-center gap-4">
-												<Avatar.Root>
-													<Avatar.Image src={post.image} alt="post" />
-													<Avatar.Fallback>
-														{#if post.fallback_image !== undefined && post.fallback_image !== null && post.fallback_image !== ''}
-															<img src={post.fallback_image} alt="post" />
-														{:else}
-															P
-														{/if}
-													</Avatar.Fallback>
-												</Avatar.Root>
-												<div class="flex flex-col">
-													<strong class="text-sm font-medium text-gray-900 dark:text-gray-200"
-														>{truncateString(post.title, 50)}</strong
-													>
-													<span class="text-sm font-medium text-gray-500 dark:text-gray-400">
-														{truncateString(post.description, 250)}
-													</span>
-													{#if post.price}
-														<span
-															class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1"
+											<div class="{socialMedia.type} p-4 relative">
+												{#if socialMedia.type == 'streetview'}
+													<div class="absolute top-3 right-2 z-50">
+														<Tooltip.Root>
+															<Tooltip.Trigger>
+																<span on:click={() => downloadPanoid(post.id)}>
+																	<Icon
+																		icon={downloadIcons[post.id] || 'line-md:downloading'}
+																		class="h-7 w-7 text-gray-500"
+																	/></span
+																>
+															</Tooltip.Trigger>
+															<Tooltip.Content>Download Image.</Tooltip.Content>
+														</Tooltip.Root>
+													</div>
+												{/if}
+												<a href={post.url} target="_blank" class="flex items-center gap-4">
+													<Avatar.Root>
+														<Avatar.Image src={post.image} alt="post" />
+														<Avatar.Fallback>
+															{#if post.fallback_image !== undefined && post.fallback_image !== null && post.fallback_image !== ''}
+																<img src={post.fallback_image} alt="post" />
+															{:else}
+																P
+															{/if}
+														</Avatar.Fallback>
+													</Avatar.Root>
+													<div class="flex flex-col flex-grow">
+														<strong class="text-sm font-medium text-gray-900 dark:text-gray-200"
+															>{truncateString(post.title, 50)}</strong
 														>
-															<Icon icon="grommet-icons:money" />
-															{post.currency}{post.price}
+														<span class="text-sm font-medium text-gray-500 dark:text-gray-400">
+															{truncateString(post.description, 250)}
 														</span>
-													{/if}
-												</div>
-											</a>
+														{#if post.price}
+															<span
+																class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1"
+															>
+																<Icon icon="grommet-icons:money" />
+																{post.currency}{post.price}
+															</span>
+														{/if}
+													</div>
+												</a>
+											</div>
 										</div>
 									{/if}
 								{/each}
