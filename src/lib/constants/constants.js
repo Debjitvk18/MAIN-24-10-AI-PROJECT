@@ -1,6 +1,6 @@
 import { PUBLIC_API_URL } from '$env/static/public';
-import TwitterIcon from '$lib/assets/svg/marker/x-pin.svg?raw';
-import TwitterIconHistorical from '$lib/assets/svg/marker/x-pin-historical.svg?raw';
+import TwitterIcon from '$lib/assets/svg/marker/x-pin-red-dot.svg?raw';
+import TwitterIconHistorical from '$lib/assets/svg/marker/x-pin.svg?raw';
 import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
 import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
 import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
