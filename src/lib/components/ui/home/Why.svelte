@@ -63,7 +63,6 @@
     <!-- Custom Navigation Dots -->
     <div class="flex justify-center mt-6 md:hidden">
         {#each features as _, index}
-        {console.log('here')}
             <button 
                 class="h-2 w-2 mx-1 rounded-full transition-all duration-300"
                 class:bg-gray-400="{current !== index}"
@@ -73,7 +72,7 @@
     </div>
 
     <!-- Desktop Grid Layout -->
-    <div class="hidden md:grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {#each features as card}
             <div class="p-8 rounded-2xl shadow-lg flex items-start gap-6"
                  class:bg-gradient-to-r="{card.gradient}" 

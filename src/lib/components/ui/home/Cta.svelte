@@ -23,7 +23,7 @@
 	</div>
 
 	<!-- Responsive Image -->
-	<div class="absolute right-0 bottom-0 w-[50vw] max-w-[250px] sm:max-w-[300px] md:max-w-[400px] z-10 hidden sm:block">
+	<div class="absolute right-0 bottom-0 w-[50vw] max-w-[250px] sm:max-w-[300px] md:max-w-[400px] z-10 hidden lg:block">
 		<img src="{CTABanner}" alt="Placer.ai Illustration" class="w-full h-auto">
 	</div>
 </section>

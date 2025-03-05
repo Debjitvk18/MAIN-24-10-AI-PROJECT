@@ -75,7 +75,7 @@
 
 </script>
 
-<form class="max-w-md">
+<form class="max-w-full xl:max-w-md">
 	<label class="mb-2 text-sm font-medium text-gray-900 sr-only" for="default-search">
 		Search
 	</label>

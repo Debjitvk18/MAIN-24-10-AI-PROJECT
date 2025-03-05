@@ -59,8 +59,8 @@
     });
 </script>
 <div class="section bg-white">
-	<div class="container">
-		<h2 class="text-center text-5xl font-bold text-gray-900 leading-tight">
+	<div class="md:container">
+		<h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 leading-tight text-center">
 			Powerful Insights<br />Built on Reliable Data
 		</h2>
 		<div class="font-size-1-875rem text-center margin-bottom-2-5rem margin-top-8-125rem mobile data-heading">
@@ -177,7 +177,7 @@
 				/>
 			</div>
 		</div>
-		<div class="font-size-1-875rem text-center margin-bottom-2-5rem margin-top-8-125rem mobile">
+		<div class="font-size-1-875rem text-center margin-bottom-2-5rem margin-top-8-125rem mobile seamless">
 			Seamless Business Integration
 		</div>
 		<div class="diagram-lines last">
@@ -4788,4 +4788,112 @@
 #w-node-_6555176d-d5e1-a173-c37b-efdaf9c786f2-faea5da4, #w-node-_6555176d-d5e1-a173-c37b-efdaf9c78747-faea5da4, #w-node-d6e1df3a-be79-c819-653c-96ff99579666-faea5da4 {
     grid-area: span 1 / span 1 / span 1 / span 1;
 }
+
+
+
+
+
+
+/* ======================= */
+@media screen and (max-width: 991px) {
+    .flex-h-center-start.position-relative.mobile-margin {
+        margin-bottom: 5%;
+    }
+    .data-step-1 {
+        flex-direction: column;
+    }
+    .margin-right-1rem.mobile-width {
+        width: 140px;
+    }
+    .data-floating-text {
+        position: static;
+    }
+    .margin-right-1rem.mobile-width {
+        width: 140px;
+    }
+    .margin-right-1rem.mobile-width {
+        width: 160px;
+        margin-right: 2rem;
+    }
+    .font-size-1-875rem.text-center.margin-bottom-2-5rem.margin-top-8-125rem.mobile {
+        font-size: 1.5rem;
+    }
+    .font-size-1-875rem.text-center.margin-bottom-2-5rem.margin-top-8-125rem.mobile {
+        border-bottom: 1px solid var(--light-grey);
+        text-align: center;
+        margin-top: 7.125rem;
+    }
+    .position-relative.width-100.flex-v-center-start.mobile-margin {
+        margin-bottom: 5%;
+    }
+    .data-step-2 {
+        flex-direction: column;
+        display: flex;
+        top: -145px;
+    }
+    .dotted-data-line {
+        display: none;
+    }
+    .font-size-1-5rem.text-bold.text-line-height-1-5.mobile-line-height {
+        line-height: 1.3;
+    }
+    .flex-v-start-center.mobile-last {
+        order: 1;
+    }
+    .data-dashed-wrapper {
+        background-image: none;
+        background-repeat: repeat;
+        background-size: auto;
+        padding-left: 0%;
+    }
+    .diagram-lines.absolute, .diagram-lines.margin-bottom, .diagram-lines.last {
+        display: none;
+    }
+    .data-step-3 {
+        flex-direction: column;
+    }
+    .width-50.flex-h-center-start.padding-right.mobile {
+        flex-direction: column;
+        width: 100%;
+        margin-bottom: 5%;
+    }
+    .height-30vh.margin-bottom-1rem.margin-right-2-5rem {
+        margin-right: 0;
+    }
+    .font-size-1-5rem.text-bold.text-line-height-1-5.mobile-line-height {
+        line-height: 1.3;
+    }
+    .flex-h-center-start.link-semi-bold {
+        font-size: .875rem;
+    }
+    .width-50.flex-h-center-start.tablet-width-100, .width-50.mobile, .width-50.responsive {
+        width: 100%;
+    }
+    .margin-bottom-1-5rem {
+        margin-bottom: 1rem;
+    }
+    .height-25vh.margin-right-2-5rem.mobile {
+        min-width: 40%;
+    }
+    .font-size-1-5rem.text-bold.text-line-height-1-5.mobile-line-height {
+        line-height: 1.3;
+    }
+    .section {
+        padding: 4rem 1rem 3rem;
+    }
+    .height-25vh.margin-right-2-5rem.mobile {
+        margin-right: 1.5rem;
+    }
+
+    .data-step-3 {
+        top: -118px;
+    }
+    .font-size-1-875rem.text-center.margin-bottom-2-5rem.margin-top-8-125rem.data-heading {
+        margin-top: 187px;
+    }
+    .font-size-1-875rem.text-center.margin-bottom-2-5rem.margin-top-8-125rem.mobile.seamless.mobile{
+        margin-top: 0;
+    }
+}
+    
 </style>
