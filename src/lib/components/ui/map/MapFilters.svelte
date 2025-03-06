@@ -6,7 +6,13 @@
 	import * as Card from '$lib/components/ui/card';
 	import * as Sheet from '$lib/components/ui/sheet';
 
-	import { DateFormatter, type DateValue, getLocalTimeZone, today } from '@internationalized/date';
+	import {
+		DateFormatter,
+		type DateValue,
+		getLocalTimeZone,
+		today,
+		parseDate
+	} from '@internationalized/date';
 	import { RangeCalendar } from '$lib/components/ui/range-calendar/index.ts';
 
 	import { cn } from '$lib/utils.ts';
@@ -18,19 +24,9 @@
 	import MapSearchBox from '$lib/components/ui/map/MapSearchBox.svelte';
 	import { getDataFromURL, removeDataFromURL } from '$lib/utils/generalUtils';
 	import { onMount } from 'svelte';
-	import { Input } from '$lib/components/ui/input';
 	import { SOCIAL_MEDIA_PLATFORMS, DATE_RANGE_OPTIONS } from '$lib/constants/constants';
 	import XTwitterFilters from './social-filters/XTwitterFilters.svelte';
-
-	const df = new DateFormatter('en-US', {
-		dateStyle: 'medium'
-	});
-
-	const todayDate = today(getLocalTimeZone());
-	let datePickerValue = $state<DateRange | undefined>({
-		start: todayDate,
-		end: todayDate
-	});
+	import { formatDateToYYYYMMDD } from '$lib/utils/dateTimeUtils';
 
 	let selectedSource = [];
 
@@ -39,15 +35,27 @@
 	let resolutionValue = $state([5]);
 
 	let selectedLocation = null;
-	let timeFrame = $state('1_hour');
+	let timeFrame = $state('24_hours');
+	let showDateRange = $state(false);
 
 	// X-Twitter filters
-	let xKeywords = '';
-	let xUsernames = '';
-	let xPostTypes = [
+	let xKeywords = $state('');
+	let xUsernames = $state('');
+	let xPostTypes = $state([
 		{ label: 'Top', description: 'Most popular tweets', enabled: true },
 		{ label: 'Latest', description: 'Most recent tweets', enabled: true }
-	];
+	]);
+
+	// date picker values
+	const df = new DateFormatter('en-US', {
+		dateStyle: 'medium'
+	});
+	const todayDate = today(getLocalTimeZone());
+	let datePickerValue = $state<DateRange | undefined>({
+		start: todayDate,
+		end: todayDate
+	});
+	let startValue = $state<DateValue | undefined>(undefined);
 
 	// Function to initialize values from URL parameters
 	function initializeURLData() {
@@ -76,37 +84,43 @@
 		resolutionValue = [parseInt(rawResolution, 10) || 5];
 
 		// X-Twitter filters from URL
-		const selectedXKeywordsFromURL = getDataFromURL('xKeywords');
-		const selectedXUsernamesFromURL = getDataFromURL('xUsernames');
-		const selectedXPostTypesFromURL = getDataFromURL('xPostTypes[]');
-		if (selectedXKeywordsFromURL && xKeywords == '') {
-			xKeywords = selectedXKeywordsFromURL;
-		}
-		if (selectedXUsernamesFromURL && xUsernames == '') {
-			xUsernames = selectedXUsernamesFromURL;
-		}
-		if (selectedXPostTypesFromURL) {
-			xPostTypes = xPostTypes.map((postType) => {
-				if (selectedXPostTypesFromURL.includes(postType.label.toLowerCase())) {
-					postType.enabled = true;
-				} else {
-					postType.enabled = false;
-				}
+		if (selectedFeaturesFromURL && selectedFeaturesFromURL.includes('x-twitter')) {
+			const selectedXKeywordsFromURL = getDataFromURL('xKeywords');
+			const selectedXUsernamesFromURL = getDataFromURL('xUsernames');
+			const selectedXPostTypesFromURL = getDataFromURL('xPostTypes[]');
+			if (selectedXKeywordsFromURL && xKeywords == '') {
+				xKeywords = selectedXKeywordsFromURL;
+			}
+			if (selectedXUsernamesFromURL && xUsernames == '') {
+				xUsernames = selectedXUsernamesFromURL;
+			}
+			if (selectedXPostTypesFromURL) {
+				xPostTypes = xPostTypes.map((postType) => {
+					if (selectedXPostTypesFromURL.includes(postType.label.toLowerCase())) {
+						postType.enabled = true;
+					} else {
+						postType.enabled = false;
+					}
 
+					return postType;
+				});
+			}
+		} else {
+			xKeywords = '';
+			xUsernames = '';
+			xPostTypes = xPostTypes.map((postType) => {
+				postType.enabled = true;
 				return postType;
 			});
 		}
 
 		// Fetch timeframe, from, and to
-		timeFrame = getDataFromURL('timeframe');
-		const fromDate = getDataFromURL('from');
-		const toDate = getDataFromURL('to');
+		const timeFrameFromURL = getDataFromURL('timeframe');
 
-		if (timeFrame === 'custom' && fromDate && toDate) {
-			datePickerValue = {
-				start: new DateValue(fromDate),
-				end: new DateValue(toDate)
-			};
+		if (timeFrameFromURL === '') {
+			timeFrame = '24_hours';
+		} else {
+			timeFrame = timeFrameFromURL;
 		}
 	}
 
@@ -118,9 +132,20 @@
 			}
 		});
 		observer.observe(document.body, { childList: true, subtree: true });
-	});
 
-	let startValue = $state<DateValue | undefined>(undefined);
+		const timeFrameFromURL = getDataFromURL('timeframe');
+		if (timeFrameFromURL === 'custom' && getDataFromURL('from') && getDataFromURL('to')) {
+			showDateRange = true;
+			const fromDate = getDataFromURL('from');
+			const toDate = getDataFromURL('to');
+
+			datePickerValue.start = parseDate(fromDate);
+			datePickerValue.end = parseDate(toDate);
+			startValue = parseDate(fromDate);
+		} else {
+			showDateRange = false;
+		}
+	});
 
 	// Initialize MapService
 	const mapService = new MapService();
@@ -139,6 +164,12 @@
 			SOCIAL_MEDIA_PLATFORMS.forEach(({ slug }) => {
 				enabledPlatforms[slug] = features.includes(slug);
 			});
+		}
+
+		if (timeFrame === 'custom') {
+			showDateRange = true;
+		} else {
+			showDateRange = false;
 		}
 	});
 
@@ -189,11 +220,9 @@
 			removeDataFromURL('from');
 			removeDataFromURL('to');
 		} else {
-			const fromDate = datePickerValue?.start
-				?.toDate(getLocalTimeZone())
-				.toISOString()
-				.split('T')[0];
-			const toDate = datePickerValue?.end?.toDate(getLocalTimeZone()).toISOString().split('T')[0];
+			const fromDate = formatDateToYYYYMMDD(datePickerValue?.start?.toDate(getLocalTimeZone()));
+			const toDate = formatDateToYYYYMMDD(datePickerValue?.end?.toDate(getLocalTimeZone()));
+
 			payload.from = fromDate;
 			payload.to = toDate;
 		}
@@ -214,7 +243,6 @@
 				errorMessages = null;
 				// pass payload in URL
 				const url = new URL(window.location.href);
-				// payload.request_id = response.search_id;
 				Object.entries(payload).forEach(([key, value]) => {
 					if (key === 'features') {
 						url.searchParams.delete('features[]');
@@ -240,7 +268,6 @@
 					removeDataFromURL('xKeywords');
 					removeDataFromURL('xUsernames');
 					removeDataFromURL('xPostTypes[]');
-					removeDataFromURL('xDateRange');
 				}
 				window.history.replaceState({}, '', url);
 
@@ -369,57 +396,6 @@
 				</Card.Content>
 			</Card.Root>
 
-			<!-- Date Range -->
-			<Card.Root class="mb-4 hidden">
-				<Card.Header>
-					<Card.Title>Choose Date Range</Card.Title>
-					<Card.Description
-						>Select dates to include historical data within your search.</Card.Description
-					>
-				</Card.Header>
-				<Card.Content>
-					<div class="grid gap-2">
-						<Popover.Root openFocus>
-							<Popover.Trigger asChild let:builder>
-								<Button
-									builders={[builder]}
-									class={cn(
-										'justify-start text-left font-normal',
-										!datePickerValue && 'text-muted-foreground'
-									)}
-									variant="outline"
-								>
-									<Icon class="mr-2 h-4 w-4" icon="lucide:calendar-days" />
-									{#if datePickerValue && datePickerValue.start}
-										{#if datePickerValue.end}
-											{df.format(datePickerValue.start.toDate(getLocalTimeZone()))} - {df.format(
-												datePickerValue.end.toDate(getLocalTimeZone())
-											)}
-										{:else}
-											{df.format(datePickerValue.start.toDate(getLocalTimeZone()))}
-										{/if}
-									{:else if startValue}
-										{df.format(startValue.toDate(getLocalTimeZone()))}
-									{:else}
-										Pick a date
-									{/if}
-								</Button>
-							</Popover.Trigger>
-							<Popover.Content align="start" class="w-auto p-0">
-								<RangeCalendar
-									bind:startValue
-									bind:value={datePickerValue}
-									initialFocus
-									maxValue={todayDate}
-									numberOfMonths={2}
-									placeholder={datePickerValue?.start}
-								/>
-							</Popover.Content>
-						</Popover.Root>
-					</div>
-				</Card.Content>
-			</Card.Root>
-
 			<!-- Timeframe -->
 			<Card.Root class="mb-4">
 				<Card.Header>
@@ -436,7 +412,6 @@
 						class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 						aria-label="Select a timeframe"
 					>
-						<option value="" disabled selected>Choose a date option</option>
 						{#each DATE_RANGE_OPTIONS as option}
 							<option value={option.value}>{option.label}</option>
 						{/each}

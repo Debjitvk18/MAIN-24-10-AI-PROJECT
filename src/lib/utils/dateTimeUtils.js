@@ -34,3 +34,10 @@ export function formatTwitterDate(dateStr) {
 
     return formattedDate;
 }
+
+export function formatDateToYYYYMMDD(dateStr) {
+    const year = dateStr.getFullYear();
+    const month = String(dateStr.getMonth() + 1).padStart(2, '0'); // Ensure two-digit format
+    const day = String(dateStr.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}

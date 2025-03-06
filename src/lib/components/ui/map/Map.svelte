@@ -124,8 +124,7 @@
 	 * and applies the selected style to the map. The control also updates the
 	 * URL with the chosen theme for persistence and resets when removed from the map.
 	 *
-	 * @return {Object} A new instance of the StyleSwitcherControl class, which can
-	 *         be added to a Mapbox map as a control to switch map styles.
+	 * @return {Object} A new instance of the StyleSwitcherControl class, which can be added to a Mapbox map as a control to switch map styles.
 	 */
 	function createStyleSwitcherControl() {
 		class StyleSwitcherControl {
@@ -454,6 +453,10 @@
 
 					if (getDataFromURL('timeframe')) {
 						payload.timeframe = getDataFromURL('timeframe');
+						if (payload.timeframe === 'custom') {
+							payload.from = getDataFromURL('from');
+							payload.to = getDataFromURL('to');
+						}
 					}
 
 					// xFilters from url
