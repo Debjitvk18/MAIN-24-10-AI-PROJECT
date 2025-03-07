@@ -61,8 +61,8 @@ const PLATFORM_PARSERS = {
 		const tweetObjects = tweetData[1];
 
 		const getTweetDetails = (tweetObject) => {
-			const {tweet = {}} = tweetObject;
-			const {user_details: user, place, extended_entities} = tweet;
+			const { tweet = {} } = tweetObject;
+			const { user_details: user, place, extended_entities } = tweet;
 			const [lng, lat] = place?.bounding_box?.coordinates?.[0]?.[0] ?? [null, null];
 
 			const mediaDetails = extended_entities?.media?.[0] || {};
@@ -89,7 +89,7 @@ const PLATFORM_PARSERS = {
 			};
 		};
 
-		return {[tweetType]: tweetObjects.tweets.map(getTweetDetails)};
+		return { [tweetType]: tweetObjects.tweets.map(getTweetDetails) };
 	},
 
 	linkedin: (data) =>
@@ -103,16 +103,84 @@ const PLATFORM_PARSERS = {
 			url: post.url ?? '#'
 		})),
 
-	facebook: (data) =>
-		data.results.map((post) => ({
-			id: post.id,
-			title: post.message,
-			description: post.message,
-			image: post.actors[0]?.profile_picture || FacebookIconImg,
-			lat: post.explicit_place?.latitude ?? null,
-			lng: post.explicit_place?.longitude ?? null,
-			url: post.url ?? '#'
-		})),
+	facebook: (data) => {
+		const fbData = Object.entries(data)[0];
+		const fbType = fbData[0];
+		const fbObjects = fbData[1];
+
+		const getFbDetails = (fbObject) => {
+			const commonDetails = {
+				id: fbObject.id,
+				url: fbObject.url ?? '#',
+				type: fbType,
+				historical: data?.historical || false,
+			};
+
+			switch (fbType) {
+				case 'posts':
+					return {
+						...commonDetails,
+						content: fbObject.message,
+						postMedia: fbObject.attachments[0]?.preview_image || FacebookIconImg,
+						userName: fbObject.actors[0]?.name,
+						userProfilePhoto: fbObject.actors[0]?.profile_picture,
+						lat: null,
+						lng: null,
+						postTime: fbObject.creation_time,
+						reaction: fbObject.feedback?.reaction_count,
+						comment: fbObject.feedback?.comment_count,
+						share: fbObject.feedback?.share_count,
+						like: fbObject.feedback?.like_count,
+					};
+				case 'users':
+					return {
+						...commonDetails,
+						name: fbObject.name,
+						image: fbObject.photoUrl,
+						info: fbObject.info,
+					};
+				case 'pages':
+					return {
+						...commonDetails,
+						name: fbObject.name,
+						image: fbObject.photoUrl,
+						info: fbObject.info,
+						postsFrequency: fbObject.postsFrequency,
+						followers: fbObject.followers,
+					};
+				case 'groups':
+					return {
+						...commonDetails,
+						name: fbObject.name,
+						image: fbObject.photoUrl,
+						info: fbObject.info,
+						postsFrequency: fbObject.postsFrequency,
+						members: fbObject.members,
+					};
+				case 'events':
+					return {
+						...commonDetails,
+						name: fbObject.name,
+						image: fbObject.picture,
+						attendings: fbObject.attendings,
+						startTimeStamp: fbObject.startTimeStamp,
+						startText: fbObject.startText,
+						timezone: fbObject.timezone,
+						isAllDay: fbObject.isAllDay,
+						endTimeStamp: fbObject.endTimeStamp,
+						location: fbObject.location,
+						pastEvent: fbObject.pastEvent,
+					};
+				default:
+					return commonDetails;
+			}
+		};
+
+		if (fbType === 'videos') return false;
+		// const fbDetails = fbType === 'videos' ? fbObjects.data : fbObjects.results;
+		const fbDetails = fbObjects.data || fbObjects.results;
+		return { [fbType]: fbDetails.map(getFbDetails) };
+	},
 
 	'facebook-marketplace': (data) =>
 		data.data.marketplace_search.feed_units.edges
