@@ -49,8 +49,8 @@ export const MAP_PRIMARY_COLOR = '#2462ea';
 
 export const SOCIAL_MEDIA_PLATFORMS = [
 	{ name: 'X (Twitter)', slug: 'x-twitter', tabIcon: 'ri:twitter-x-fill', mapIcon: TwitterIcon, mapIconHistorical: TwitterIconHistorical, visibility: true, tabs: ["Top", "Latest"] },
-	{ name: 'LinkedIn', slug: 'linkedin', tabIcon: 'mdi:linkedin', mapIcon: LinkedInIcon, visibility: true, tabs: [] },
 	{ name: 'Facebook', slug: 'facebook', tabIcon: 'lucide:facebook', mapIcon: FacebookIcon, visibility: true, tabs: ["Posts", "Users", "Groups", "Videos", "Pages", "Events"] },
+	{ name: 'LinkedIn', slug: 'linkedin', tabIcon: 'mdi:linkedin', mapIcon: LinkedInIcon, visibility: true, tabs: [] },
 	{ name: 'Marketplace', slug: 'facebook-marketplace', tabIcon: 'lucide:facebook', mapIcon: FacebookMarketPlaceIcon, visibility: true, tabs: [] },
 	{ name: 'Instagram', slug: 'instagram', tabIcon: 'lucide:instagram', mapIcon: InstagramIcon, visibility: true, tabs: [] },
 	{ name: 'Google News', slug: 'google-news', tabIcon: 'simple-icons:googlenews', mapIcon: GoogleNewsIcon, visibility: true, tabs: [] },
@@ -68,4 +68,13 @@ export const DATE_RANGE_OPTIONS = [
 	{ label: '6 months', value: '6_months' },
 	{ label: '1 year', value: '1_year' },
 	{ label: 'Custom', value: 'custom' }
+];
+
+export const FACEBOOK_CATEGORIES = [
+	{ label: 'Local Business or Place', value: '1006' },
+	{ label: 'Company, Organization or Institution', value: '1013' },
+	{ label: 'Brand or Product', value: '1009' },
+	{ label: 'Artist, Band or Public Figure', value: '1007' },
+	{ label: 'Entertainment', value: '1019' },
+	{ label: 'Cause or Community', value: '2612' }
 ];

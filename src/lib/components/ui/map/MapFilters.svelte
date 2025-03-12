@@ -27,6 +27,7 @@
 	import { SOCIAL_MEDIA_PLATFORMS, DATE_RANGE_OPTIONS } from '$lib/constants/constants';
 	import XTwitterFilters from './social-filters/XTwitterFilters.svelte';
 	import { formatDateToYYYYMMDD } from '$lib/utils/dateTimeUtils';
+	import FacebookFilters from './social-filters/FacebookFilters.svelte';
 
 	let selectedSource = [];
 
@@ -44,6 +45,21 @@
 	let xPostTypes = $state([
 		{ label: 'Top', description: 'Most popular tweets', enabled: true },
 		{ label: 'Latest', description: 'Most recent tweets', enabled: true }
+	]);
+
+	// Facebook filters
+	let fbKeywords = $state('');
+	let fbPostTypes = $state([
+		{
+			label: 'Posts',
+			description: 'Enable/Disable the Posts',
+			enabled: true,
+			subFilters: []
+		},
+		{ label: 'Users', description: 'Enable/Disable the Users', enabled: true },
+		{ label: 'Pages', description: 'Enable/Disable the Pages', enabled: true },
+		{ label: 'Group', description: 'Enable/Disable the Group', enabled: true },
+		{ label: 'Events', description: 'Enable/Disable the Events', enabled: true }
 	]);
 
 	// date picker values
@@ -342,6 +358,10 @@
 								</div>
 								{#if slug === 'x-twitter' && enabledPlatforms[slug]}
 									<XTwitterFilters bind:xKeywords bind:xUsernames bind:xPostTypes />
+								{/if}
+
+								{#if slug === 'facebook' && enabledPlatforms[slug]}
+									<FacebookFilters bind:fbKeywords bind:fbPostTypes />
 								{/if}
 							{/each}
 						</div>
