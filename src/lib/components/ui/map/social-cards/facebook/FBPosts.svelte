@@ -1,12 +1,9 @@
 <script>
 	import Icon from '@iconify/svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import TweetTooltip from '../x-twitter/TweetTooltip.svelte';
-	import TextTweet from '$lib/components/ui/map/social-cards/x-twitter/TextTweet.svelte';
-	import ImageTweet from '$lib/components/ui/map/social-cards/x-twitter/ImageTweet.svelte';
-	import VideoTweet from '$lib/components/ui/map/social-cards/x-twitter/VideoTweet.svelte';
-	import { formatTwitterDate } from '$lib/utils/dateTimeUtils.js';
+	import { formatToSocialMediaDate } from '$lib/utils/dateTimeUtils.js';
 	import { flyToMarker } from '$lib/utils/mapUtils.js';
+	import CountIconTooltip from '../../CountIconTooltip.svelte';
 
 	export let post;
 	export let map = null;
@@ -14,7 +11,6 @@
 
 	const userClass = 'font-bold text-gray-900';
 	const profileImageClass = 'w-10 h-10 rounded-full';
-	const verifyIconClass = 'h-5 w-5 text-blue-500';
 	const mutedTextClass = 'text-gray-500';
 	const actionsClass = 'flex items-center justify-between text-gray-500 text-sm mt-3';
 </script>
@@ -40,9 +36,6 @@
 				<!-- User Information Section -->
 				<div class="flex items-center space-x-1">
 					<span class={userClass}>{post.userName}</span>
-					{#if post.isUserVerified}
-						<Icon icon="bitcoin-icons:verify-filled" class={verifyIconClass} />
-					{/if}
 					{#if !post.historical}
 						<Tooltip.Root>
 							<Tooltip.Trigger>
@@ -54,49 +47,57 @@
 				</div>
 
 				<div class="flex items-center space-x-1">
-					<span class={mutedTextClass}
-						>@{post.userScreenName} ·
+					<span class={mutedTextClass}>
 						<Tooltip.Root>
 							<Tooltip.Trigger>
-								{formatTwitterDate(post.postTime)}
+								{formatToSocialMediaDate(post.postTime, true)}
 							</Tooltip.Trigger>
 							<Tooltip.Content>
-								<p>{post.postTime}</p>
+								<p>{new Date(post.postTime * 1000).toISOString()}</p>
 							</Tooltip.Content>
 						</Tooltip.Root>
 					</span>
 				</div>
-
-				<!-- Post Content Section -->
-				{#if post.type === 'video'}
-					<VideoTweet content={post.content} media={post.postMedia} />
-				{:else if post.type === 'photo'}
-					<ImageTweet content={post.content} media={post.postMedia} />
-				{:else}
-					<TextTweet content={post.content} />
-				{/if}
-
-				<!-- Actions Section -->
-				<div class={actionsClass}>
-					<TweetTooltip count={post.replyCount} icon="lineicons:comment-1" text="Reply" />
-					<TweetTooltip
-						count={post.retweetCount}
-						icon="garden:arrow-retweet-stroke-16"
-						text="Repost"
-					/>
-					<TweetTooltip
-						count={post.favoriteCount}
-						icon="material-symbols:favorite-outline-rounded"
-						text="Like"
-					/>
+			</div>
+		</div>
+		<div>
+			<p class="text-gray-800 mt-1">{@html post.content.split('\n').join('<br/>')}</p>
+			{#if post.postType === 'MediaAttachment' || post.postType === 'PhotoSetAttachment'}
+				<div class="mt-3">
+					<img src={post.postMedia} alt="FB Image" class="rounded-lg w-100" />
 				</div>
+			{/if}
+
+			{#if post.postType === 'VideoAttachment' || post.postType === 'FBShortsStoryAttachment'}
+				<div class="mt-3 relative">
+					<img src={post.postMedia} alt="Video Thumbnail" class="rounded-lg w-full" />
+					<button class="absolute inset-0 flex items-center justify-center">
+						<div class="bg-black bg-opacity-50 p-3 rounded-full">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-10 w-10 text-white transition transform hover:scale-110"
+								viewBox="0 0 24 24"
+								fill="currentColor"
+							>
+								<path d="M8 5v14l11-7z" />
+							</svg>
+						</div>
+					</button>
+				</div>
+			{/if}
+
+			<!-- Actions Section -->
+			<div class={actionsClass}>
+				<CountIconTooltip count={post.like} icon="meteor-icons:thumbs-up" text="Like" />
+				<CountIconTooltip count={post.comment} icon="teenyicons:chat-outline" text="Comment" />
+				<CountIconTooltip count={post.share} icon="uil:share" text="Share" />
 			</div>
 		</div>
 	</a>
 </div>
 
 <style>
-	.tweet:hover {
+	.fbpost:hover {
 		border-color: #007bff;
 		background-color: #f0f9ff;
 	}

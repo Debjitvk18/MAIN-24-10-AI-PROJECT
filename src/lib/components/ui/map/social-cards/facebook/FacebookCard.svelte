@@ -42,6 +42,9 @@
 	{#if posts}
 		{#each Object.keys(posts) as key}
 			{#if posts[key].length > 0}
+				<div class="sticky top-0 bg-white z-[100] p-2 border-b border-gray-200">
+					<h2 class="text-lg font-bold">{key.toUpperCase()}</h2>
+				</div>
 				{#each posts[key] as post}
 					<div
 						data-type="facebook"
@@ -162,9 +165,9 @@
 							</div>
 						{/if}
 
-						<!-- {#if post.type === 'posts'}
+						{#if post.type === 'posts'}
 							<FbPosts {post} {map} marker={markers['facebook']?.[post.id]} />
-						{/if} -->
+						{/if}
 					</div>
 				{/each}
 			{/if}

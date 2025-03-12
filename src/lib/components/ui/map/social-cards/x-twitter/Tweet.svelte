@@ -5,7 +5,7 @@
 	import TextTweet from '$lib/components/ui/map/social-cards/x-twitter/TextTweet.svelte';
 	import ImageTweet from '$lib/components/ui/map/social-cards/x-twitter/ImageTweet.svelte';
 	import VideoTweet from '$lib/components/ui/map/social-cards/x-twitter/VideoTweet.svelte';
-	import { formatTwitterDate } from '$lib/utils/dateTimeUtils.js';
+	import { formatToSocialMediaDate } from '$lib/utils/dateTimeUtils.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/';
 	import { flyToMarker } from '$lib/utils/mapUtils.js';
 
@@ -59,7 +59,7 @@
 						>@{tweet.userScreenName} ·
 						<Tooltip.Root>
 							<Tooltip.Trigger>
-								{formatTwitterDate(tweet.postTime)}
+								{formatToSocialMediaDate(tweet.postTime)}
 							</Tooltip.Trigger>
 							<Tooltip.Content>
 								<p>{tweet.postTime}</p>

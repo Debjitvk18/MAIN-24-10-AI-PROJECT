@@ -131,6 +131,7 @@ const PLATFORM_PARSERS = {
 						comment: fbObject.feedback?.comment_count,
 						share: fbObject.feedback?.share_count,
 						like: fbObject.feedback?.like_count,
+						postType: fbObject.attachments[0]?.attachment_type,
 					};
 				case 'users':
 					return {

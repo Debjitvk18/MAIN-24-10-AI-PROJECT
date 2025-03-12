@@ -1,4 +1,8 @@
-export function formatTwitterDate(dateStr) {
+export function formatToSocialMediaDate(dateStr, unixTimestamp = false) {
+    if (unixTimestamp) {
+        dateStr = new Date(dateStr * 1000).toISOString();
+    }
+
     const date = new Date(dateStr); // Parse the date string into a Date object
     const now = new Date();
     const diffInSeconds = Math.floor((date - now) / 1000);
