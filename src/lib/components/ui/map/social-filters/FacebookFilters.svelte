@@ -4,11 +4,64 @@
 	import { Input } from '$lib/components/ui/input';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import { FACEBOOK_CATEGORIES } from '$lib/constants/constants';
+	import { MapService } from '$lib/services/map-service';
 
 	export let fbKeywords = '';
 	export let fbPostTypes = [];
-	export let educationSuggestions = ['Education', 'School', 'University', 'College'];
-	export let workSuggestions = ['Work', 'Job', 'Employment', 'Company'];
+	export let fbPublicPosts;
+	export let fbRecentPosts;
+	export let fbEducationId = '';
+	export let fbWorkId = '';
+	export let fbCategoryId = '';
+	export let educationSuggestions = {};
+	export let workSuggestions = /** @type {{ id: string, text: string, image: string }[]} */ ([]);
+
+	function debounce(func, wait) {
+		let timeout;
+		return function (...args) {
+			clearTimeout(timeout);
+			timeout = setTimeout(() => func.apply(this, args), wait);
+		};
+	}
+
+	const debouncedHandleTypeSearchFilters = debounce(handleTypeSearchFilters, 800);
+
+	function handleTypeSearchFilters(type, keyword, feature = 'facebook') {
+		const mapService = new MapService();
+		const payload = {
+			type,
+			keyword,
+			feature
+		};
+		mapService.getSearchFilters(payload).then((response) => {
+			if (response.success) {
+				const suggestions = response.results.map((item) => ({
+					id: item.node.value_object.id,
+					text: item.node.text,
+					image: item.node.value_object.profile_picture.uri
+				}));
+				if (type === 'education') {
+					educationSuggestions = suggestions;
+				} else {
+					workSuggestions = suggestions;
+				}
+			} else {
+				console.error(response.message);
+			}
+		});
+	}
+
+	function handleEducationSelect(event) {
+		const selectedOption = event.target.selectedOptions[0];
+		fbEducationId = selectedOption.value;
+		console.log('Selected Education ID:', fbEducationId);
+	}
+
+	function handleWorkSelect(event) {
+		const selectedOption = event.target.selectedOptions[0];
+		fbWorkId = selectedOption.value;
+		console.log('Selected Work ID:', fbWorkId);
+	}
 </script>
 
 <Card.Root class="bg-blue-50 shadow-lg rounded-lg">
@@ -53,7 +106,7 @@
 								<p class="text-sm font-medium leading-none text-blue-700">Public Posts</p>
 								<p class="text-xs text-gray-500">Fetch Public Posts</p>
 							</div>
-							<Switch class="bg-blue-500" bind:checked={fbPostTypes[index].publicPostsEnabled} />
+							<Switch class="bg-blue-500" bind:checked={fbPublicPosts} />
 						</div>
 
 						<Separator class="my-2" />
@@ -64,7 +117,7 @@
 									for="post-order-select"
 									class="text-sm font-medium leading-none text-blue-700"
 								>
-									Post Order
+									Post Sorting
 								</label>
 								<p class="text-xs text-gray-500">
 									Select the order in which posts should be displayed.
@@ -72,7 +125,7 @@
 								<select
 									id="post-order-select"
 									class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-									bind:value={fbPostTypes[index].postOrder}
+									bind:value={fbRecentPosts}
 								>
 									<option value="Relevancy">Relevancy</option>
 									<option value="Recent">Recent</option>
@@ -96,17 +149,22 @@
 								</label>
 								<p class="text-xs text-gray-500">Filters users based on their education.</p>
 								<Input
-									id="keyword-input"
+									id="education-input"
 									placeholder="Enter keywords"
 									class="border-blue-300 focus:border-blue-500"
-									bind:value={fbKeywords}
-									list="education-suggestions"
+									bind:value={fbEducationId}
+									on:input={() => debouncedHandleTypeSearchFilters('education', fbEducationId)}
 								/>
-								<datalist id="education-suggestions">
+								<select
+									id="education-select"
+									class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+									on:change={handleEducationSelect}
+								>
+									<option value="">Select an education</option>
 									{#each educationSuggestions as suggestion}
-										<option value={suggestion} />
+										<option value={suggestion.id}>{suggestion.text}</option>
 									{/each}
-								</datalist>
+								</select>
 							</div>
 							<Separator class="my-2" />
 							<div class="flex flex-col space-y-1">
@@ -118,17 +176,22 @@
 								</label>
 								<p class="text-xs text-gray-500">Filters users based on their work experience.</p>
 								<Input
-									id="keyword-input"
+									id="work-input"
 									placeholder="Enter keywords"
 									class="border-blue-300 focus:border-blue-500"
-									bind:value={fbKeywords}
-									list="work-suggestions"
+									bind:value={fbWorkId}
+									on:input={() => debouncedHandleTypeSearchFilters('work', fbWorkId)}
 								/>
-								<datalist id="work-suggestions">
+								<select
+									id="work-select"
+									class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+									on:change={handleWorkSelect}
+								>
+									<option value="">Select a work experience</option>
 									{#each workSuggestions as suggestion}
-										<option value={suggestion} />
+										<option value={suggestion.id}>{suggestion.text}</option>
 									{/each}
-								</datalist>
+								</select>
 							</div>
 						</div>
 					</Card.Content>
@@ -148,9 +211,11 @@
 								</label>
 								<p class="text-xs text-gray-500">Select the category of pages to filter pages</p>
 								<select
+									bind:value={fbCategoryId}
 									id="post-order-select"
 									class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
 								>
+									<option value="">Select a category</option>
 									{#each FACEBOOK_CATEGORIES as category}
 										<option value={category.value}>{category.label}</option>
 									{/each}

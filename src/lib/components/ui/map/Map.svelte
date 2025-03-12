@@ -477,6 +477,39 @@
 						removeDataFromURL('xPostTypes[]');
 					}
 
+					// Facebook filters from url
+					// check if features are in url and contains facebook
+					if (payload.features && payload.features.includes('facebook')) {
+						if (getDataFromURL('fbKeywords')) {
+							payload.fbKeywords = getDataFromURL('fbKeywords');
+						}
+						if (getDataFromURL('fbPostTypes[]') && getDataFromURL('fbPostTypes[]').length > 0) {
+							payload.fbPostTypes = getDataFromURL('fbPostTypes[]');
+
+							if (payload.fbPostTypes.includes('posts')) {
+								payload.fbPublicPosts = getDataFromURL('fbPublicPosts');
+								payload.fbRecentPosts = getDataFromURL('fbRecentPosts');
+							}
+
+							if (payload.fbPostTypes.includes('users')) {
+								payload.fbEducationId = getDataFromURL('fbEducationId');
+								payload.fbWorkId = getDataFromURL('fbWorkId');
+							}
+
+							if (payload.fbPostTypes.includes('pages')) {
+								payload.fbCategoryId = getDataFromURL('fbCategoryId');
+							}
+						}
+					} else {
+						removeDataFromURL('fbKeywords');
+						removeDataFromURL('fbPostTypes[]');
+						removeDataFromURL('fbPublicPosts');
+						removeDataFromURL('fbRecentPosts');
+						removeDataFromURL('fbEducationId');
+						removeDataFromURL('fbWorkId');
+						removeDataFromURL('fbCategoryId');
+					}
+
 					let searchId = 0;
 					if (!request_id && !reqId) {
 						// Fetch data

@@ -49,6 +49,11 @@
 
 	// Facebook filters
 	let fbKeywords = $state('');
+	let fbPublicPosts = $state(true);
+	let fbRecentPosts = $state('Relevancy');
+	let fbEducationId = $state('');
+	let fbWorkId = $state('');
+	let fbCategoryId = $state('');
 	let fbPostTypes = $state([
 		{
 			label: 'Posts',
@@ -161,6 +166,56 @@
 		} else {
 			showDateRange = false;
 		}
+
+		// facebook post types
+		const fbPostTypesFromURL = getDataFromURL('fbPostTypes[]');
+		if (fbPostTypesFromURL) {
+			fbPostTypes = fbPostTypes.map((postType) => {
+				if (fbPostTypesFromURL.includes(postType.label.toLowerCase())) {
+					postType.enabled = true;
+				} else {
+					postType.enabled = false;
+				}
+
+				return postType;
+			});
+		}
+
+		// Fetch Facebook Keywords
+		const fbKeywordsFromURL = getDataFromURL('fbKeywords');
+		if (fbKeywordsFromURL) {
+			fbKeywords = fbKeywordsFromURL;
+		}
+
+		// Fetch Facebook Category ID
+		const fbCategoryIdFromURL = getDataFromURL('fbCategoryId');
+		if (fbCategoryIdFromURL) {
+			fbCategoryId = fbCategoryIdFromURL;
+		}
+
+		// Fetch Facebook Education ID
+		const fbEducationIdFromURL = getDataFromURL('fbEducationId');
+		if (fbEducationIdFromURL) {
+			fbEducationId = fbEducationIdFromURL;
+		}
+
+		// Fetch Facebook Work ID
+		const fbWorkIdFromURL = getDataFromURL('fbWorkId');
+		if (fbWorkIdFromURL) {
+			fbWorkId = fbWorkIdFromURL;
+		}
+
+		// Fetch Facebook Public Posts
+		const fbPublicPostsFromURL = getDataFromURL('fbPublicPosts');
+		if (fbPublicPostsFromURL) {
+			fbPublicPosts = fbPublicPostsFromURL === 'true';
+		}
+
+		// Fetch Facebook Recent Posts
+		const fbRecentPostsFromURL = getDataFromURL('fbRecentPosts');
+		if (fbRecentPostsFromURL) {
+			fbRecentPosts = fbRecentPostsFromURL;
+		}
 	});
 
 	// Initialize MapService
@@ -251,6 +306,27 @@
 				.map((postType) => postType.label.toLowerCase());
 		}
 
+		if (enabledPlatforms['facebook']) {
+			payload.fbKeywords = fbKeywords;
+			payload.fbPostTypes = fbPostTypes
+				.filter((postType) => postType.enabled)
+				.map((postType) => postType.label.toLowerCase());
+
+			if (payload.fbPostTypes.includes('posts')) {
+				payload.fbPublicPosts = fbPublicPosts;
+				payload.fbRecentPosts = fbRecentPosts;
+			}
+
+			if (payload.fbPostTypes.includes('users')) {
+				payload.fbEducationId = fbEducationId;
+				payload.fbWorkId = fbWorkId;
+			}
+
+			if (payload.fbPostTypes.includes('pages')) {
+				payload.fbCategoryId = fbCategoryId;
+			}
+		}
+
 		try {
 			const response = await mapService.validateFilters(payload);
 			if (!response.success) {
@@ -270,6 +346,11 @@
 						if (value?.length) {
 							value.forEach((v) => url.searchParams.append('xPostTypes[]', v));
 						}
+					} else if (key === 'fbPostTypes') {
+						url.searchParams.delete('fbPostTypes[]');
+						if (value?.length) {
+							value.forEach((v) => url.searchParams.append('fbPostTypes[]', v));
+						}
 					} else {
 						if (key === 'longitude') key = 'long';
 						if (key === 'latitude') key = 'lat';
@@ -284,6 +365,17 @@
 					removeDataFromURL('xKeywords');
 					removeDataFromURL('xUsernames');
 					removeDataFromURL('xPostTypes[]');
+				}
+
+				// Remove Facebook filters if Facebook is disabled
+				if (!payload.features.includes('facebook') && !enabledPlatforms['facebook']) {
+					removeDataFromURL('fbKeywords');
+					removeDataFromURL('fbPostTypes[]');
+					removeDataFromURL('fbPublicPosts');
+					removeDataFromURL('fbRecentPosts');
+					removeDataFromURL('fbEducationId');
+					removeDataFromURL('fbWorkId');
+					removeDataFromURL('fbCategoryId');
 				}
 				window.history.replaceState({}, '', url);
 
@@ -361,7 +453,15 @@
 								{/if}
 
 								{#if slug === 'facebook' && enabledPlatforms[slug]}
-									<FacebookFilters bind:fbKeywords bind:fbPostTypes />
+									<FacebookFilters
+										bind:fbKeywords
+										bind:fbPostTypes
+										bind:fbCategoryId
+										bind:fbEducationId
+										bind:fbWorkId
+										bind:fbPublicPosts
+										bind:fbRecentPosts
+									/>
 								{/if}
 							{/each}
 						</div>

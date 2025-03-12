@@ -89,4 +89,8 @@ export class MapService {
 	async downloadPanoid(requestID, panoid) {
 		return this.apiService.makeApiCall(`search-requests/${requestID}/${panoid}/download`, {}, 'GET', 'blob');
 	}
+
+	async getSearchFilters(payload) {
+		return this.apiService.makeApiCall('map/search-filters', payload, 'POST');
+	}
 }
