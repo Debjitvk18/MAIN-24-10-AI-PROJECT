@@ -63,7 +63,7 @@
 		},
 		{ label: 'Users', description: 'Enable/Disable the Users', enabled: true },
 		{ label: 'Pages', description: 'Enable/Disable the Pages', enabled: true },
-		{ label: 'Group', description: 'Enable/Disable the Group', enabled: true },
+		{ label: 'Groups', description: 'Enable/Disable the Group', enabled: true },
 		{ label: 'Events', description: 'Enable/Disable the Events', enabled: true }
 	]);
 

@@ -310,6 +310,42 @@ function processTwitterPosts(twitterData, acc) {
 }
 
 /**
+ * Processes and groups posts for Facebook by type (users, groups, pages, etc..).
+ *
+ * @param {Object} twitterData - The Facebook data object containing posts.
+ * @param {Object} acc - The accumulator object to group data.
+ */
+function processFacebookPosts(twitterData, acc) {
+	const { type, posts } = twitterData;
+	acc[type] = acc[type] || { groups: [], pages: [], users: [], events: [], posts: [] };
+
+	if (posts?.groups) {
+		acc[type].groups.push(...posts.groups);
+		acc[type].groups = deduplicatePosts(acc[type].groups);
+	}
+
+	if (posts?.pages) {
+		acc[type].pages.push(...posts.pages);
+		acc[type].pages = deduplicatePosts(acc[type].pages);
+	}
+
+	if (posts?.users) {
+		acc[type].users.push(...posts.users);
+		acc[type].users = deduplicatePosts(acc[type].users);
+	}
+
+	if (posts?.events) {
+		acc[type].events.push(...posts.events);
+		acc[type].events = deduplicatePosts(acc[type].events);
+	}
+
+	if (posts?.posts) {
+		acc[type].posts.push(...posts.posts);
+		acc[type].posts = deduplicatePosts(acc[type].posts);
+	}
+}
+
+/**
  * Groups social media data based on their type and organizes posts accordingly.
  *
  * @param {Array<Object>} data - An array of social media data objects, each containing a `type` property
@@ -321,6 +357,8 @@ export function groupSocialMediaData(data) {
 	return data.reduce((acc, { type, posts }) => {
 		if (type === 'x-twitter') {
 			processTwitterPosts({ type, posts }, acc);
+		} else if (type === 'facebook') {
+			processFacebookPosts({ type, posts }, acc);
 		} else {
 			acc[type] = acc[type] || [];
 			acc[type].push(...(posts || []));
