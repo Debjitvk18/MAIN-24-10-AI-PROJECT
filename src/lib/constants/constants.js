@@ -42,7 +42,7 @@ export const REFRESH_FREQUENCY_OPTIONS = [
 	"Hourly",
 	"Every 2 hours",
 	"Every 6 hours",
-	"Every 24 hours",
+	"Every 12 hours",
 	"Daily",
 	"Weekly",
 	"Monthly",
