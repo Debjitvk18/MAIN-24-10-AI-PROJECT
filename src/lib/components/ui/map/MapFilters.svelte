@@ -28,6 +28,7 @@
 	import XTwitterFilters from './social-filters/XTwitterFilters.svelte';
 	import { formatDateToYYYYMMDD } from '$lib/utils/dateTimeUtils';
 	import FacebookFilters from './social-filters/FacebookFilters.svelte';
+	import FacebookMarketplaceFilters from './social-filters/FacebookMarketplaceFilters.svelte';
 
 	let selectedSource = [];
 
@@ -66,6 +67,13 @@
 		{ label: 'Groups', description: 'Enable/Disable the Group', enabled: true },
 		{ label: 'Events', description: 'Enable/Disable the Events', enabled: true }
 	]);
+
+	// Facebook Marketplace filters
+	let fbmKeywords = $state('');
+	let fbmCategoryId = $state('');
+	let fbmMinPrice = $state('');
+	let fbmMaxPrice = $state('');
+	let fbmSort = $state('');
 
 	// date picker values
 	const df = new DateFormatter('en-US', {
@@ -216,6 +224,36 @@
 		if (fbRecentPostsFromURL) {
 			fbRecentPosts = fbRecentPostsFromURL;
 		}
+
+		// Fetch Facebook Marketplace Keywords
+		const fbmKeywordsFromURL = getDataFromURL('fbmKeywords');
+		if (fbmKeywordsFromURL) {
+			fbmKeywords = fbmKeywordsFromURL;
+		}
+
+		// Fetch Facebook Marketplace Category ID
+		const fbmCategoryIdFromURL = getDataFromURL('fbmCategoryId');
+		if (fbmCategoryIdFromURL) {
+			fbmCategoryId = fbmCategoryIdFromURL;
+		}
+
+		// Fetch Facebook Marketplace Min Price
+		const fbmMinPriceFromURL = getDataFromURL('fbmMinPrice');
+		if (fbmMinPriceFromURL) {
+			fbmMinPrice = fbmMinPriceFromURL;
+		}
+
+		// Fetch Facebook Marketplace Max Price
+		const fbmMaxPriceFromURL = getDataFromURL('fbmMaxPrice');
+		if (fbmMaxPriceFromURL) {
+			fbmMaxPrice = fbmMaxPriceFromURL;
+		}
+
+		// Fetch Facebook Marketplace Sort
+		const fbmSortFromURL = getDataFromURL('fbmSort');
+		if (fbmSortFromURL) {
+			fbmSort = fbmSortFromURL;
+		}
 	});
 
 	// Initialize MapService
@@ -327,6 +365,14 @@
 			}
 		}
 
+		if (enabledPlatforms['facebook-marketplace']) {
+			payload.fbmKeywords = fbmKeywords;
+			payload.fbmCategoryId = fbmCategoryId;
+			payload.fbmMinPrice = fbmMinPrice;
+			payload.fbmMaxPrice = fbmMaxPrice;
+			payload.fbmSort = fbmSort;
+		}
+
 		try {
 			const response = await mapService.validateFilters(payload);
 			if (!response.success) {
@@ -376,6 +422,18 @@
 					removeDataFromURL('fbEducationId');
 					removeDataFromURL('fbWorkId');
 					removeDataFromURL('fbCategoryId');
+				}
+
+				// Remove Facebook Marketplace filters if Facebook Marketplace is disabled
+				if (
+					!payload.features.includes('facebook-marketplace') &&
+					!enabledPlatforms['facebook-marketplace']
+				) {
+					removeDataFromURL('fbmKeywords');
+					removeDataFromURL('fbmCategoryId');
+					removeDataFromURL('fbmMinPrice');
+					removeDataFromURL('fbmMaxPrice');
+					removeDataFromURL('fbmSort');
 				}
 				window.history.replaceState({}, '', url);
 
@@ -461,6 +519,16 @@
 										bind:fbWorkId
 										bind:fbPublicPosts
 										bind:fbRecentPosts
+									/>
+								{/if}
+
+								{#if slug === 'facebook-marketplace' && enabledPlatforms[slug]}
+									<FacebookMarketplaceFilters
+										bind:fbmKeywords
+										bind:fbmCategoryId
+										bind:fbmMinPrice
+										bind:fbmMaxPrice
+										bind:fbmSort
 									/>
 								{/if}
 							{/each}

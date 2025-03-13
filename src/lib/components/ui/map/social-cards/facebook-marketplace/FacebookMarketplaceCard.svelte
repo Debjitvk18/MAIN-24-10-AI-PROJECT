@@ -3,10 +3,8 @@
 	import { highlightMarker } from '$lib/utils/mapUtils.js';
 	import { sanitizeId } from '$lib/utils/generalUtils.js';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import * as Avatar from '$lib/components/ui/avatar';
 	import { flyToMarker } from '$lib/utils/mapUtils.js';
 	import Icon from '@iconify/svelte';
-	import FbPosts from './FBPosts.svelte';
 
 	export let markers;
 	export let map;

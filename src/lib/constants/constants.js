@@ -78,3 +78,32 @@ export const FACEBOOK_CATEGORIES = [
 	{ label: 'Entertainment', value: '1019' },
 	{ label: 'Cause or Community', value: '2612' }
 ];
+
+export const FACEBOOK_MARKETPLACE_CATEGORIES = [
+	{ label: 'Vehicles', value: '546583916084032' },
+	{ label: 'Property for rent', value: '460427381212751' },
+	{ label: 'Classifieds', value: '759201041254543' },
+	{ label: 'Clothing', value: '677457442746983' },
+	{ label: 'Electronics', value: '479353692612078' },
+	{ label: 'Entertainment', value: '529595287638583' },
+	{ label: 'Family', value: '891748581240437' },
+	{ label: 'Free stuff', value: '2796952007029050' },
+	{ label: 'Garden and outdoors', value: '1109541402725436' },
+	{ label: 'Hobbies', value: '459026188375950' },
+	{ label: 'Home goods', value: '753380185098614' },
+	{ label: 'Home improvement supplies', value: '476291743038859' },
+	{ label: 'Musical instruments', value: '1078592699170502' },
+	{ label: 'Office supplies', value: '586894672179024' },
+	{ label: 'Pet supplies', value: '197143151659643' },
+	{ label: 'Property for sale', value: '1270772586445798' },
+	{ label: 'Sporting goods', value: '391335928190702' },
+	{ label: 'Toys and games', value: '199404184572737' }
+];
+
+export const FACEBOOK_MARKETPLACE_SORT_OPTIONS = [
+	{ label: 'Best Match', value: 'BEST_MATCH' },
+	{ label: 'Distance Ascending', value: 'DISTANCE_ASCEND' },
+	{ label: 'Creation Time Descending', value: 'CREATION_TIME_DESCEND' },
+	{ label: 'Price Ascending', value: 'PRICE_ASCEND' },
+	{ label: 'Price Descending', value: 'PRICE_DESCEND' }
+];

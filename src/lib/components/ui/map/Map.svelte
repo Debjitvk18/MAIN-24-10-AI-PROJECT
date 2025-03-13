@@ -510,6 +510,36 @@
 						removeDataFromURL('fbCategoryId');
 					}
 
+					// Facebook Marketplace filters from url
+					// check if features are in url and contains facebook-marketplace
+					if (payload.features && payload.features.includes('facebook-marketplace')) {
+						if (getDataFromURL('fbmKeywords')) {
+							payload.fbmKeywords = getDataFromURL('fbmKeywords');
+						}
+
+						if (getDataFromURL('fbmCategoryId') && getDataFromURL('fbmCategoryId').length > 0) {
+							payload.fbmCategoryId = getDataFromURL('fbmCategoryId');
+						}
+
+						if (getDataFromURL('fbmPriceMin')) {
+							payload.fbmPriceMin = getDataFromURL('fbmPriceMin');
+						}
+
+						if (getDataFromURL('fbmPriceMax')) {
+							payload.fbmPriceMax = getDataFromURL('fbmPriceMax');
+						}
+
+						if (getDataFromURL('fbmSort')) {
+							payload.fbmSort = getDataFromURL('fbmSort');
+						}
+					} else {
+						removeDataFromURL('fbmKeywords');
+						removeDataFromURL('fbmCategoryId');
+						removeDataFromURL('fbmPriceMin');
+						removeDataFromURL('fbmPriceMax');
+						removeDataFromURL('fbmSort');
+					}
+
 					let searchId = 0;
 					if (!request_id && !reqId) {
 						// Fetch data
