@@ -35,8 +35,19 @@ export const MAPBOX_THEMES = [
 
 export const REFRESH_FREQUENCY_OPTIONS = [
 	"No Refresh",
+	"Every 5 minutes",
+	"Every 10 minutes",
+	"Every 15 minutes",
+	"Every 30 minutes",
+	"Hourly",
+	"Every 2 hours",
+	"Every 6 hours",
+	"Every 24 hours",
 	"Daily",
+	"Weekly",
 	"Monthly",
+	"Quarterly",
+	"Yearly"
 ];
 
 

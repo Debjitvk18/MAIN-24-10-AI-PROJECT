@@ -27,8 +27,6 @@
 			});
 		}
 	}
-
-	console.log(posts, 'posts');
 </script>
 
 <div>

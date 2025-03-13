@@ -54,13 +54,11 @@
 	function handleEducationSelect(event) {
 		const selectedOption = event.target.selectedOptions[0];
 		fbEducationId = selectedOption.value;
-		console.log('Selected Education ID:', fbEducationId);
 	}
 
 	function handleWorkSelect(event) {
 		const selectedOption = event.target.selectedOptions[0];
 		fbWorkId = selectedOption.value;
-		console.log('Selected Work ID:', fbWorkId);
 	}
 </script>
 
