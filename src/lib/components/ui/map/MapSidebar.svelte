@@ -16,6 +16,7 @@
 	import { MapService } from '$lib/services/map-service';
 	import { toast } from 'svelte-sonner';
 	import FacebookCard from './social-cards/facebook/FacebookCard.svelte';
+	import FacebookMarketplaceCard from './social-cards/facebook-marketplace/FacebookMarketplaceCard.svelte';
 
 	export let isSidebarVisible = true;
 	export let markers = {};
@@ -118,6 +119,11 @@
 	$: facebookData = $socialMediaJson?.socialData?.find(
 		(socialMedia) => socialMedia.type === 'facebook'
 	);
+
+	let facebookMarketplaceData;
+	$: facebookMarketplaceData = $socialMediaJson?.socialData?.find(
+		(socialMedia) => socialMedia.type === 'facebook-marketplace'
+	);
 </script>
 
 <!-- Sidebar -->
@@ -146,9 +152,15 @@
 						</div>
 					{/if}
 
+					{#if facebookMarketplaceData && $visibility['facebook-marketplace']}
+						<div class="social-media-block" data-type="facebook-marketplace">
+							<FacebookMarketplaceCard {markers} {map} />
+						</div>
+					{/if}
+
 					<!-- Call other data here -->
 					{#each $socialMediaJson.socialData as socialMedia}
-						{#if socialMedia.type !== 'x-twitter' && socialMedia.type !== 'facebook'}
+						{#if socialMedia.type !== 'x-twitter' && socialMedia.type !== 'facebook' && socialMedia.type !== 'facebook-marketplace'}
 							<div class="social-media-block" data-type={socialMedia.type}>
 								{#each socialMedia.posts as post}
 									{#if $visibility[socialMedia.type] && post && post.id}

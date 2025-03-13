@@ -188,14 +188,14 @@ const PLATFORM_PARSERS = {
 			.map((post) => {
 				if (post.node?.data?.title) {
 					return {
-						id: post.node.id,
+						id: post.node.entity_id,
 						title: post.node?.data?.title || '',
 						description: post.node?.data?.description || '',
 						image: post.node?.photo?.image?.uri || FacebookMarketPlaceIconImg,
 						lat: null,
 						lng: null,
-						url: post.node?.link ?? '#',
-						price: post.node?.data?.price?.amount_with_offset || null,
+						url: "https://www.facebook.com/marketplace/item/" + post.node.entity_id,
+						price: (Number(post.node?.data?.price?.amount_with_offset) / 100).toLocaleString(),
 						currency: post.node?.data?.price?.currency || null
 					};
 				}
