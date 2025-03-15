@@ -4,57 +4,51 @@
 	import * as Card from '$lib/components/ui/card';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import { MapService } from '$lib/services/map-service';
-	import { getDataFromURL, removeDataFromURL } from '$lib/utils/generalUtils';
+	import { getDataFromURL } from '$lib/utils/generalUtils';
 	import { onMount } from 'svelte';
-	import {SOCIAL_MEDIA_PLATFORMS} from "$lib/constants/constants";
-	import {Badge} from "$lib/components/ui/badge";
+	import { SOCIAL_MEDIA_PLATFORMS } from "$lib/constants/constants";
+	import { Badge } from "$lib/components/ui/badge";
+	import { searchRequestID } from "$lib/stores/mapStore";
 
-	let historyData = {};
+	let versionHistory = {};
 	let location = "";
 	let currentPage = 1;
 	let hasNextPage = true;
 
-	// const latitude = getDataFromURL('lat');
-	// const longitude = getDataFromURL('long');
-	const latitude = "26.920341";
-	const longitude = "75.81248";
+	const latitude = getDataFromURL('lat');
+	const longitude = getDataFromURL('long');
 
-	onMount(() => {
+	function fetchVersionHistory(payload: object, append = false) {
 		const mapService = new MapService();
-		const payload = { latitude, longitude };
-		mapService.getVersionHistory(payload).then((res) => {
-			if(!res.success)
-				return console.log(`Error fetching history data: ${res.message}`);
-
-			if(res.versions.data.length == 0)
-				return console.log("No history data found");
-
-			historyData = res.versions.data;
-			location = res.versions.data[0].address;
-		});
-	});
-
-	function loadMoreHistoryOnScroll() {
-		if(!hasNextPage)
-			return;
-
-		const mapService = new MapService();
-		const payload = { latitude, longitude, page: currentPage + 1 };
-		mapService.getVersionHistory(payload).then((res) => {
-			if(!res.success)
-				return console.log(`Error fetching history data: ${res.message}`);
-
-			if(res.versions.data.length == 0) {
-				hasNextPage = false;
-				return;
+		return mapService.getVersionHistory(payload).then((res) => {
+			if (!res.success)
+				return console.error(`Error fetching history data: ${res.message}`);
+			if (res.versions.data.length === 0) {
+				if (append) hasNextPage = false;
+				return console.log("No more history data found");
 			}
-
-			historyData = [...historyData, ...res.versions.data];
-			currentPage++;
+			versionHistory = append ? [...versionHistory, ...res.versions.data] : res.versions.data;
+			if (!append) location = res.versions.data[0]?.address || "";
 		});
 	}
 
-	function intersectionObserver(node: Element, {threshold = 0.1} = {}) {
+	const getPayload = (page = currentPage) => ({
+		latitude,
+		longitude,
+		page
+	});
+
+	onMount(() => {
+		if (!latitude || !longitude) return false;
+		fetchVersionHistory(getPayload());
+	});
+
+	function onLoadMoreHistory() {
+		if (!hasNextPage) return;
+		fetchVersionHistory(getPayload(currentPage + 1), true).then(() => currentPage++);
+	}
+
+	function intersectionObserver(node: Element, { threshold = 0.1 } = {}) {
 		const observer = new IntersectionObserver(
 				(entries) => {
 					entries.forEach((entry) => {
@@ -63,10 +57,9 @@
 						}
 					});
 				},
-				{threshold}
+				{ threshold }
 		);
 		observer.observe(node);
-
 		return {
 			destroy() {
 				observer.disconnect();
@@ -74,7 +67,6 @@
 		};
 	}
 </script>
-
 <Sheet.Root>
 	<Sheet.Trigger>
 		<Button variant="outline">
@@ -87,10 +79,9 @@
 			<Sheet.Title>Search History</Sheet.Title>
 			<Sheet.Description>{location}</Sheet.Description>
 		</Sheet.Header>
-
 		<div class="flex-1 overflow-y-auto overflow-x-hidden border-t border-b border-gray-200 py-2">
-			{#if historyData && historyData.length > 0}
-				{#each historyData as item, index}
+			{#if versionHistory && versionHistory.length > 0}
+				{#each versionHistory as item, index}
 					<Card.Root
 							class="mb-4 shadow-lg hover:shadow-xl border border-gray-200 rounded-lg transition-shadow duration-300">
 						<Card.Content>
@@ -105,9 +96,11 @@
 										hour12: true
 									})}
 								</span>
-								<Badge class="bg-green-200 text-green-800 hover:bg-green-300 px-2 py-1 rounded-md shadow-sm mt-2 md:mt-0">
-									Active
-								</Badge>
+								{#if item.id === $searchRequestID}
+									<Badge class="bg-green-200 text-green-800 hover:bg-green-300 px-2 py-1 rounded-md shadow-sm mt-2 md:mt-0">
+										Active
+									</Badge>
+								{/if}
 							</div>
 							<hr class="my-4 border-gray-300">
 							<div class="flex flex-wrap gap-2">
@@ -126,12 +119,11 @@
 						</Card.Content>
 					</Card.Root>
 				{/each}
-
 				<div class="flex items-center justify-center mt-4">
 					{#if hasNextPage}
 						<Icon class="w-7 h-7 md:w-6 md:h-6" icon="line-md:loading-twotone-loop" />
 						<span class="ml-2 text-gray-500">Loading...</span>
-						<div use:intersectionObserver on:intersect={loadMoreHistoryOnScroll}></div>
+						<div use:intersectionObserver on:intersect={onLoadMoreHistory}></div>
 					{/if}
 				</div>
 			{:else}
@@ -141,7 +133,6 @@
 				</div>
 			{/if}
 		</div>
-
 		<Sheet.Footer>
 			<Sheet.Close>
 				<Button variant="ghost">Close</Button>
