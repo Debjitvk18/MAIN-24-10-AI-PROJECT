@@ -93,4 +93,14 @@ export class MapService {
 	async getSearchFilters(payload) {
 		return this.apiService.makeApiCall('map/search-filters', payload, 'POST');
 	}
+
+	/**
+	 * Retrieves the version history by making an API call to the specified endpoint.
+	 *
+	 * @param {Object} payload - The payload containing the data required for the API request.
+	 * @return {Promise<Object>} A promise that resolves to the response from the version history API.
+	 */
+	async getVersionHistory(payload) {
+		return this.apiService.makeApiCall('version-history', payload, 'POST');
+	}
 }

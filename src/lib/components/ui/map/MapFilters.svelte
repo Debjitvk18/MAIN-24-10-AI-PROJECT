@@ -125,11 +125,7 @@
 			}
 			if (selectedXPostTypesFromURL) {
 				xPostTypes = xPostTypes.map((postType) => {
-					if (selectedXPostTypesFromURL.includes(postType.label.toLowerCase())) {
-						postType.enabled = true;
-					} else {
-						postType.enabled = false;
-					}
+					postType.enabled = selectedXPostTypesFromURL.includes(postType.label.toLowerCase());
 
 					return postType;
 				});
@@ -179,11 +175,7 @@
 		const fbPostTypesFromURL = getDataFromURL('fbPostTypes[]');
 		if (fbPostTypesFromURL) {
 			fbPostTypes = fbPostTypes.map((postType) => {
-				if (fbPostTypesFromURL.includes(postType.label.toLowerCase())) {
-					postType.enabled = true;
-				} else {
-					postType.enabled = false;
-				}
+				postType.enabled = fbPostTypesFromURL.includes(postType.label.toLowerCase());
 
 				return postType;
 			});
@@ -275,11 +267,7 @@
 			});
 		}
 
-		if (timeFrame === 'custom') {
-			showDateRange = true;
-		} else {
-			showDateRange = false;
-		}
+		showDateRange = timeFrame === 'custom';
 	});
 
 	// apply filters
