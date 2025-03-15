@@ -11,7 +11,7 @@
 
 	let historyData = {};
 	let location = "";
-	let currentPage = 0;
+	let currentPage = 1;
 	let hasNextPage = true;
 
 	// const latitude = getDataFromURL('lat');
@@ -33,6 +33,46 @@
 			location = res.versions.data[0].address;
 		});
 	});
+
+	function loadMoreHistoryOnScroll() {
+		if(!hasNextPage)
+			return;
+
+		const mapService = new MapService();
+		const payload = { latitude, longitude, page: currentPage + 1 };
+		mapService.getVersionHistory(payload).then((res) => {
+			if(!res.success)
+				return console.log(`Error fetching history data: ${res.message}`);
+
+			if(res.versions.data.length == 0) {
+				hasNextPage = false;
+				return;
+			}
+
+			historyData = [...historyData, ...res.versions.data];
+			currentPage++;
+		});
+	}
+
+	function intersectionObserver(node: Element, {threshold = 0.1} = {}) {
+		const observer = new IntersectionObserver(
+				(entries) => {
+					entries.forEach((entry) => {
+						if (entry.isIntersecting) {
+							node.dispatchEvent(new CustomEvent("intersect"));
+						}
+					});
+				},
+				{threshold}
+		);
+		observer.observe(node);
+
+		return {
+			destroy() {
+				observer.disconnect();
+			},
+		};
+	}
 </script>
 
 <Sheet.Root>
@@ -48,11 +88,11 @@
 			<Sheet.Description>{location}</Sheet.Description>
 		</Sheet.Header>
 
-
 		<div class="flex-1 overflow-y-auto overflow-x-hidden border-t border-b border-gray-200 py-2">
 			{#if historyData && historyData.length > 0}
 				{#each historyData as item, index}
-					<Card.Root class="mb-4 shadow-lg hover:shadow-xl border border-gray-200 rounded-lg transition-shadow duration-300">
+					<Card.Root
+							class="mb-4 shadow-lg hover:shadow-xl border border-gray-200 rounded-lg transition-shadow duration-300">
 						<Card.Content>
 							<div class="flex flex-col md:flex-row md:justify-between md:items-center">
 								<span class="text-sm text-gray-700">
@@ -65,7 +105,7 @@
 										hour12: true
 									})}
 								</span>
-								<Badge class="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded-md shadow-sm mt-2 md:mt-0">
+								<Badge class="bg-green-200 text-green-800 hover:bg-green-300 px-2 py-1 rounded-md shadow-sm mt-2 md:mt-0">
 									Active
 								</Badge>
 							</div>
@@ -86,6 +126,14 @@
 						</Card.Content>
 					</Card.Root>
 				{/each}
+
+				<div class="flex items-center justify-center mt-4">
+					{#if hasNextPage}
+						<Icon class="w-7 h-7 md:w-6 md:h-6" icon="line-md:loading-twotone-loop" />
+						<span class="ml-2 text-gray-500">Loading...</span>
+						<div use:intersectionObserver on:intersect={loadMoreHistoryOnScroll}></div>
+					{/if}
+				</div>
 			{:else}
 				<div class="flex flex-col items-center justify-center h-full">
 					<Icon class="w-16 h-16 text-gray-500" icon="solar:history-bold" />
