@@ -852,13 +852,15 @@
 
 	function generateRandomValidPoints(count: number, circle: any) {
 		const points = [];
-		const randomPoints = turf.randomPoint(count, { bbox: turf.bbox(circle) });
+		while (points.length < count) {
+			const randomPoints = turf.randomPoint(count - points.length, {bbox: turf.bbox(circle)});
 
-		randomPoints.features.forEach((feature) => {
-			if (turf.booleanPointInPolygon(feature, circle)) {
-				points.push(feature.geometry.coordinates);
-			}
-		});
+			randomPoints.features.forEach((feature) => {
+				if (turf.booleanPointInPolygon(feature, circle)) {
+					points.push(feature.geometry.coordinates);
+				}
+			});
+		}
 
 		return points;
 	}
