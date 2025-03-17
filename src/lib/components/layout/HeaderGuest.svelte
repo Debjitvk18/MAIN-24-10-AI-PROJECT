@@ -42,7 +42,7 @@
 			<a href="/" class="text-sm/6 font-semibold text-gray-900">Pricing</a>
 			<a href="/" class="text-sm/6 font-semibold text-gray-900">Blog</a>
 			<a href="/" class="text-sm/6 font-semibold text-gray-900">Testimonials</a>
-			<a href="/try-demo" class="text-sm/6 font-semibold text-gray-900">Try Demo</a>
+			<a href="/try-demo" class="text-sm/6 font-semibold text-gray-900" rel="external">Try Demo</a>
 		</div>
 		<div class="hidden lg:flex lg:flex-1 lg:justify-end">
 			{#if $isLoggedIn}
@@ -112,26 +112,22 @@
 						<a
 							href="/"
 							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Blog</a
-						>
+							>Blog</a>
 						<a
 						href="/"
 						class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-						>Testimonials</a
-					>
-						
+						>Testimonials</a>
 					</div>
 					<div class="py-6">
 						<a
 							href="/try-demo"
 							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Try Demo</a
-						>
+							rel="external"
+							>Try Demo</a>
 						<a
 							href="/register"
 							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Register</a
-						>
+							>Register</a>
 					</div>
 				</div>
 			</div>
