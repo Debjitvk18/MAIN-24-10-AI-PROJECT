@@ -155,6 +155,7 @@
 		}
 
 		const timeFrameFromURL = getDataFromURL('timeframe');
+		const selectedFeaturesFromURL = getDataFromURL('features[]');
 		if (timeFrameFromURL === 'custom' && getDataFromURL('from') && getDataFromURL('to')) {
 			showDateRange = true;
 			const fromDate = getDataFromURL('from');
@@ -167,80 +168,97 @@
 			showDateRange = false;
 		}
 
-		// facebook post types
-		const fbPostTypesFromURL = getDataFromURL('fbPostTypes[]');
-		if (fbPostTypesFromURL) {
-			fbPostTypes = fbPostTypes.map((postType) => {
-				postType.enabled = fbPostTypesFromURL.includes(postType.label.toLowerCase());
+		if(selectedFeaturesFromURL && selectedFeaturesFromURL.includes('facebook')) {
+			// facebook post types
+			const fbPostTypesFromURL = getDataFromURL('fbPostTypes[]');
+			if (fbPostTypesFromURL) {
+				fbPostTypes = fbPostTypes.map((postType) => {
+					postType.enabled = fbPostTypesFromURL.includes(postType.label.toLowerCase());
 
+					return postType;
+				});
+			}
+
+			// Fetch Facebook Keywords
+			const fbKeywordsFromURL = getDataFromURL('fbKeywords');
+			if (fbKeywordsFromURL) {
+				fbKeywords = fbKeywordsFromURL;
+			}
+
+			// Fetch Facebook Category ID
+			const fbCategoryIdFromURL = getDataFromURL('fbCategoryId');
+			if (fbCategoryIdFromURL) {
+				fbCategoryId = fbCategoryIdFromURL;
+			}
+
+			// Fetch Facebook Education ID
+			const fbEducationIdFromURL = getDataFromURL('fbEducationId');
+			if (fbEducationIdFromURL) {
+				fbEducationId = fbEducationIdFromURL;
+			}
+
+			// Fetch Facebook Work ID
+			const fbWorkIdFromURL = getDataFromURL('fbWorkId');
+			if (fbWorkIdFromURL) {
+				fbWorkId = fbWorkIdFromURL;
+			}
+
+			// Fetch Facebook Public Posts
+			const fbPublicPostsFromURL = getDataFromURL('fbPublicPosts');
+			if (fbPublicPostsFromURL) {
+				fbPublicPosts = fbPublicPostsFromURL === 'true';
+			}
+
+			// Fetch Facebook Recent Posts
+			const fbRecentPostsFromURL = getDataFromURL('fbRecentPosts');
+			if (fbRecentPostsFromURL) {
+				fbRecentPosts = fbRecentPostsFromURL;
+			}
+
+			// Fetch Facebook Marketplace Keywords
+			const fbmKeywordsFromURL = getDataFromURL('fbmKeywords');
+			if (fbmKeywordsFromURL) {
+				fbmKeywords = fbmKeywordsFromURL;
+			}
+
+			// Fetch Facebook Marketplace Category ID
+			const fbmCategoryIdFromURL = getDataFromURL('fbmCategoryId');
+			if (fbmCategoryIdFromURL) {
+				fbmCategoryId = fbmCategoryIdFromURL;
+			}
+
+			// Fetch Facebook Marketplace Min Price
+			const fbmMinPriceFromURL = getDataFromURL('fbmMinPrice');
+			if (fbmMinPriceFromURL) {
+				fbmMinPrice = fbmMinPriceFromURL;
+			}
+
+			// Fetch Facebook Marketplace Max Price
+			const fbmMaxPriceFromURL = getDataFromURL('fbmMaxPrice');
+			if (fbmMaxPriceFromURL) {
+				fbmMaxPrice = fbmMaxPriceFromURL;
+			}
+
+			// Fetch Facebook Marketplace Sort
+			const fbmSortFromURL = getDataFromURL('fbmSort');
+			if (fbmSortFromURL) {
+				fbmSort = fbmSortFromURL;
+			}
+		} else {
+			fbKeywords = '';
+			fbCategoryId = '';
+			fbEducationId = '';
+			fbWorkId = '';
+			fbPublicPosts = true;
+			fbRecentPosts = 'Relevancy';
+			fbmKeywords = '';
+			fbmCategoryId = '';
+			fbmMinPrice = '';
+
+			fbPostTypes = fbPostTypes.map((postType) => {
+				postType.enabled = true;
 				return postType;
 			});
-		}
-
-		// Fetch Facebook Keywords
-		const fbKeywordsFromURL = getDataFromURL('fbKeywords');
-		if (fbKeywordsFromURL) {
-			fbKeywords = fbKeywordsFromURL;
-		}
-
-		// Fetch Facebook Category ID
-		const fbCategoryIdFromURL = getDataFromURL('fbCategoryId');
-		if (fbCategoryIdFromURL) {
-			fbCategoryId = fbCategoryIdFromURL;
-		}
-
-		// Fetch Facebook Education ID
-		const fbEducationIdFromURL = getDataFromURL('fbEducationId');
-		if (fbEducationIdFromURL) {
-			fbEducationId = fbEducationIdFromURL;
-		}
-
-		// Fetch Facebook Work ID
-		const fbWorkIdFromURL = getDataFromURL('fbWorkId');
-		if (fbWorkIdFromURL) {
-			fbWorkId = fbWorkIdFromURL;
-		}
-
-		// Fetch Facebook Public Posts
-		const fbPublicPostsFromURL = getDataFromURL('fbPublicPosts');
-		if (fbPublicPostsFromURL) {
-			fbPublicPosts = fbPublicPostsFromURL === 'true';
-		}
-
-		// Fetch Facebook Recent Posts
-		const fbRecentPostsFromURL = getDataFromURL('fbRecentPosts');
-		if (fbRecentPostsFromURL) {
-			fbRecentPosts = fbRecentPostsFromURL;
-		}
-
-		// Fetch Facebook Marketplace Keywords
-		const fbmKeywordsFromURL = getDataFromURL('fbmKeywords');
-		if (fbmKeywordsFromURL) {
-			fbmKeywords = fbmKeywordsFromURL;
-		}
-
-		// Fetch Facebook Marketplace Category ID
-		const fbmCategoryIdFromURL = getDataFromURL('fbmCategoryId');
-		if (fbmCategoryIdFromURL) {
-			fbmCategoryId = fbmCategoryIdFromURL;
-		}
-
-		// Fetch Facebook Marketplace Min Price
-		const fbmMinPriceFromURL = getDataFromURL('fbmMinPrice');
-		if (fbmMinPriceFromURL) {
-			fbmMinPrice = fbmMinPriceFromURL;
-		}
-
-		// Fetch Facebook Marketplace Max Price
-		const fbmMaxPriceFromURL = getDataFromURL('fbmMaxPrice');
-		if (fbmMaxPriceFromURL) {
-			fbmMaxPrice = fbmMaxPriceFromURL;
-		}
-
-		// Fetch Facebook Marketplace Sort
-		const fbmSortFromURL = getDataFromURL('fbmSort');
-		if (fbmSortFromURL) {
-			fbmSort = fbmSortFromURL;
 		}
 	});
 
