@@ -150,13 +150,9 @@
 	}
 
 	onMount(() => {
-		// Listen for URL changes dynamically
-		const observer = new MutationObserver(() => {
-			if (getDataFromURL('search')) {
-				initializeURLData();
-			}
-		});
-		observer.observe(document.body, { childList: true, subtree: true });
+		if (getDataFromURL('search')) {
+			initializeURLData();
+		}
 
 		const timeFrameFromURL = getDataFromURL('timeframe');
 		if (timeFrameFromURL === 'custom' && getDataFromURL('from') && getDataFromURL('to')) {
