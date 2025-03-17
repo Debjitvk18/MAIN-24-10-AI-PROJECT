@@ -184,3 +184,61 @@ export function isMobile() {
 	return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 		|| window.matchMedia("(max-width: 767px)").matches;
 }
+
+/**
+ * Generates a URL for a map request based on the provided parameters.
+ *
+ * @param {Object} request - The request object containing the necessary parameters.
+ * @return {string} The generated URL as a string with the concatenated query parameters.
+ */
+export function generateMapURL(request) {
+	const BASE_URL = '/try-demo/';
+	const { id, request_params, address } = request;
+	const { latitude, longitude, radius, resolution, features, from, to, timeframe, filters } = request_params;
+
+	const queryParams = new URLSearchParams({
+		request_id: id,
+		search: address,
+		lat: latitude,
+		long: longitude,
+		timeframe,
+		radius,
+		resolution,
+	});
+
+	appendCustomTimeframe(queryParams, timeframe, from, to);
+	appendFeatures(queryParams, features);
+	appendFilters(queryParams, filters);
+
+	return `${BASE_URL}?${queryParams.toString()}`;
+}
+
+// handle custom timeframe query parameters
+function appendCustomTimeframe(queryParams, timeframe, from, to) {
+	if (timeframe === 'custom') {
+		queryParams.append('from', from);
+		queryParams.append('to', to);
+	}
+}
+
+// handle features array
+function appendFeatures(queryParams, features) {
+	if (features?.length) {
+		features.forEach((feature) => queryParams.append('features[]', feature));
+	}
+}
+
+// handle filters
+function appendFilters(queryParams, filters) {
+	if (filters && Object.keys(filters).length > 0) {
+		Object.entries(filters).forEach(([_, section]) => {
+			Object.entries(section).forEach(([sectionKey, value]) => {
+				if (Array.isArray(value)) {
+					value.forEach((item) => queryParams.append(`${sectionKey}[]`, item));
+				} else {
+					queryParams.append(sectionKey, value !== null ? value : "");
+				}
+			});
+		});
+	}
+}

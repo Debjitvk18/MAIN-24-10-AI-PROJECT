@@ -147,8 +147,7 @@
 										{:else}
 											<Badge
 												class="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
-												>Pending</Badge
-											>
+												>Pending</Badge>
 										{/if}
 									</Table.Cell>
 									<Table.Cell>{formatDate(request.created_at)}</Table.Cell>
