@@ -1,17 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import * as Table from '$lib/components/ui/table';
-	import * as Card from '$lib/components/ui/card/index.ts';
 	import { page } from '$app/stores';
 	import NotFound from '$lib/components/general/NotFound.svelte';
 	import { ApiService } from '$lib/services/api-service';
 	import GetBack from '$lib/components/general/GetBack.svelte';
 	import TableShimmer from '$lib/components/general/shimmer/TableShimmer.svelte';
-	import { formatDate } from '$lib/utils/generalUtils';
-	import * as Tabs from "$lib/components/ui/tabs/index.ts";
-	import { Button } from "$lib/components/ui/button/index.ts";
-	import { Input } from "$lib/components/ui/input/index.ts";
-	import { Label } from "$lib/components/ui/label/index.ts";
 	import Tweet from '$lib/components/ui/map/social-cards/x-twitter/Tweet.svelte';
 	import CardShimmer from '$lib/components/general/shimmer/CardShimmer.svelte';
 
@@ -63,23 +57,16 @@
 			X (Twitter)
 		</h2>
 		<GetBack url={`/my-requests/${id}`} />
-		<Card.Root class="col-span-4">
-			<Card.Content>
-				{#if !loader}
-					{#if error}
-						<NotFound message={'No data found!!'} />
-					{:else}
-					  <Tabs.Root value="top">
-						<Tabs.List class="grid w-full grid-cols-2">
-						  <Tabs.Trigger value="top">Top</Tabs.Trigger>
-						  <Tabs.Trigger value="latest">Latest</Tabs.Trigger>
-						</Tabs.List>
-						<Tabs.Content value="top">
-							<div class="columns-2  gap-4 p-4 space-y-4">
-								{#each topTweets as topTweet}
-								  {#each topTweet.top.tweets as tweet}
-									<div class="break-inside-avoid bg-white shadow-lg rounded-2xl p-4">
-									  <Tweet 
+		{#if !loader}
+			{#if error}
+				<NotFound message={'No data found!!'} />
+			{:else}
+				<!-- Top -->
+				<div class="columns-2  gap-4 p-4 space-y-4">
+					{#each topTweets as topTweet}
+						{#each topTweet.top.tweets as tweet}
+							<div class="break-inside-avoid bg-white shadow-lg rounded-2xl p-4">
+								<Tweet
 										tweet={{
 										  id: tweet.entryId,
 										  content: tweet.tweet.full_text,
@@ -96,24 +83,22 @@
 										  replyCount: tweet.tweet.reply_count,
 										  retweetCount: tweet.tweet.retweet_count,
 										  postTime: tweet.tweet.created_at,
-										}} 
-									  />
-									</div>
-								  {/each}
-								{/each}
-							  </div>
-							  
-						</Tabs.Content>
-						<Tabs.Content value="latest">
-							<Card.Content class="space-y-2">
-								<div class="columns-2 gap-4 p-4 space-y-4">
-									{#each latestTweets as latestTweet }
-	
-										{#each latestTweet.latest.tweets as tweet }
-										<div class="break-inside-avoid bg-white shadow-lg rounded-2xl p-4">
+										}}
+								/>
+							</div>
+						{/each}
+					{/each}
+				</div>
 
-											<Tweet 
-											tweet={{
+				<!-- Latest -->
+				<div class="columns-2 gap-4 p-4 space-y-4">
+					{#each latestTweets as latestTweet }
+
+						{#each latestTweet.latest.tweets as tweet }
+							<div class="break-inside-avoid bg-white shadow-lg rounded-2xl p-4">
+
+								<Tweet
+										tweet={{
 											id: tweet.entryId,
 											content: tweet.tweet.full_text,
 											url: tweet.tweet.url ?? "#",
@@ -129,25 +114,20 @@
 											replyCount: tweet.tweet.reply_count,
 											retweetCount: tweet.tweet.retweet_count,
 											postTime: tweet.tweet.created_at,
-											}} 
-										/>
-										</div>
-									
-											
-										{/each}
-	
-									{/each}
-								</div>
-							</Card.Content>
-						</Tabs.Content>
-					  </Tabs.Root>
-					{/if}
-				{:else}
-					<div class="w-full grid grid-cols-2 gap-4 p-4">
-						<CardShimmer rows={16} />
-					</div>
-				{/if}
-			</Card.Content>
-		</Card.Root>
+											}}
+								/>
+							</div>
+
+
+						{/each}
+
+					{/each}
+				</div>
+			{/if}
+		{:else}
+			<div class="w-full grid grid-cols-2 gap-4 p-4">
+				<CardShimmer rows={16} />
+			</div>
+		{/if}
 	</div>
 </div>
