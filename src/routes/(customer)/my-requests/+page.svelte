@@ -180,7 +180,7 @@
 					<!-- Pagination Controls -->
 					<div class="flex items-center justify-end space-x-2 py-4">
 						<div class="text-muted-foreground flex-1 text-sm">
-							{meta.to} of {meta.total} row(s) showing.
+							{meta.to ?? 0} of {meta.total ?? 0} row(s) showing.
 						</div>
 
 						<!-- Previous Button -->
