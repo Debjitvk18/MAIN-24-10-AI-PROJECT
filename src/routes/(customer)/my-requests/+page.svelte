@@ -5,7 +5,7 @@
 	import NotFound from '$lib/components/general/NotFound.svelte';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import { ApiService } from '$lib/services/api-service';
-	import { formatDate, loadOnMapUrl } from '$lib/utils/generalUtils';
+	import { formatDate, generateMapURL } from '$lib/utils/generalUtils';
 	import { page } from '$app/stores';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import Icon from '@iconify/svelte';
@@ -130,7 +130,7 @@
 							{#each searchRequests as request}
 								<Table.Row>
 									<Table.Cell class="font-medium">
-										<a href={loadOnMapUrl(request)} target="_blank" >
+										<a href={generateMapURL(request)} target="_blank" >
 											{request.address || 'N/A'}
 											<Icon icon="line-md:map-marker-radius" class="text-blue-500 h-5 w-5 inline" />
 										</a>
@@ -163,7 +163,7 @@
 														<a href={`my-requests/${request.id}`} class="w-full">View</a>
 													</DropdownMenu.Item>
 													<DropdownMenu.Item>
-														<a href={loadOnMapUrl(request)} target="_blank"  class="w-full">
+														<a href={generateMapURL(request)} target="_blank"  class="w-full">
 															Load on map
 														</a>
 													</DropdownMenu.Item>

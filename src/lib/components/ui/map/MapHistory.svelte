@@ -8,7 +8,7 @@
 	import { searchRequestID } from "$lib/stores/mapStore";
 	import { SOCIAL_MEDIA_PLATFORMS } from "$lib/constants/constants";
 	import { MapService } from '$lib/services/map-service';
-	import { loadOnMapUrl, getDataFromURL, generateMapURL } from '$lib/utils/generalUtils';
+	import { getDataFromURL, generateMapURL } from '$lib/utils/generalUtils';
 
 	// Constants & Initialization
 	const DEFAULT_OBSERVER_OPTIONS = { threshold: 0.1 };

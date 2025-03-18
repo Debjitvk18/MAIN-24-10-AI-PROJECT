@@ -3,7 +3,7 @@
 	import * as Card from '$lib/components/ui/card/index.ts';
 	import NotFound from '$lib/components/general/NotFound.svelte';
 	import Icon from '@iconify/svelte';
-	import { formatDate, loadOnMapUrl } from '$lib/utils/generalUtils';
+	import { formatDate, generateMapURL } from '$lib/utils/generalUtils';
 	import { buttonVariants } from "$lib/components/ui/button";
 	import GetBack from '$lib/components/general/GetBack.svelte';
 	import {ApiService} from "$lib/services/api-service";
@@ -61,7 +61,7 @@
 		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Search Request</h2>
 		<GetBack url={`/my-requests`} />
 		{#if !error}
-			<a href={loadOnMapUrl(searchRequest)} class={`${buttonVariants({ variant: "outline" })} float-end`} target="">
+			<a href={generateMapURL(searchRequest)} class={`${buttonVariants({ variant: "outline" })} float-end`} target="">
 				<Icon icon="quill:link-out" class="me-2" /> Load on Map
 			</a>
 		{/if}

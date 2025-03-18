@@ -5,7 +5,7 @@
 	import NotFound from '$lib/components/general/NotFound.svelte';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import { ApiService } from '$lib/services/api-service';
-	import { formatDate, loadOnMapUrl } from '$lib/utils/generalUtils';
+	import { formatDate, generateMapURL } from '$lib/utils/generalUtils';
 	import { page } from '$app/stores';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import Icon from '@iconify/svelte';
@@ -157,7 +157,7 @@
 														<a href={`saved-requests/edit/${request.id}`}>Edit</a>
 													</DropdownMenu.Item>
 													<DropdownMenu.Item>
-														<a href={loadOnMapUrl(request.search_request)} target="_blank" >
+														<a href={generateMapURL(request.search_request)} target="_blank" >
 															Load on map
 														</a>
 													</DropdownMenu.Item>

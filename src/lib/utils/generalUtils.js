@@ -112,30 +112,6 @@ export function formatDate(isoString) {
 	return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export function loadOnMapUrl(request) {
-	const { id, request_params, address } = request;
-	const { latitude, longitude, radius, features, start_date, end_date, timeframe } = request_params;
-
-	let params = new URLSearchParams({
-		request_id: id,
-		lat: latitude,
-		long: longitude,
-		timeframe,
-		radius // search : address
-	});
-
-	// Append features as array format
-	if (features?.length) {
-		features.forEach((feature) => params.append('features[]', feature));
-	}
-
-	// Add optional parameters if they are not null
-	// if (start_date) params.append('start_date', start_date);
-	// if (end_date) params.append('end_date', end_date);
-
-	return `/try-demo/?${params.toString()}`;
-}
-
 /**
  * Processes error data and extracts error messages into an array.
  *
