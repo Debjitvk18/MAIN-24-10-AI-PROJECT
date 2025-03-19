@@ -1,10 +1,12 @@
 import { PUBLIC_API_URL } from '$env/static/public';
 import TwitterIcon from '$lib/assets/svg/marker/x-pin-red-dot.svg?raw';
 import TwitterIconHistorical from '$lib/assets/svg/marker/x-pin.svg?raw';
+import FacebookIcon from '$lib/assets/svg/marker/facebook-pin-red-dot.svg?raw';
+import FacebookIconHistorical from '$lib/assets/svg/marker/facebook-pin.svg?raw';
+import FacebookMarketPlaceIcon from '$lib/assets/svg/marker/facebook-marketplace-pin-red-dot.svg?raw';
+import FacebookMarketPlaceIconHistorical from '$lib/assets/svg/marker/facebook-marketplace-pin.svg?raw';
 import PanoidsIcon from '$lib/assets/svg/marker/panoids-pin.svg?raw';
 import LinkedInIcon from '$lib/assets/svg/marker/linkedin-pin.svg?raw';
-import FacebookIcon from '$lib/assets/svg/marker/facebook-pin.svg?raw';
-import FacebookMarketPlaceIcon from '$lib/assets/svg/marker/facebook-marketplace-pin.svg?raw';
 import InstagramIcon from '$lib/assets/svg/marker/insta-pin.svg?raw';
 import GoogleNewsIcon from '$lib/assets/svg/marker/google-news-pin.svg?raw';
 
@@ -72,6 +74,7 @@ export const SOCIAL_MEDIA_PLATFORMS = [
 		slug: 'facebook',
 		tabIcon: 'lucide:facebook',
 		mapIcon: FacebookIcon,
+		mapIconHistorical: FacebookIconHistorical,
 		visibility: true,
 		tabs: ['Posts', 'Users', 'Groups', 'Videos', 'Pages', 'Events']
 	},
@@ -80,6 +83,7 @@ export const SOCIAL_MEDIA_PLATFORMS = [
 		slug: 'facebook-marketplace',
 		tabIcon: 'lucide:facebook',
 		mapIcon: FacebookMarketPlaceIcon,
+		mapIconHistorical: FacebookMarketPlaceIconHistorical,
 		visibility: true,
 		tabs: []
 	},
@@ -88,6 +92,7 @@ export const SOCIAL_MEDIA_PLATFORMS = [
 		slug: 'linkedin',
 		tabIcon: 'mdi:linkedin',
 		mapIcon: LinkedInIcon,
+		mapIconHistorical: LinkedInIcon,
 		visibility: true,
 		tabs: []
 	},
@@ -96,6 +101,7 @@ export const SOCIAL_MEDIA_PLATFORMS = [
 		slug: 'instagram',
 		tabIcon: 'lucide:instagram',
 		mapIcon: InstagramIcon,
+		mapIconHistorical: InstagramIcon,
 		visibility: true,
 		tabs: []
 	},
@@ -104,6 +110,7 @@ export const SOCIAL_MEDIA_PLATFORMS = [
 		slug: 'google-news',
 		tabIcon: 'simple-icons:googlenews',
 		mapIcon: GoogleNewsIcon,
+		mapIconHistorical: GoogleNewsIcon,
 		visibility: true,
 		tabs: []
 	},
@@ -112,6 +119,7 @@ export const SOCIAL_MEDIA_PLATFORMS = [
 		slug: 'streetview',
 		tabIcon: 'lucide:map-pinned',
 		mapIcon: PanoidsIcon,
+		mapIconHistorical: PanoidsIcon,
 		visibility: true,
 		tabs: []
 	}
