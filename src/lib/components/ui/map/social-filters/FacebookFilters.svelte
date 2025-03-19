@@ -5,6 +5,7 @@
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import { FACEBOOK_CATEGORIES } from '$lib/constants/constants';
 	import { MapService } from '$lib/services/map-service';
+	import Icon from '@iconify/svelte';
 
 	export let fbKeywords = '';
 	export let fbPostTypes = [];
@@ -15,6 +16,9 @@
 	export let fbCategoryId = '';
 	export let educationSuggestions = {};
 	export let workSuggestions = /** @type {{ id: string, text: string, image: string }[]} */ ([]);
+
+	$: isEducationFetching = false;
+	$: isWorkFetching = false;
 
 	function debounce(func, wait) {
 		let timeout;
@@ -27,6 +31,23 @@
 	const debouncedHandleTypeSearchFilters = debounce(handleTypeSearchFilters, 800);
 
 	function handleTypeSearchFilters(type, keyword, feature = 'facebook') {
+		if(keyword === '') {
+			if(type === 'education') {
+				educationSuggestions = [];
+			} else {
+				workSuggestions = [];
+			}
+
+			return;
+		}
+
+		if (type === 'education') {
+			isEducationFetching = true;
+		}
+
+		if (type === 'work') {
+			isWorkFetching = true;
+		}
 		const mapService = new MapService();
 		const payload = {
 			type,
@@ -46,7 +67,15 @@
 					workSuggestions = suggestions;
 				}
 			} else {
-				console.error(response.message);
+				console.error(response);
+			}
+
+			if (type === 'education') {
+				isEducationFetching = false;
+			}
+
+			if (type === 'work') {
+				isWorkFetching = false;
 			}
 		});
 	}
@@ -113,8 +142,7 @@
 							<div class="flex flex-col space-y-1">
 								<label
 									for="post-order-select"
-									class="text-sm font-medium leading-none text-blue-700"
-								>
+									class="text-sm font-medium leading-none text-blue-700">
 									Post Sorting
 								</label>
 								<p class="text-xs text-gray-500">
@@ -123,8 +151,7 @@
 								<select
 									id="post-order-select"
 									class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-									bind:value={fbRecentPosts}
-								>
+									bind:value={fbRecentPosts}>
 									<option value="Relevancy">Relevancy</option>
 									<option value="Recent">Recent</option>
 								</select>
@@ -141,8 +168,7 @@
 							<div class="flex flex-col space-y-1">
 								<label
 									for="post-order-select"
-									class="text-sm font-medium leading-none text-blue-700"
-								>
+									class="text-sm font-medium leading-none text-blue-700">
 									Education
 								</label>
 								<p class="text-xs text-gray-500">Filters users based on their education.</p>
@@ -151,13 +177,18 @@
 									placeholder="Enter keywords"
 									class="border-blue-300 focus:border-blue-500"
 									bind:value={fbEducationId}
-									on:input={() => debouncedHandleTypeSearchFilters('education', fbEducationId)}
+									on:input={() => debouncedHandleTypeSearchFilters('education', fbEducationId) }
 								/>
+								{#if isEducationFetching}
+									<p class="text-blue-500 text-xs flex items-center">
+										<Icon class="w-4 h-4" icon="line-md:loading-twotone-loop" />
+										<span class="ml-2">Fetching results, please wait...</span>
+									</p>
+								{/if}
 								<select
 									id="education-select"
 									class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-									on:change={handleEducationSelect}
-								>
+									on:change={handleEducationSelect}>
 									<option value="">Select an education</option>
 									{#each educationSuggestions as suggestion}
 										<option value={suggestion.id}>{suggestion.text}</option>
@@ -168,8 +199,7 @@
 							<div class="flex flex-col space-y-1">
 								<label
 									for="post-order-select"
-									class="text-sm font-medium leading-none text-blue-700"
-								>
+									class="text-sm font-medium leading-none text-blue-700">
 									Work
 								</label>
 								<p class="text-xs text-gray-500">Filters users based on their work experience.</p>
@@ -180,11 +210,16 @@
 									bind:value={fbWorkId}
 									on:input={() => debouncedHandleTypeSearchFilters('work', fbWorkId)}
 								/>
+								{#if isWorkFetching}
+									<p class="text-blue-500 text-xs flex items-center">
+										<Icon class="w-4 h-4" icon="line-md:loading-twotone-loop" />
+										<span class="ml-2">Fetching results, please wait...</span>
+									</p>
+								{/if}
 								<select
 									id="work-select"
 									class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-									on:change={handleWorkSelect}
-								>
+									on:change={handleWorkSelect}>
 									<option value="">Select a work experience</option>
 									{#each workSuggestions as suggestion}
 										<option value={suggestion.id}>{suggestion.text}</option>
@@ -203,16 +238,14 @@
 							<div class="flex flex-col space-y-1">
 								<label
 									for="post-order-select"
-									class="text-sm font-medium leading-none text-blue-700"
-								>
+									class="text-sm font-medium leading-none text-blue-700">
 									Page Category
 								</label>
 								<p class="text-xs text-gray-500">Select the category of pages to filter pages</p>
 								<select
 									bind:value={fbCategoryId}
 									id="post-order-select"
-									class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-								>
+									class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
 									<option value="">Select a category</option>
 									{#each FACEBOOK_CATEGORIES as category}
 										<option value={category.value}>{category.label}</option>
