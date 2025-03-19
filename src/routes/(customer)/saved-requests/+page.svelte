@@ -10,14 +10,14 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import Icon from '@iconify/svelte';
 
-    export let data;
+	export let data;
 	let meta = data?.savedRequests?.meta || {};
 	let savedRequests = data?.savedRequests?.data || [];
 	let error = data?.error || null;
 	let queryParam;
 	$: queryParam = $page.url.searchParams.get('page');
 
-    function getPaginationNumbers() {
+	function getPaginationNumbers() {
 		if (!meta || !meta.current_page || !meta.last_page) return [];
 
 		const { current_page, last_page } = meta;
@@ -50,7 +50,7 @@
 		return pages;
 	}
 
-    async function fetchSavedRequests(pageNumber = 1) {
+	async function fetchSavedRequests(pageNumber = 1) {
 		try {
 			if (meta?.current_page == pageNumber) return;
 
@@ -70,7 +70,7 @@
 		}
 	}
 
-    async function goToPage(pageNumber) {
+	async function goToPage(pageNumber) {
 		if (meta.current_page !== pageNumber) {
 			goto(`?page=${pageNumber}`, { noScroll: true });
 			await fetchSavedRequests(pageNumber);
@@ -86,20 +86,29 @@
 	$: if (!queryParam || error) {
 		fetchSavedRequests();
 	}
-
 </script>
 
 <div class="container max-w-100">
 	<div class="flex-1 space-y-4">
 		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Saved Request</h2>
 
-		<div class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700">
+		<div
+			class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700"
+		>
 			<ul class="flex flex-wrap -mb-px">
 				<li class="me-2">
-					<a href="/my-requests" class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" aria-current="page">My Request</a>
+					<a
+						href="/my-requests"
+						class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+						aria-current="page">My Request</a
+					>
 				</li>
 				<li class="me-2">
-					<a href="/saved-requests" class="inline-block p-4 text-primary border-b-2 border-primary rounded-t-lg active dark:text-primary dark:border-primary">Saved Request</a>
+					<a
+						href="/saved-requests"
+						class="inline-block p-4 text-primary border-b-2 border-primary rounded-t-lg active dark:text-primary dark:border-primary"
+						>Saved Request</a
+					>
 				</li>
 			</ul>
 		</div>
@@ -128,21 +137,27 @@
 								<Table.Row>
 									<Table.Cell class="font-medium">{request.title || 'N/A'}</Table.Cell>
 									<Table.Cell>
-                                        {request.frequency}
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        <span class={`px-2 py-1 text-xs font-semibold rounded-md ${request.notify ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                            {request.notify ? 'Yes' : 'No'}
-                                        </span>
-                                    </Table.Cell>
-                                    
-                                    <Table.Cell>
-                                        <span class={`px-2 py-1 text-xs font-semibold rounded-md ${request.status ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'}`}>
-                                            {request.status ? 'Active' : 'Deactivated'}
-                                        </span>
-                                    </Table.Cell>
-                                    
-									<Table.Cell>{request.executed_at ? formatDate(request.executed_at) : 'N/A'}</Table.Cell>
+										{request.frequency}
+									</Table.Cell>
+									<Table.Cell>
+										<span
+											class={`px-2 py-1 text-xs font-semibold rounded-md ${request.notify ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+										>
+											{request.notify ? 'Yes' : 'No'}
+										</span>
+									</Table.Cell>
+
+									<Table.Cell>
+										<span
+											class={`px-2 py-1 text-xs font-semibold rounded-md ${request.status ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'}`}
+										>
+											{request.status ? 'Active' : 'Deactivated'}
+										</span>
+									</Table.Cell>
+
+									<Table.Cell
+										>{request.executed_at ? formatDate(request.executed_at) : 'N/A'}</Table.Cell
+									>
 									<Table.Cell class="text-right">
 										<DropdownMenu.Root>
 											<DropdownMenu.Trigger>
@@ -153,11 +168,11 @@
 													<DropdownMenu.Item>
 														<a href={`my-requests/${request.id}`}>View</a>
 													</DropdownMenu.Item>
-                                                    <DropdownMenu.Item>
+													<DropdownMenu.Item>
 														<a href={`saved-requests/edit/${request.id}`}>Edit</a>
 													</DropdownMenu.Item>
 													<DropdownMenu.Item>
-														<a href={generateMapURL(request.search_request)} target="_blank" >
+														<a href={generateMapURL(request.search_request)} target="_blank">
 															Load on map
 														</a>
 													</DropdownMenu.Item>
@@ -165,7 +180,6 @@
 											</DropdownMenu.Content>
 										</DropdownMenu.Root>
 									</Table.Cell>
-
 								</Table.Row>
 							{/each}
 						</Table.Body>

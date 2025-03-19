@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { cn } from "$lib/utils.js";
+	import { cn } from '$lib/utils.js';
 
 	let className: string | undefined | null = undefined;
 	export { className as class };
 </script>
 
-<nav class={cn("flex items-center space-x-4 lg:space-x-6", className)}>
+<nav class={cn('flex items-center space-x-4 lg:space-x-6', className)}>
 	<a href="/examples/dashboard" class="hover:text-primary text-sm font-medium transition-colors">
 		Overview
 	</a>

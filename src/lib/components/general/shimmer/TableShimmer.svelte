@@ -1,5 +1,5 @@
 <script lang="ts">
-	export let rows = 10; 
+	export let rows = 10;
 	let skeletonRows = Array(rows).fill(0);
 </script>
 

@@ -12,10 +12,10 @@
 	import GoogleNewsIcon from '$lib/assets/svg/marker/google-news-mark.svg?raw';
 	import MapBg from '$lib/assets/svg/map/map-view.svg';
 	import Cta from '$lib/components/ui/home/Cta.svelte';
-	import * as Tabs from "$lib/components/ui/tabs";
+	import * as Tabs from '$lib/components/ui/tabs';
 	import Icon from '@iconify/svelte';
 	import { ApiService } from '$lib/services/api-service';
-	import { toast } from "svelte-sonner";
+	import { toast } from 'svelte-sonner';
 	import MapSearchBox from '$lib/components/ui/map/MapSearchBox.svelte';
 	import Fetaures from '$lib/components/ui/home/Fetaures.svelte';
 	import Why from '$lib/components/ui/home/Why.svelte';
@@ -148,12 +148,12 @@
 		if (allowedTypes.includes(selectedFile.type)) {
 			return true;
 		} else {
-			toast.error("Invalid file type. Please upload a PNG or JPG.")
+			toast.error('Invalid file type. Please upload a PNG or JPG.');
 			return false;
 		}
 	}
 
-	$: if(file) {
+	$: if (file) {
 		if (validateFile(file)) {
 			uploadFile(file);
 		}
@@ -170,26 +170,26 @@
 		try {
 			const res = await apiService.makeApiCall(`map/image-search/`, formData, 'POST', 'formdata');
 			if (res.success) {
-				let lat = res.search_request.request_params.latitude
-				let long = res.search_request.request_params.longitude
-				let id = res.search_request.id
+				let lat = res.search_request.request_params.latitude;
+				let long = res.search_request.request_params.longitude;
+				let id = res.search_request.id;
 				goto(`try-demo?req_id=${id}&lat=${lat}&long=${long}`);
-
 			} else {
-				toast.error(res.message)
+				toast.error(res.message);
 			}
-
 		} catch (error) {
-			toast.error('Upload failed:'+error)
-		} finally{
+			toast.error('Upload failed:' + error);
+		} finally {
 			fileLoader = false;
 		}
 	}
-
 </script>
 
 <section class="bg-white bg-gradient-to-b from-blue-50 to-blue-100">
-	<div class="bg-cover bg-bottom lg:container md:container" style="background-image: url('{MapBg}');">
+	<div
+		class="bg-cover bg-bottom lg:container md:container"
+		style="background-image: url('{MapBg}');"
+	>
 		<div class="relative bg-gray-200 rounded-lg">
 			<!-- Marker 1 -->
 			<div
@@ -245,7 +245,7 @@
 					</div>
 				</div>
 			</div>
-			
+
 			<!-- Marker 4 -->
 			<div
 				class="hidden xl:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-4"
@@ -264,18 +264,18 @@
 
 			<!-- Marker 5 -->
 			<div
-			class="hidden xl:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-5"
-		>
-			<div class="w-10 h-10 group-hover:animate-bounce transition-all duration-200 ease-in-out">
-				{@html GoogleNewsIcon}
-				<div
-					class="absolute hidden group-hover:block bg-white shadow-lg rounded-md p-2 text-center text-gray-800 w-40 -top-16 left-1/2 transform -translate-x-1/2"
-				>
-					<span class="font-semibold">Location 5</span>
-					<p class="text-xs">Details about Location 4</p>
+				class="hidden xl:block cursor-pointer absolute bottom-2/3 left-1/3 transform -translate-x-1/2 -translate-y-1/2 group poi-5"
+			>
+				<div class="w-10 h-10 group-hover:animate-bounce transition-all duration-200 ease-in-out">
+					{@html GoogleNewsIcon}
+					<div
+						class="absolute hidden group-hover:block bg-white shadow-lg rounded-md p-2 text-center text-gray-800 w-40 -top-16 left-1/2 transform -translate-x-1/2"
+					>
+						<span class="font-semibold">Location 5</span>
+						<p class="text-xs">Details about Location 4</p>
+					</div>
 				</div>
 			</div>
-		</div>
 		</div>
 
 		<div
@@ -293,7 +293,8 @@
 
 						<Tabs.Trigger
 							value="image"
-							class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md">
+							class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+						>
 							Search by Image
 						</Tabs.Trigger>
 					</Tabs.List>
@@ -307,20 +308,22 @@
 						<h2
 							class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600"
 						>
-							Leverage advanced location analytics to gain real-time insights, optimize site selection, understand customer behavior, and drive data-driven growth.
-					</h2>
+							Leverage advanced location analytics to gain real-time insights, optimize site
+							selection, understand customer behavior, and drive data-driven growth.
+						</h2>
 						<MapSearchBox />
 					</Tabs.Content>
 					<Tabs.Content value="image">
 						<div
 							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl"
 						>
-						Live Market Location Intelligence
+							Live Market Location Intelligence
 						</div>
 						<div
 							class="max-w-2xl w-f mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600"
 						>
-						Leverage advanced location analytics to gain real-time insights, optimize site selection, understand customer behavior, and drive data-driven growth.
+							Leverage advanced location analytics to gain real-time insights, optimize site
+							selection, understand customer behavior, and drive data-driven growth.
 						</div>
 						<form class="max-w-md w-full">
 							<div
@@ -336,14 +339,17 @@
 									transition-all duration-300"
 									class:border-blue-500={isDragging}
 									class:border-gray-300={!isDragging && !fileLoader}
-									class:border-gray-500={fileLoader} 
+									class:border-gray-500={fileLoader}
 								>
 									<div class="flex flex-col items-center justify-center pt-5 pb-6">
 										{#if fileLoader}
 											<Icon icon="line-md:uploading-loop" class="text-5xl text-primary" />
 											<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Uploading...</p>
 										{:else}
-											<Icon icon="icon-park-outline:upload-one" class="w-8 h-8 mb-4 text-primary dark:text-gray-400" />
+											<Icon
+												icon="icon-park-outline:upload-one"
+												class="w-8 h-8 mb-4 text-primary dark:text-gray-400"
+											/>
 											<p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
 												<span class="font-semibold">Click to upload</span> or drag and drop
 											</p>
@@ -351,13 +357,13 @@
 										{/if}
 									</div>
 									{#if !fileLoader}
-									<input
-										id="dropzone-file"
-										accept="image/png, image/jpeg"
-										type="file"
-										class="hidden"
-										on:change={handleFileSelect}
-									/>
+										<input
+											id="dropzone-file"
+											accept="image/png, image/jpeg"
+											type="file"
+											class="hidden"
+											on:change={handleFileSelect}
+										/>
 									{/if}
 								</label>
 							</div>
@@ -412,41 +418,41 @@
 <Cta />
 
 <style>
-    .poi-1 {
-        left: 64%;
-        top: 218px;
-    }
-
-    .poi-2 {
-		top: 475px;
-    	left: 65%;
-    }
-
-    .poi-3 {
-		left: 54%;
-   		top: 368px;
-    }
-
-    .poi-4 {
-        top: 160px;
-        left: 55%;
-    }
-	.poi-5{
-		top: 500px;
-        left: 45%
+	.poi-1 {
+		left: 64%;
+		top: 218px;
 	}
 
-    @keyframes bounce {
-        0%,
-        100% {
-            transform: translateY(0);
-        }
-        50% {
-            transform: translateY(-10px);
-        }
-    }
+	.poi-2 {
+		top: 475px;
+		left: 65%;
+	}
 
-    .group-hover\:animate-bounce:hover {
-        animation: bounce 0.6s ease-out;
-    }
+	.poi-3 {
+		left: 54%;
+		top: 368px;
+	}
+
+	.poi-4 {
+		top: 160px;
+		left: 55%;
+	}
+	.poi-5 {
+		top: 500px;
+		left: 45%;
+	}
+
+	@keyframes bounce {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
+		}
+	}
+
+	.group-hover\:animate-bounce:hover {
+		animation: bounce 0.6s ease-out;
+	}
 </style>

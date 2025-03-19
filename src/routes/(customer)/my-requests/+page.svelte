@@ -88,20 +88,29 @@
 	$: if (!queryParam || error) {
 		fetchSearchRequests();
 	}
-
 </script>
 
 <div class="container max-w-100">
 	<div class="flex-1 space-y-4">
 		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Request</h2>
 
-		<div class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700">
+		<div
+			class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700"
+		>
 			<ul class="flex flex-wrap -mb-px">
 				<li class="me-2">
-					<a href="/my-requests" class="inline-block p-4 text-primary border-b-2 border-primary rounded-t-lg active dark:text-primary dark:border-primary" aria-current="page">My Request</a>
+					<a
+						href="/my-requests"
+						class="inline-block p-4 text-primary border-b-2 border-primary rounded-t-lg active dark:text-primary dark:border-primary"
+						aria-current="page">My Request</a
+					>
 				</li>
 				<li class="me-2">
-					<a href="/saved-requests" class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300">Saved Request</a>
+					<a
+						href="/saved-requests"
+						class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+						>Saved Request</a
+					>
 				</li>
 			</ul>
 		</div>
@@ -130,7 +139,7 @@
 							{#each searchRequests as request}
 								<Table.Row>
 									<Table.Cell class="font-medium">
-										<a href={generateMapURL(request)} target="_blank" >
+										<a href={generateMapURL(request)} target="_blank">
 											{request.address || 'N/A'}
 											<Icon icon="line-md:map-marker-radius" class="text-blue-500 h-5 w-5 inline" />
 										</a>
@@ -147,7 +156,8 @@
 										{:else}
 											<Badge
 												class="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
-												>Pending</Badge>
+												>Pending</Badge
+											>
 										{/if}
 									</Table.Cell>
 									<Table.Cell>{formatDate(request.created_at)}</Table.Cell>
@@ -163,7 +173,7 @@
 														<a href={`my-requests/${request.id}`} class="w-full">View</a>
 													</DropdownMenu.Item>
 													<DropdownMenu.Item>
-														<a href={generateMapURL(request)} target="_blank"  class="w-full">
+														<a href={generateMapURL(request)} target="_blank" class="w-full">
 															Load on map
 														</a>
 													</DropdownMenu.Item>
@@ -171,7 +181,6 @@
 											</DropdownMenu.Content>
 										</DropdownMenu.Root>
 									</Table.Cell>
-
 								</Table.Row>
 							{/each}
 						</Table.Body>

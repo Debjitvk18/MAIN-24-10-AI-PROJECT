@@ -2,7 +2,7 @@ import { goto } from '$app/navigation';
 import { AUTH_TOKEN, USER_KEY } from '$lib/constants/constants';
 import { UserService } from '$lib/services/user-service';
 import { writable } from 'svelte/store';
-import { resetMode } from "mode-watcher";
+import { resetMode } from 'mode-watcher';
 import { setCookie, deleteCookie } from '$lib/utils/cookies';
 
 export const isLoggedIn = writable(false);
@@ -16,30 +16,30 @@ export const user = writable(null);
  */
 
 export function checkAuth() {
-    const token = localStorage.getItem(AUTH_TOKEN);
+	const token = localStorage.getItem(AUTH_TOKEN);
 	const userData = localStorage.getItem(USER_KEY);
-    if (token && user) {
-        isLoggedIn.set(true);
+	if (token && user) {
+		isLoggedIn.set(true);
 		user.set(JSON.parse(userData));
-    } else {
+	} else {
 		localStorage.removeItem(AUTH_TOKEN);
 		localStorage.removeItem(USER_KEY);
 		isLoggedIn.set(false);
 		user.set(null);
-    }
+	}
 }
 
 /**
  * Login the user.
- * 
+ *
  * @param {Object} data The login data.
- * 
+ *
  * @returns {Promise<void>}
  */
 export async function login(data) {
 	localStorage.setItem(AUTH_TOKEN, data.access_token);
 	localStorage.setItem(USER_KEY, JSON.stringify(data.member));
-	setCookie(AUTH_TOKEN, data.access_token, 60)
+	setCookie(AUTH_TOKEN, data.access_token, 60);
 	isLoggedIn.set(true);
 	goto('/dashboard');
 }
@@ -58,7 +58,7 @@ export async function getUserData() {
 export function logout() {
 	localStorage.removeItem(AUTH_TOKEN);
 	localStorage.removeItem(USER_KEY);
-	deleteCookie(AUTH_TOKEN)
+	deleteCookie(AUTH_TOKEN);
 	resetMode();
 	isLoggedIn.set(false);
 	user.set(null);

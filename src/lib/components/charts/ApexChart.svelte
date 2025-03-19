@@ -1,23 +1,23 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  
-  export let options;
-  export let series;
+	import { onMount } from 'svelte';
 
-  let chartDiv;
-  let ApexCharts; 
+	export let options;
+	export let series;
 
-  onMount(async () => {
-    if (typeof window !== 'undefined') {
-      const module = await import('apexcharts'); // Import dynamically ✅
-      ApexCharts = module.default;
+	let chartDiv;
+	let ApexCharts;
 
-      let chart = new ApexCharts(chartDiv, { ...options, series });
-      chart.render();
+	onMount(async () => {
+		if (typeof window !== 'undefined') {
+			const module = await import('apexcharts'); // Import dynamically ✅
+			ApexCharts = module.default;
 
-      return () => chart.destroy(); 
-    }
-  });
+			let chart = new ApexCharts(chartDiv, { ...options, series });
+			chart.render();
+
+			return () => chart.destroy();
+		}
+	});
 </script>
 
 <div bind:this={chartDiv}></div>

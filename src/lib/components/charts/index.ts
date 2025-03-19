@@ -1,1 +1,1 @@
-export { default as Bar } from "./bar.svelte";
+export { default as Bar } from './bar.svelte';

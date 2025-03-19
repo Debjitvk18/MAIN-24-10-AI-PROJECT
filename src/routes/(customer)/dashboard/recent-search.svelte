@@ -3,7 +3,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import Icon from '@iconify/svelte';
-	import * as Table from "$lib/components/ui/table";
+	import * as Table from '$lib/components/ui/table';
 
 	export let searches = null;
 	export let loading;
@@ -29,7 +29,7 @@
 				{#each searches as search}
 					<Table.Row>
 						<Table.Cell class="font-medium">
-							{search.address} <br>
+							{search.address} <br />
 							{search.request_params.latitude}, {search.request_params.longitude}
 						</Table.Cell>
 						<Table.Cell>{search.request_origin}</Table.Cell>

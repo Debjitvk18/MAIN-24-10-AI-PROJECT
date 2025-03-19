@@ -4,9 +4,9 @@
 	import NotFound from '$lib/components/general/NotFound.svelte';
 	import Icon from '@iconify/svelte';
 	import { formatDate, generateMapURL } from '$lib/utils/generalUtils';
-	import { buttonVariants } from "$lib/components/ui/button";
+	import { buttonVariants } from '$lib/components/ui/button';
 	import GetBack from '$lib/components/general/GetBack.svelte';
-	import {ApiService} from "$lib/services/api-service";
+	import { ApiService } from '$lib/services/api-service';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 
@@ -17,13 +17,13 @@
 	let error = data?.error || null;
 
 	const icons = {
-		"x-twitter": { icon: 'ri:twitter-x-fill', label: 'X (Twitter)' },
+		'x-twitter': { icon: 'ri:twitter-x-fill', label: 'X (Twitter)' },
 		streetview: { icon: 'lucide:map-pinned', label: 'Panoids' },
 		linkedin: { icon: 'mdi:linkedin', label: 'Linkedin' },
 		facebook: { icon: 'lucide:facebook', label: 'Facebook' },
 		'facebook-marketplace': { icon: 'lucide:facebook', label: 'Marketplace' },
 		instagram: { icon: 'lucide:instagram', label: 'Instagram' },
-		"google-news": { icon: 'simple-icons:googlenews', label: 'Google News' },
+		'google-news': { icon: 'simple-icons:googlenews', label: 'Google News' }
 	};
 
 	async function fetchMyRequestByID() {
@@ -35,7 +35,7 @@
 				throw new Error(response.error);
 			}
 
-			if(!response.success) {
+			if (!response.success) {
 				error = response.message;
 				return false;
 			}
@@ -50,7 +50,7 @@
 	}
 
 	onMount(() => {
-		if(error) {
+		if (error) {
 			fetchMyRequestByID();
 		}
 	});
@@ -61,7 +61,11 @@
 		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Search Request</h2>
 		<GetBack url={`/my-requests`} />
 		{#if !error}
-			<a href={generateMapURL(searchRequest)} class={`${buttonVariants({ variant: "outline" })} float-end`} target="">
+			<a
+				href={generateMapURL(searchRequest)}
+				class={`${buttonVariants({ variant: 'outline' })} float-end`}
+				target=""
+			>
 				<Icon icon="quill:link-out" class="me-2" /> Load on Map
 			</a>
 		{/if}
@@ -197,7 +201,7 @@
 											Search Image
 										</h4>
 										<img
-											src="{searchRequest.imagepath}"
+											src={searchRequest.imagepath}
 											alt="Search Thumbnail"
 											class="h-16 w-16 object-cover rounded-xl border dark:border-gray-600"
 										/>
@@ -206,29 +210,40 @@
 							{/if}
 						</div>
 					</div>
-                    <h4 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white text-center my-5 py-5">Features</h4>
+					<h4
+						class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white text-center my-5 py-5"
+					>
+						Features
+					</h4>
 
-                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 py-5">
-                        {#if features.length > 0}
-                            {#each features as feature}
-                                <a href="{searchRequest.id}/{feature}" class="group block border rounded-lg shadow-sm transition-all hover:shadow-md 
-                                    hover:border-primary dark:border-gray-700 dark:hover:border-primary dark:bg-gray-900 text-center">
-                                    <Card.Root>
-                                        <Card.Header class="flex items-center justify-between pb-2">
-                                            <Icon icon={icons[feature].icon || 'lucide:help-circle'} 
-                                                  class="text-primary text-3xl group-hover:scale-110 transition-transform" />
-                                        </Card.Header>
-                                        <Card.Content>
-                                            <div class="text-lg font-bold uppercase group-hover:text-primary transition-colors">{icons[feature].label }</div>
-                                            <p class="text-muted-foreground text-xs">View Response</p>
-                                        </Card.Content>
-                                    </Card.Root>
-                                    
-                                </a>
-                            {/each}
-                        {/if}
-                    </div>
-                    
+					<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 py-5">
+						{#if features.length > 0}
+							{#each features as feature}
+								<a
+									href="{searchRequest.id}/{feature}"
+									class="group block border rounded-lg shadow-sm transition-all hover:shadow-md
+                                    hover:border-primary dark:border-gray-700 dark:hover:border-primary dark:bg-gray-900 text-center"
+								>
+									<Card.Root>
+										<Card.Header class="flex items-center justify-between pb-2">
+											<Icon
+												icon={icons[feature].icon || 'lucide:help-circle'}
+												class="text-primary text-3xl group-hover:scale-110 transition-transform"
+											/>
+										</Card.Header>
+										<Card.Content>
+											<div
+												class="text-lg font-bold uppercase group-hover:text-primary transition-colors"
+											>
+												{icons[feature].label}
+											</div>
+											<p class="text-muted-foreground text-xs">View Response</p>
+										</Card.Content>
+									</Card.Root>
+								</a>
+							{/each}
+						{/if}
+					</div>
 				{/if}
 			</Card.Content>
 		</Card.Root>

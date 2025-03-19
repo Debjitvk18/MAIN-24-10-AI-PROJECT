@@ -27,7 +27,6 @@
 </script>
 
 <div class="py-40" id="pricing">
-
 	<div class="mx-auto max-w-4xl text-center">
 		<h2 class="text-base/7 font-semibold text-[#2C7BE5]">Pricing</h2>
 		<p class="mt-2 text-balance text-5xl font-semibold tracking-tight text-gray-900 sm:text-4xl">

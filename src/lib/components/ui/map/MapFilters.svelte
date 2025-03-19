@@ -168,7 +168,7 @@
 			showDateRange = false;
 		}
 
-		if(selectedFeaturesFromURL && selectedFeaturesFromURL.includes('facebook')) {
+		if (selectedFeaturesFromURL && selectedFeaturesFromURL.includes('facebook')) {
 			// facebook post types
 			const fbPostTypesFromURL = getDataFromURL('fbPostTypes[]');
 			if (fbPostTypesFromURL) {

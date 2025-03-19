@@ -73,7 +73,9 @@
 		>
 			<span class="text-5xl">🌍</span>
 			<div class="text-left">
-				<h3 class="font-semibold text-lg py-1 text-gray-900">Counter-Terrorism & National Security</h3>
+				<h3 class="font-semibold text-lg py-1 text-gray-900">
+					Counter-Terrorism & National Security
+				</h3>
 				<p class="text-sm text-gray-500">Strengthen threat detection & intelligence gathering.</p>
 			</div>
 		</div>

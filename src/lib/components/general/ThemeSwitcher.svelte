@@ -3,7 +3,6 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import Icon from '@iconify/svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-
 </script>
 
 <Tooltip.Root>
@@ -21,6 +20,6 @@
 		</Button>
 	</Tooltip.Trigger>
 	<Tooltip.Content>
-		<p>Switch to {$mode === 'dark' ? 'light' : 'dark'} mode. </p>
+		<p>Switch to {$mode === 'dark' ? 'light' : 'dark'} mode.</p>
 	</Tooltip.Content>
 </Tooltip.Root>

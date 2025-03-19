@@ -21,9 +21,8 @@
 //         if (!res.success) {
 //             throw new Error(res.message || 'API request failed.');
 //         }
-        
-//         return { streetview: res.response || [] };
 
+//         return { streetview: res.response || [] };
 
 //     } catch (error) {
 //         console.error('Error in load function:', error.message);

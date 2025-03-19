@@ -22,7 +22,7 @@
 
 	// Fetch location suggestions
 	async function fetchLocationSuggestions() {
-		if(query.length <= 2) {
+		if (query.length <= 2) {
 			suggestions = [];
 			showSuggestions = false;
 			return;
@@ -92,7 +92,7 @@
 			class="block p-4 pr-14 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-0 placeholder-gray-500"
 			id="location-input"
 			on:input={fetchLocationSuggestions}
-			placeholder={placeholder}
+			{placeholder}
 			required
 			type="search"
 		/>
@@ -100,7 +100,8 @@
 			<button
 				class="absolute right-0 top-0 bottom-0 p-4 text-sm font-medium text-white bg-[#2C7BE5] rounded-r-lg border-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
 				disabled
-				type="submit">
+				type="submit"
+			>
 				<Icon class="w-6 h-6" icon="ic:sharp-search" />
 
 				<span class="sr-only">Search</span>
@@ -109,15 +110,14 @@
 	</div>
 
 	{#if showSuggestions && suggestions.length > 0}
-		<ul
-			class="bg-white border border-gray-100 w-full z-2"
-			bind:this={suggestionListRef}>
+		<ul class="bg-white border border-gray-100 w-full z-2" bind:this={suggestionListRef}>
 			{#each suggestions as suggestion (suggestion.id)}
 				<li
 					class="pl-8 pr-2 py-1 border-gray-100 relative cursor-pointer hover:bg-yellow-50 hover:text-gray-900"
-					on:click={() => onSuggestionClick(suggestion)}>
-						<Icon icon="si:arrow-right-fill" class="absolute w-6 h-6 left-2 right-2" />
-						{suggestion.place_name}
+					on:click={() => onSuggestionClick(suggestion)}
+				>
+					<Icon icon="si:arrow-right-fill" class="absolute w-6 h-6 left-2 right-2" />
+					{suggestion.place_name}
 				</li>
 			{/each}
 		</ul>

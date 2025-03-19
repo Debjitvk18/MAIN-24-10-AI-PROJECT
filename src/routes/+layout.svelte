@@ -7,8 +7,8 @@
 	import '../app.css';
 	import Sidebar from '$lib/components/layout/Sidebar.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
-	import { ModeWatcher } from "mode-watcher";
-	import { Toaster } from "$lib/components/ui/sonner";
+	import { ModeWatcher } from 'mode-watcher';
+	import { Toaster } from '$lib/components/ui/sonner';
 	let { children } = $props();
 
 	// const noLayoutRoutes = ['/', '/login', '/register']; // Add routes where you don't want to show the layout

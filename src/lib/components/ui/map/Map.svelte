@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Svelte
-	import {onDestroy, onMount} from 'svelte';
-	import {page} from '$app/stores';
+	import { onDestroy, onMount } from 'svelte';
+	import { page } from '$app/stores';
 
 	// Mapbox
 	import mapboxgl from 'mapbox-gl';
@@ -9,10 +9,10 @@
 	import * as turf from '@turf/turf';
 
 	// Environment variables
-	import {PUBLIC_MAPBOX_ACCESS_TOKEN} from '$env/static/public';
+	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 
 	// Services
-	import {MapService} from '$lib/services/map-service';
+	import { MapService } from '$lib/services/map-service';
 
 	// Constants
 	import {
@@ -25,22 +25,38 @@
 	} from '$lib/constants/constants';
 
 	// Utility functions
-	import {getDataFromURL, putDataInURL, removeDataFromURL, toggleFullScreen} from '$lib/utils/generalUtils';
-	import {addCircleRadius, addPulsingDotAnimation, parseCoordinates, resetMap} from '$lib/utils/mapUtils';
+	import {
+		getDataFromURL,
+		putDataInURL,
+		removeDataFromURL,
+		toggleFullScreen
+	} from '$lib/utils/generalUtils';
+	import {
+		addCircleRadius,
+		addPulsingDotAnimation,
+		parseCoordinates,
+		resetMap
+	} from '$lib/utils/mapUtils';
 
 	// UI Components
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
-	import {toast} from 'svelte-sonner';
+	import { toast } from 'svelte-sonner';
 
 	// Icon Component
 	import MapTopbar from '$lib/components/ui/map/MapTopbar.svelte';
 	import MapSidebar from '$lib/components/ui/map/MapSidebar.svelte';
-	import {dataLoadingState, hoveredPostId, searchRequestID, socialMediaJson, visibility} from '$lib/stores/mapStore';
+	import {
+		dataLoadingState,
+		hoveredPostId,
+		searchRequestID,
+		socialMediaJson,
+		visibility
+	} from '$lib/stores/mapStore';
 	import ErrorDialog from '$lib/components/general/dialog/ErrorDialog.svelte';
-	import {parseSocialMediaResponse} from '$lib/utils/socialMediaUtils';
+	import { parseSocialMediaResponse } from '$lib/utils/socialMediaUtils';
 	import MapExportJson from '$lib/components/ui/map/MapExportJson.svelte';
 	import MapDataInsights from './MapDataInsights.svelte';
-	import {user} from '$lib/stores/authStore';
+	import { user } from '$lib/stores/authStore';
 
 	// Default Data...
 	let showLoadingOverlay = false;
@@ -853,7 +869,7 @@
 	function generateRandomValidPoints(count: number, circle: any) {
 		const points = [];
 		while (points.length < count) {
-			const randomPoints = turf.randomPoint(count - points.length, {bbox: turf.bbox(circle)});
+			const randomPoints = turf.randomPoint(count - points.length, { bbox: turf.bbox(circle) });
 
 			randomPoints.features.forEach((feature) => {
 				if (turf.booleanPointInPolygon(feature, circle)) {

@@ -73,44 +73,43 @@
 
 	let downloadLoaders = [];
 	async function downloadPanoid(panoid_id: string) {
-    try {
-        if (response_id === null || !panoid_id) return;
+		try {
+			if (response_id === null || !panoid_id) return;
 
-        downloadLoaders = [...downloadLoaders, panoid_id];
+			downloadLoaders = [...downloadLoaders, panoid_id];
 
-        let apiService = new ApiService();
-        
-		let res = await apiService.makeApiCall(
-			`search-requests/${response_id}/${panoid_id}/download`,
-			{}, 
-			'GET', 
-			'blob' 
-		);
+			let apiService = new ApiService();
 
-        if (!res) {
-            throw new Error("No response from server");
-        }
+			let res = await apiService.makeApiCall(
+				`search-requests/${response_id}/${panoid_id}/download`,
+				{},
+				'GET',
+				'blob'
+			);
 
-        // Handle binary data (Blob)
-        const blob = new Blob([res], { type: 'image/jpeg' }); 
-        const url = URL.createObjectURL(blob);
+			if (!res) {
+				throw new Error('No response from server');
+			}
 
-        // Create a temporary link to trigger the download
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${panoid_id}.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+			// Handle binary data (Blob)
+			const blob = new Blob([res], { type: 'image/jpeg' });
+			const url = URL.createObjectURL(blob);
 
-        // Release object URL to free up memory
-        URL.revokeObjectURL(url);
+			// Create a temporary link to trigger the download
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `${panoid_id}.jpg`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
 
-    } catch (err) {
-        console.error('Something went wrong, please try again.', err);
-    } finally {
-        downloadLoaders = downloadLoaders.filter(id => id !== panoid_id);
-    }
+			// Release object URL to free up memory
+			URL.revokeObjectURL(url);
+		} catch (err) {
+			console.error('Something went wrong, please try again.', err);
+		} finally {
+			downloadLoaders = downloadLoaders.filter((id) => id !== panoid_id);
+		}
 	}
 
 	async function goToPage(pageNumber) {
@@ -128,15 +127,12 @@
 
 	onMount(async () => {
 		await fetchStreetView();
-  });
-
+	});
 </script>
 
 <div class="container max-w-100">
 	<div class="flex-1 space-y-4">
-		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">
-			Panoids
-		</h2>
+		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Panoids</h2>
 		<GetBack url={`/my-requests/${id}`} />
 
 		<Card.Root class="col-span-4">
@@ -158,7 +154,11 @@
 								{#each streetViews as streetView}
 									<Table.Row>
 										<Table.Cell class="font-medium">
-											<a href={`${PANOID_BASE_URL}${streetView.panoid}`} target="_blank" rel="noopener noreferrer">
+											<a
+												href={`${PANOID_BASE_URL}${streetView.panoid}`}
+												target="_blank"
+												rel="noopener noreferrer"
+											>
 												{streetView.panoid}
 											</a>
 										</Table.Cell>
@@ -167,10 +167,20 @@
 										<Table.Cell>{streetView.lon}</Table.Cell>
 										<Table.Cell>
 											{#if downloadLoaders.includes(streetView.panoid)}
-												<Icon icon="line-md:downloading-loop" class="text-blue-500" width="24" height="24" />
+												<Icon
+													icon="line-md:downloading-loop"
+													class="text-blue-500"
+													width="24"
+													height="24"
+												/>
 											{:else}
 												<button on:click={() => downloadPanoid(streetView.panoid)}>
-													<Icon icon="lucide:download" class="text-blue-500" width="24" height="24" />
+													<Icon
+														icon="lucide:download"
+														class="text-blue-500"
+														width="24"
+														height="24"
+													/>
 												</button>
 											{/if}
 										</Table.Cell>

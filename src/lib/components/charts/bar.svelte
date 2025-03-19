@@ -67,7 +67,7 @@
 <div class="w-full">
 	{#if series.length > 0}
 		<ApexChart {options} {series} />
-	{:else if (loading === false)}
+	{:else if loading === false}
 		<div
 			role="status"
 			class="max-full p-4 border border-gray-200 rounded-sm shadow-sm animate-pulse md:p-6 dark:border-gray-700"
@@ -86,6 +86,6 @@
 			<span class="sr-only">Loading...</span>
 		</div>
 	{:else}
-			<p class="text-muted-foreground text-xs">No data found</p>
+		<p class="text-muted-foreground text-xs">No data found</p>
 	{/if}
 </div>

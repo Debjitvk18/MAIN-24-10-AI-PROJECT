@@ -60,13 +60,17 @@
 								{#each posts as post}
 									<Table.Row>
 										<Table.Cell class="font-medium">
-												<a href={post.actors?.[0]?.url || '#'} target="_blank" class="flex items-center gap-2">
-													<Avatar.Root class="h-8 w-8">
-														<Avatar.Image src={post.actors?.[0]?.profile_picture} alt="user" />
-														<Avatar.Fallback>{post.actors?.[0]?.name}</Avatar.Fallback>
-													</Avatar.Root>
-													{post.actors?.[0]?.name || 'Unknown'}
-												</a>
+											<a
+												href={post.actors?.[0]?.url || '#'}
+												target="_blank"
+												class="flex items-center gap-2"
+											>
+												<Avatar.Root class="h-8 w-8">
+													<Avatar.Image src={post.actors?.[0]?.profile_picture} alt="user" />
+													<Avatar.Fallback>{post.actors?.[0]?.name}</Avatar.Fallback>
+												</Avatar.Root>
+												{post.actors?.[0]?.name || 'Unknown'}
+											</a>
 										</Table.Cell>
 										<Table.Cell>
 											<a href={post.url || '#'} target="_blank">

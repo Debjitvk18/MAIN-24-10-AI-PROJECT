@@ -34,22 +34,21 @@ export const MAPBOX_THEMES = [
 ];
 
 export const REFRESH_FREQUENCY_OPTIONS = [
-	"No Refresh",
-	"Every 5 minutes",
-	"Every 10 minutes",
-	"Every 15 minutes",
-	"Every 30 minutes",
-	"Hourly",
-	"Every 2 hours",
-	"Every 6 hours",
-	"Every 12 hours",
-	"Daily",
-	"Weekly",
-	"Monthly",
-	"Quarterly",
-	"Yearly"
+	'No Refresh',
+	'Every 5 minutes',
+	'Every 10 minutes',
+	'Every 15 minutes',
+	'Every 30 minutes',
+	'Hourly',
+	'Every 2 hours',
+	'Every 6 hours',
+	'Every 12 hours',
+	'Daily',
+	'Weekly',
+	'Monthly',
+	'Quarterly',
+	'Yearly'
 ];
-
 
 export const MARKER_HIGHLIGHT_COLOR = '#448ee4';
 export const MARKER_DEFAULT_COLOR = 'black';
@@ -59,13 +58,63 @@ export const MARKER_FONT_SIZE = '20px';
 export const MAP_PRIMARY_COLOR = '#2462ea';
 
 export const SOCIAL_MEDIA_PLATFORMS = [
-	{ name: 'X (Twitter)', slug: 'x-twitter', tabIcon: 'ri:twitter-x-fill', mapIcon: TwitterIcon, mapIconHistorical: TwitterIconHistorical, visibility: true, tabs: ["Top", "Latest"] },
-	{ name: 'Facebook', slug: 'facebook', tabIcon: 'lucide:facebook', mapIcon: FacebookIcon, visibility: true, tabs: ["Posts", "Users", "Groups", "Videos", "Pages", "Events"] },
-	{ name: 'Marketplace', slug: 'facebook-marketplace', tabIcon: 'lucide:facebook', mapIcon: FacebookMarketPlaceIcon, visibility: true, tabs: [] },
-	{ name: 'LinkedIn', slug: 'linkedin', tabIcon: 'mdi:linkedin', mapIcon: LinkedInIcon, visibility: true, tabs: [] },
-	{ name: 'Instagram', slug: 'instagram', tabIcon: 'lucide:instagram', mapIcon: InstagramIcon, visibility: true, tabs: [] },
-	{ name: 'Google News', slug: 'google-news', tabIcon: 'simple-icons:googlenews', mapIcon: GoogleNewsIcon, visibility: true, tabs: [] },
-	{ name: 'Panoids', slug: 'streetview', tabIcon: 'lucide:map-pinned', mapIcon: PanoidsIcon, visibility: true, tabs: [] },
+	{
+		name: 'X (Twitter)',
+		slug: 'x-twitter',
+		tabIcon: 'ri:twitter-x-fill',
+		mapIcon: TwitterIcon,
+		mapIconHistorical: TwitterIconHistorical,
+		visibility: true,
+		tabs: ['Top', 'Latest']
+	},
+	{
+		name: 'Facebook',
+		slug: 'facebook',
+		tabIcon: 'lucide:facebook',
+		mapIcon: FacebookIcon,
+		visibility: true,
+		tabs: ['Posts', 'Users', 'Groups', 'Videos', 'Pages', 'Events']
+	},
+	{
+		name: 'Marketplace',
+		slug: 'facebook-marketplace',
+		tabIcon: 'lucide:facebook',
+		mapIcon: FacebookMarketPlaceIcon,
+		visibility: true,
+		tabs: []
+	},
+	{
+		name: 'LinkedIn',
+		slug: 'linkedin',
+		tabIcon: 'mdi:linkedin',
+		mapIcon: LinkedInIcon,
+		visibility: true,
+		tabs: []
+	},
+	{
+		name: 'Instagram',
+		slug: 'instagram',
+		tabIcon: 'lucide:instagram',
+		mapIcon: InstagramIcon,
+		visibility: true,
+		tabs: []
+	},
+	{
+		name: 'Google News',
+		slug: 'google-news',
+		tabIcon: 'simple-icons:googlenews',
+		mapIcon: GoogleNewsIcon,
+		visibility: true,
+		tabs: []
+	},
+	{
+		name: 'Panoids',
+		slug: 'streetview',
+		tabIcon: 'lucide:map-pinned',
+		mapIcon: PanoidsIcon,
+		visibility: true,
+		tabs: []
+	}
 ];
 
 export const DATE_RANGE_OPTIONS = [

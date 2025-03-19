@@ -9,11 +9,17 @@ export class ApiService {
 	 *
 	 * @returns {Promise<any>}
 	 */
-	async makeApiCall(endpoint, payload = {}, method = 'GET', requestType = 'json', access_token = false) {
+	async makeApiCall(
+		endpoint,
+		payload = {},
+		method = 'GET',
+		requestType = 'json',
+		access_token = false
+	) {
 		let headers;
 		let fetchOptions;
 		let userToken = access_token || localStorage.getItem(AUTH_TOKEN) || false;
-		
+
 		if (requestType !== 'formdata') {
 			headers = {
 				Accept: 'application/json',

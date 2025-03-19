@@ -145,20 +145,22 @@ export function sanitizeId(id) {
 
 /**
  * Checks if the user is on a mobile device.
- * 
+ *
  * This function determines if the user is using a mobile device based on:
  * 1. The `navigator.userAgent` string, which detects mobile devices like iPhones, Androids, and iPads.
  * 2. The `window.matchMedia` method, which checks if the screen width is `767px` or less.
- * 
+ *
  * @returns {boolean} - Returns `true` if the user is on a mobile device, otherwise `false`.
  */
 export function isMobile() {
-	if (typeof window === "undefined" || typeof navigator === "undefined") {
+	if (typeof window === 'undefined' || typeof navigator === 'undefined') {
 		return false; // Ensure this runs only in the browser
 	}
 
-	return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-		|| window.matchMedia("(max-width: 767px)").matches;
+	return (
+		/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+		window.matchMedia('(max-width: 767px)').matches
+	);
 }
 
 /**
@@ -170,7 +172,8 @@ export function isMobile() {
 export function generateMapURL(request) {
 	const BASE_URL = '/try-demo/';
 	const { id, request_params, address } = request;
-	const { latitude, longitude, radius, resolution, features, from, to, timeframe, filters } = request_params;
+	const { latitude, longitude, radius, resolution, features, from, to, timeframe, filters } =
+		request_params;
 
 	const queryParams = new URLSearchParams({
 		request_id: id,
@@ -179,7 +182,7 @@ export function generateMapURL(request) {
 		long: longitude,
 		timeframe,
 		radius,
-		resolution,
+		resolution
 	});
 
 	appendCustomTimeframe(queryParams, timeframe, from, to);
@@ -212,7 +215,7 @@ function appendFilters(queryParams, filters) {
 				if (Array.isArray(value)) {
 					value.forEach((item) => queryParams.append(`${sectionKey}[]`, item));
 				} else {
-					queryParams.append(sectionKey, value !== null ? value : "");
+					queryParams.append(sectionKey, value !== null ? value : '');
 				}
 			});
 		});

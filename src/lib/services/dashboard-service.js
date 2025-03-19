@@ -5,7 +5,6 @@ export class DashboardService {
 		this.apiService = new ApiService();
 	}
 
-
 	/**
 	 * Get dashboard content.
 	 *

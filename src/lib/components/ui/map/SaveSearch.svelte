@@ -72,14 +72,14 @@
 		}
 	}
 
-	const unsubscribe = searchRequestID.subscribe(id => {
+	const unsubscribe = searchRequestID.subscribe((id) => {
 		formData.requestID = id;
 	});
 	onDestroy(() => unsubscribe());
 </script>
 
 <Dialog.Root bind:open={isOpen}>
-	<Dialog.Trigger class={buttonVariants({ variant: "outline" })} on:click={() => isOpen = true}>
+	<Dialog.Trigger class={buttonVariants({ variant: 'outline' })} on:click={() => (isOpen = true)}>
 		<Icon class="md:me-2 sm:me-0 w-6 h-6" icon="carbon:save" />
 		<span class="hidden md:inline">Save search</span>
 	</Dialog.Trigger>
@@ -87,8 +87,8 @@
 		<Dialog.Header>
 			<Dialog.Title>Save Your Search</Dialog.Title>
 			<Dialog.Description>
-				Save your selected filters and search results into a new saved search. <br />You can also set up automatic
-				refresh using your preferred refresh frequency.
+				Save your selected filters and search results into a new saved search. <br />You can also
+				set up automatic refresh using your preferred refresh frequency.
 			</Dialog.Description>
 		</Dialog.Header>
 		<form on:submit={handleFormSubmit}>
@@ -134,10 +134,7 @@
 
 			<!-- Submit Button -->
 			<div class="py-4 grid justify-items-end">
-				<Button
-					class="btn btn-primary"
-					disabled={isLoading}
-					type="submit">
+				<Button class="btn btn-primary" disabled={isLoading} type="submit">
 					{#if isLoading}
 						<Icon icon="eos-icons:loading" class="mr-2 h-4 w-4 animate-spin" />
 					{/if}

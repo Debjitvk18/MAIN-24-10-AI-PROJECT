@@ -26,12 +26,12 @@
 				throw new Error(res.message);
 			}
 
-			res?.response?.forEach(element => {
+			res?.response?.forEach((element) => {
 				if (element.response?.top != undefined) {
-					topTweets.push(element.response)
+					topTweets.push(element.response);
 				}
 				if (element.response?.latest != undefined) {
-					latestTweets.push(element.response)
+					latestTweets.push(element.response);
 				}
 			});
 
@@ -48,42 +48,39 @@
 	onMount(async () => {
 		await fetchTwitter();
 	});
-
 </script>
 
 <div class="container max-w-100">
 	<div class="flex-1 space-y-4">
-		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">
-			X (Twitter)
-		</h2>
+		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">X (Twitter)</h2>
 		<GetBack url={`/my-requests/${id}`} />
 		{#if !loader}
 			{#if error}
 				<NotFound message={'No data found!!'} />
 			{:else}
 				<!-- Top -->
-				<div class="columns-2  gap-4 p-4 space-y-4">
+				<div class="columns-2 gap-4 p-4 space-y-4">
 					{#each topTweets as topTweet}
 						{#each topTweet.top.tweets as tweet}
 							<div class="break-inside-avoid bg-white shadow-lg rounded-2xl p-4">
 								<Tweet
-										tweet={{
-										  id: tweet.entryId,
-										  content: tweet.tweet.full_text,
-										  url: tweet.tweet.url ?? "#",
-										  type: tweet.tweet.extended_entities?.media?.[0]?.type || "text",
-										  postMedia: tweet.tweet.extended_entities?.media?.[0]?.media_url_https || null,
-										  isUserVerified: tweet.tweet.user_details?.verified,
-										  userName: tweet.tweet.user_details?.name,
-										  userScreenName: tweet.tweet.user_details?.screen_name,
-										  userProfilePhoto: tweet.tweet.user_details?.profile_image_url_https,
-										  lat: tweet.tweet.place?.bounding_box?.coordinates?.[0]?.[0]?.[1] ?? null,
-										  lng: tweet.tweet.place?.bounding_box?.coordinates?.[0]?.[0]?.[0] ?? null,
-										  favoriteCount: tweet.tweet.favorite_count,
-										  replyCount: tweet.tweet.reply_count,
-										  retweetCount: tweet.tweet.retweet_count,
-										  postTime: tweet.tweet.created_at,
-										}}
+									tweet={{
+										id: tweet.entryId,
+										content: tweet.tweet.full_text,
+										url: tweet.tweet.url ?? '#',
+										type: tweet.tweet.extended_entities?.media?.[0]?.type || 'text',
+										postMedia: tweet.tweet.extended_entities?.media?.[0]?.media_url_https || null,
+										isUserVerified: tweet.tweet.user_details?.verified,
+										userName: tweet.tweet.user_details?.name,
+										userScreenName: tweet.tweet.user_details?.screen_name,
+										userProfilePhoto: tweet.tweet.user_details?.profile_image_url_https,
+										lat: tweet.tweet.place?.bounding_box?.coordinates?.[0]?.[0]?.[1] ?? null,
+										lng: tweet.tweet.place?.bounding_box?.coordinates?.[0]?.[0]?.[0] ?? null,
+										favoriteCount: tweet.tweet.favorite_count,
+										replyCount: tweet.tweet.reply_count,
+										retweetCount: tweet.tweet.retweet_count,
+										postTime: tweet.tweet.created_at
+									}}
 								/>
 							</div>
 						{/each}
@@ -92,35 +89,30 @@
 
 				<!-- Latest -->
 				<div class="columns-2 gap-4 p-4 space-y-4">
-					{#each latestTweets as latestTweet }
-
-						{#each latestTweet.latest.tweets as tweet }
+					{#each latestTweets as latestTweet}
+						{#each latestTweet.latest.tweets as tweet}
 							<div class="break-inside-avoid bg-white shadow-lg rounded-2xl p-4">
-
 								<Tweet
-										tweet={{
-											id: tweet.entryId,
-											content: tweet.tweet.full_text,
-											url: tweet.tweet.url ?? "#",
-											type: tweet.tweet.extended_entities?.media?.[0]?.type || "text",
-											postMedia: tweet.tweet.extended_entities?.media?.[0]?.media_url_https || null,
-											isUserVerified: tweet.tweet.user_details?.verified,
-											userName: tweet.tweet.user_details?.name,
-											userScreenName: tweet.tweet.user_details?.screen_name,
-											userProfilePhoto: tweet.tweet.user_details?.profile_image_url_https,
-											lat: tweet.tweet.place?.bounding_box?.coordinates?.[0]?.[0]?.[1] ?? null,
-											lng: tweet.tweet.place?.bounding_box?.coordinates?.[0]?.[0]?.[0] ?? null,
-											favoriteCount: tweet.tweet.favorite_count,
-											replyCount: tweet.tweet.reply_count,
-											retweetCount: tweet.tweet.retweet_count,
-											postTime: tweet.tweet.created_at,
-											}}
+									tweet={{
+										id: tweet.entryId,
+										content: tweet.tweet.full_text,
+										url: tweet.tweet.url ?? '#',
+										type: tweet.tweet.extended_entities?.media?.[0]?.type || 'text',
+										postMedia: tweet.tweet.extended_entities?.media?.[0]?.media_url_https || null,
+										isUserVerified: tweet.tweet.user_details?.verified,
+										userName: tweet.tweet.user_details?.name,
+										userScreenName: tweet.tweet.user_details?.screen_name,
+										userProfilePhoto: tweet.tweet.user_details?.profile_image_url_https,
+										lat: tweet.tweet.place?.bounding_box?.coordinates?.[0]?.[0]?.[1] ?? null,
+										lng: tweet.tweet.place?.bounding_box?.coordinates?.[0]?.[0]?.[0] ?? null,
+										favoriteCount: tweet.tweet.favorite_count,
+										replyCount: tweet.tweet.reply_count,
+										retweetCount: tweet.tweet.retweet_count,
+										postTime: tweet.tweet.created_at
+									}}
 								/>
 							</div>
-
-
 						{/each}
-
 					{/each}
 				</div>
 			{/if}

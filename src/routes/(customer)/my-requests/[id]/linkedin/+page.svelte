@@ -23,7 +23,6 @@
 			}
 
 			posts = [...(res?.response?.response?.posts || [])];
-
 		} catch (err) {
 			console.error('Pagination Error:', err);
 		} finally {
@@ -34,14 +33,11 @@
 	onMount(async () => {
 		await fetchLinkedin();
 	});
-
 </script>
 
 <div class="container max-w-100">
 	<div class="flex-1 space-y-4">
-		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">
-			Linkedin
-		</h2>
+		<h2 class="text-3xl font-bold tracking-tight text-dark dark:text-white">Linkedin</h2>
 		<GetBack url={`/my-requests/${id}`} />
 		<Card.Root class="col-span-4">
 			<Card.Content>
@@ -49,34 +45,40 @@
 					{#if posts.length == 0}
 						<NotFound message={'No data found!!'} />
 					{:else}
-                    <Table.Root>
-                        <Table.Header>
-                          <Table.Row>
-                            <Table.Head>User</Table.Head>
-                            <Table.Head>Description</Table.Head>
-                            <Table.Head>Date</Table.Head>
-                            <Table.Head>Likes</Table.Head>
-                          </Table.Row>
-                        </Table.Header>
-                        <Table.Body>
-                          {#each posts as post}
-                            <Table.Row>
-                              <Table.Cell class="font-medium">
-                                <a href={post.author.url} target="_blank">
-                                  <img src={post.author.image_url} alt="{post.author.first_name} {post.author.last_name}" class="rounded-full" width="40" height="40" />
-                                  {post.author.first_name} {post.author.last_name}
-                                </a>
-                              </Table.Cell>
-                              <Table.Cell>
-                                <a href={post.url} target="_blank">{post.text}</a>
-                              </Table.Cell>
-                              <Table.Cell>{formatDate(post.created_at)}</Table.Cell>
-                              <Table.Cell>{post.likes}</Table.Cell>
-                            </Table.Row>
-                          {/each}
-                        </Table.Body>
-                      </Table.Root>
-                      
+						<Table.Root>
+							<Table.Header>
+								<Table.Row>
+									<Table.Head>User</Table.Head>
+									<Table.Head>Description</Table.Head>
+									<Table.Head>Date</Table.Head>
+									<Table.Head>Likes</Table.Head>
+								</Table.Row>
+							</Table.Header>
+							<Table.Body>
+								{#each posts as post}
+									<Table.Row>
+										<Table.Cell class="font-medium">
+											<a href={post.author.url} target="_blank">
+												<img
+													src={post.author.image_url}
+													alt="{post.author.first_name} {post.author.last_name}"
+													class="rounded-full"
+													width="40"
+													height="40"
+												/>
+												{post.author.first_name}
+												{post.author.last_name}
+											</a>
+										</Table.Cell>
+										<Table.Cell>
+											<a href={post.url} target="_blank">{post.text}</a>
+										</Table.Cell>
+										<Table.Cell>{formatDate(post.created_at)}</Table.Cell>
+										<Table.Cell>{post.likes}</Table.Cell>
+									</Table.Row>
+								{/each}
+							</Table.Body>
+						</Table.Root>
 					{/if}
 				{:else}
 					<div class="w-full">

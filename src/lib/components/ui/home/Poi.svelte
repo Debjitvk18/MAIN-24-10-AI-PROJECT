@@ -2,7 +2,7 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.ts';
 	import * as Card from '$lib/components/ui/card/index.ts';
 	import { onMount, onDestroy } from 'svelte';
-    import { intersection } from "$lib/utils/intersection";
+	import { intersection } from '$lib/utils/intersection';
 
 	let activeTab = 'panoramas';
 	const tabs = ['panoramas', 'revserse-lookup', 'social-media'];
@@ -33,13 +33,13 @@
 		let index = tabs.indexOf(activeTab);
 		index = (index + 1) % tabs.length;
 		activeTab = tabs[index];
-		startProgress(); 
+		startProgress();
 	}
 
 	function handleTabClick(value) {
-		clearInterval(interval); 
+		clearInterval(interval);
 		interval = setInterval(switchTab, DURATION);
-		startProgress(); 
+		startProgress();
 	}
 
 	onMount(() => {
@@ -52,62 +52,59 @@
 		if (animationFrame) cancelAnimationFrame(animationFrame);
 	});
 
-
-    function handleEnter() {
-        startProgress();
+	function handleEnter() {
+		startProgress();
 		interval = setInterval(switchTab, DURATION);
-    }
+	}
 
-    function handleLeave() {
-        clearInterval(interval);
+	function handleLeave() {
+		clearInterval(interval);
 		if (animationFrame) cancelAnimationFrame(animationFrame);
-    }
-
+	}
 </script>
 
-<section class="container"
-use:intersection
-on:enter={handleEnter}
-on:leave={handleLeave}
->
+<section class="container" use:intersection on:enter={handleEnter} on:leave={handleLeave}>
 	<!-- Smooth Progress Bar -->
 	<div class="mx-auto bg-gray-200 h-1 dark:bg-gray-700 overflow-hidden">
 		<div class="bg-blue-600 h-1" style="width: {progress}%"></div>
 	</div>
 
 	<Card.Root class="mx-auto p-4 rounded-t-none rounded-b-lg">
-		<h2 class="text-xl sm:text-2xl md:text-3xl font-bold max-w-3xl leading-tight mx-auto my-6 md:my-10 text-center">
-			Uncover Thriving Businesses & Industry Trends & essential intelligence by point of intelligence
+		<h2
+			class="text-xl sm:text-2xl md:text-3xl font-bold max-w-3xl leading-tight mx-auto my-6 md:my-10 text-center"
+		>
+			Uncover Thriving Businesses & Industry Trends & essential intelligence by point of
+			intelligence
 		</h2>
 		<Tabs.Root bind:value={activeTab} class="w-full">
-            <Tabs.List
-            class="grid grid-cols-1 sm:grid-cols-3 border-b h-auto sm:h-11 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg gap-2 sm:gap-0"
-        >
-            <Tabs.Trigger
-                on:click={() => handleTabClick('panoramas')}
-                class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
-                value="panoramas"
-            >
-                Panoramic Street
-            </Tabs.Trigger>
-        
-            <Tabs.Trigger
-                on:click={() => handleTabClick('revserse-lookup')}
-                class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
-                value="revserse-lookup"
-            >
-                Reverse Lookup Services
-            </Tabs.Trigger>
-        
-            <Tabs.Trigger
-                on:click={() => handleTabClick('social-media')}
-                class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
-                value="social-media"
-            >
-                Social Media Live Updates
-            </Tabs.Trigger>
-        </Tabs.List>
-        
+			<Tabs.List
+				class="grid grid-cols-1 sm:grid-cols-3 border-b h-auto sm:h-11 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg gap-2 sm:gap-0"
+			>
+				<Tabs.Trigger
+					on:click={() => handleTabClick('panoramas')}
+					class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+					value="panoramas"
+				>
+					Panoramic Street
+				</Tabs.Trigger>
+
+				<Tabs.Trigger
+					on:click={() => handleTabClick('revserse-lookup')}
+					class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+					value="revserse-lookup"
+				>
+					Reverse Lookup Services
+				</Tabs.Trigger>
+
+				<Tabs.Trigger
+					on:click={() => handleTabClick('social-media')}
+					class="text-white font-semibold rounded-md transition-all duration-300 ease-in-out px-4 py-2 text-center data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+					value="social-media"
+				>
+					Social Media Live Updates
+				</Tabs.Trigger>
+			</Tabs.List>
+
 			<Tabs.Content value="panoramas">
 				<Card.Content class="flex space-y-4 p-1 py-6">
 					<div>
@@ -195,7 +192,9 @@ on:leave={handleLeave}
 							</div>
 						</div>
 						<div class="text-center my-6 md:my-12 md:mt-12 mt-14">
-							<h3 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">Who Uses Panoramic Street Data?</h3>
+							<h3 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">
+								Who Uses Panoramic Street Data?
+							</h3>
 						</div>
 						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 							<div class="bg-white p-6 rounded-2xl shadow-md flex items-center">
@@ -320,7 +319,9 @@ on:leave={handleLeave}
 								</video>
 							</div>
 							<div class="md:col-span-2 space-y-4 text-center md:text-left">
-								<h3 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">Transform Images into Insights</h3>
+								<h3 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">
+									Transform Images into Insights
+								</h3>
 								<p class="text-sm sm:text-lg text-gray-700 mt-2">
 									Our Reverse Photo Geolocation Tool leverages advanced AI algorithms to analyze the
 									visual elements within a photograph, accurately determining its geographical

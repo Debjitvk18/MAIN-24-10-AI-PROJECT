@@ -66,7 +66,7 @@ const PLATFORM_PARSERS = {
 			const [lng, lat] = place?.bounding_box?.coordinates?.[0]?.[0] ?? [null, null];
 
 			const mediaDetails = extended_entities?.media?.[0] || {};
-			const postType = mediaDetails.type || "text";
+			const postType = mediaDetails.type || 'text';
 			const media = mediaDetails.media_url_https || null;
 			return {
 				id: tweetObject.entryId,
@@ -85,7 +85,7 @@ const PLATFORM_PARSERS = {
 				replyCount: tweet.reply_count,
 				retweetCount: tweet.retweet_count,
 				postTime: tweet.created_at,
-				historical: data?.historical || false,
+				historical: data?.historical || false
 			};
 		};
 
@@ -113,7 +113,7 @@ const PLATFORM_PARSERS = {
 				id: fbObject.id,
 				url: fbObject.url ?? '#',
 				type: fbType,
-				historical: data?.historical || false,
+				historical: data?.historical || false
 			};
 
 			switch (fbType) {
@@ -131,14 +131,14 @@ const PLATFORM_PARSERS = {
 						comment: fbObject.feedback?.comment_count,
 						share: fbObject.feedback?.share_count,
 						like: fbObject.feedback?.like_count,
-						postType: fbObject.attachments[0]?.attachment_type,
+						postType: fbObject.attachments[0]?.attachment_type
 					};
 				case 'users':
 					return {
 						...commonDetails,
 						name: fbObject.name,
 						image: fbObject.photoUrl,
-						info: fbObject.info,
+						info: fbObject.info
 					};
 				case 'pages':
 					return {
@@ -147,7 +147,7 @@ const PLATFORM_PARSERS = {
 						image: fbObject.photoUrl,
 						info: fbObject.info,
 						postsFrequency: fbObject.postsFrequency,
-						followers: fbObject.followers,
+						followers: fbObject.followers
 					};
 				case 'groups':
 					return {
@@ -156,7 +156,7 @@ const PLATFORM_PARSERS = {
 						image: fbObject.photoUrl,
 						info: fbObject.info,
 						postsFrequency: fbObject.postsFrequency,
-						members: fbObject.members,
+						members: fbObject.members
 					};
 				case 'events':
 					return {
@@ -170,7 +170,7 @@ const PLATFORM_PARSERS = {
 						isAllDay: fbObject.isAllDay,
 						endTimeStamp: fbObject.endTimeStamp,
 						location: fbObject.location,
-						pastEvent: fbObject.pastEvent,
+						pastEvent: fbObject.pastEvent
 					};
 				default:
 					return commonDetails;
@@ -194,7 +194,7 @@ const PLATFORM_PARSERS = {
 						image: post.node?.photo?.image?.uri || FacebookMarketPlaceIconImg,
 						lat: null,
 						lng: null,
-						url: "https://www.facebook.com/marketplace/item/" + post.node.entity_id,
+						url: 'https://www.facebook.com/marketplace/item/' + post.node.entity_id,
 						price: (Number(post.node?.data?.price?.amount_with_offset) / 100).toLocaleString(),
 						currency: post.node?.data?.price?.currency || null
 					};
@@ -275,7 +275,9 @@ export function parseSocialMediaResponse(data, platform) {
  * @return {Array} An array of tabs for the specified social media platform. Returns an empty array if the platform is not found.
  */
 export function getSocialMediaTabs(socialMediaPlatformSlug) {
-	const socialMediaPlatform = SOCIAL_MEDIA_PLATFORMS.find(platform => platform.slug === socialMediaPlatformSlug);
+	const socialMediaPlatform = SOCIAL_MEDIA_PLATFORMS.find(
+		(platform) => platform.slug === socialMediaPlatformSlug
+	);
 	return socialMediaPlatform ? socialMediaPlatform.tabs : [];
 }
 
@@ -286,7 +288,7 @@ export function getSocialMediaTabs(socialMediaPlatformSlug) {
  * @return {Array<Object>} The deduplicated array of posts.
  */
 function deduplicatePosts(posts) {
-	return posts.filter((post, index, self) => self.findIndex(p => p.id === post.id) === index);
+	return posts.filter((post, index, self) => self.findIndex((p) => p.id === post.id) === index);
 }
 
 /**
