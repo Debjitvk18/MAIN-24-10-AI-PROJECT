@@ -17,3 +17,5 @@ export const socialMediaJson = writable([]);
 export const visibility = writable([]);
 
 export const activeSocialMedia = writable(null);
+
+export const mapDataLoaded = writable(false);

@@ -48,6 +48,7 @@
 	import {
 		dataLoadingState,
 		hoveredPostId,
+		mapDataLoaded,
 		searchRequestID,
 		socialMediaJson,
 		visibility
@@ -73,7 +74,6 @@
 	let request_id: number;
 	let showErrorDialog = false;
 	let errorResponse = {};
-	let showExportDataButton = false;
 
 	dataLoadingState.set(
 		Object.fromEntries(SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => [slug, 'initial']))
@@ -287,6 +287,8 @@
 	}
 
 	onMount(() => {
+		mapDataLoaded.set(false);
+
 		const rawRadius = getDataFromURL('radius');
 		const radiusValue = [parseInt(rawRadius, 10) || 1];
 		const radiusValueInMeters = radiusValue[0] * 1000;
@@ -736,7 +738,7 @@
 						source.close();
 
 						// show button to export the data into the JSON
-						showExportDataButton = true;
+						mapDataLoaded.set(true);
 
 						// notify user that, request fetching is done.
 						toast('🚀 All set! Explore the data now.', { position: 'bottom-center' });
@@ -948,7 +950,7 @@
 	</div>
 </div>
 
-{#if showExportDataButton && $user}
+{#if $mapDataLoaded && $user}
 	<MapExportJson />
 	<MapDataInsights />
 {/if}

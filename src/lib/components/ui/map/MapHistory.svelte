@@ -5,7 +5,7 @@
 	import * as Sheet from '$lib/components/ui/sheet';
 	import { onMount } from 'svelte';
 	import { Badge } from '$lib/components/ui/badge';
-	import { searchRequestID } from '$lib/stores/mapStore';
+	import {mapDataLoaded, searchRequestID} from '$lib/stores/mapStore';
 	import { SOCIAL_MEDIA_PLATFORMS } from '$lib/constants/constants';
 	import { MapService } from '$lib/services/map-service';
 	import { getDataFromURL, generateMapURL } from '$lib/utils/generalUtils';
@@ -72,7 +72,7 @@
 
 	// Component Lifecycle
 	onMount(() => {
-		if (latitude && longitude) fetchVersionHistory(createPayload());
+		if (latitude && longitude && $mapDataLoaded) fetchVersionHistory(createPayload());
 	});
 </script>
 
