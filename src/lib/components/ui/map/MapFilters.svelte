@@ -387,7 +387,7 @@
 				errorMessages = null;
 				// pass payload in URL
 				const url = new URL(window.location.href);
-				let baseURL = url.origin + url.pathname.replace(/\/$/, "");
+				let baseURL = url.origin + url.pathname.replace(/\/$/, '');
 				baseURL = new URL(baseURL);
 
 				Object.entries(payload).forEach(([key, value]) => {

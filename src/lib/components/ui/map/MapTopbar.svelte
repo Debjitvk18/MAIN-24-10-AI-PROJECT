@@ -7,7 +7,12 @@
 	import SaveSearch from '$lib/components/ui/map/SaveSearch.svelte';
 	import { isLoggedIn } from '$lib/stores/authStore';
 	import { getDataFromURL, isMobile } from '$lib/utils/generalUtils.js';
-	import {dataLoadingState, visibility, activeSocialMedia, mapDataLoaded} from '$lib/stores/mapStore';
+	import {
+		dataLoadingState,
+		visibility,
+		activeSocialMedia,
+		mapDataLoaded
+	} from '$lib/stores/mapStore';
 	import { SOCIAL_MEDIA_PLATFORMS } from '$lib/constants/constants.js';
 	import { onMount } from 'svelte';
 	import MapHistory from '$lib/components/ui/map/MapHistory.svelte';

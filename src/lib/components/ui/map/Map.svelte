@@ -677,10 +677,10 @@
 									validPosts.forEach((post) => {
 										if (post && pointsAdded < count) {
 											const mapIcon = post?.historical
-													? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
-															?.mapIconHistorical
-													: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
-															?.mapIcon;
+												? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+														?.mapIconHistorical
+												: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+														?.mapIcon;
 											markersForType[post.id] = createMarker(
 												mapIcon,
 												[post.lng, post.lat],
@@ -702,10 +702,10 @@
 											const randomPoint = randomPoints[0];
 											if (randomPoint && randomPoint.length === 2) {
 												const mapIcon = post?.historical
-														? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
-																?.mapIconHistorical
-														: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
-																?.mapIcon;
+													? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+															?.mapIconHistorical
+													: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+															?.mapIcon;
 												markersForType[post.id] = createMarker(
 													mapIcon,
 													[randomPoint[0], randomPoint[1]] as [number, number],
