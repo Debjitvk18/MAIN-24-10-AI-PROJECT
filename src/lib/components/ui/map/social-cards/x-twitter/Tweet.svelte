@@ -25,9 +25,9 @@
 		<div class="absolute top-3 right-2 z-50">
 			<Tooltip.Root>
 				<Tooltip.Trigger>
-					<span on:click={() => flyToMarker(marker, map)}
-						><Icon icon="uil:map-marker" class="h-7 w-7 text-gray-500" /></span
-					>
+					<span on:click={() => flyToMarker(marker, map)}>
+						<Icon icon="uil:map-marker" class="h-7 w-7 text-gray-500" />
+					</span>
 				</Tooltip.Trigger>
 				<Tooltip.Content>Locate the marker on the map.</Tooltip.Content>
 			</Tooltip.Root>
