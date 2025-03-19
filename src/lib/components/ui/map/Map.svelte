@@ -382,6 +382,7 @@
 
 			geocoder.on('result', async (event: any) => {
 				if (event.result && event.result.center) {
+					mapDataLoaded.set(false);
 					resetMap(map, mapMarker);
 
 					// Clear previous markers
