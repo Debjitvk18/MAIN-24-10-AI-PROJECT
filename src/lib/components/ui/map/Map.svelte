@@ -519,12 +519,12 @@
 							payload.fbmCategoryId = getDataFromURL('fbmCategoryId');
 						}
 
-						if (getDataFromURL('fbmPriceMin')) {
-							payload.fbmPriceMin = getDataFromURL('fbmPriceMin');
+						if (getDataFromURL('fbmMinPrice')) {
+							payload.fbmMinPrice = getDataFromURL('fbmMinPrice');
 						}
 
-						if (getDataFromURL('fbmPriceMax')) {
-							payload.fbmPriceMax = getDataFromURL('fbmPriceMax');
+						if (getDataFromURL('fbmMaxPrice')) {
+							payload.fbmMaxPrice = getDataFromURL('fbmMaxPrice');
 						}
 
 						if (getDataFromURL('fbmSort')) {
@@ -533,8 +533,8 @@
 					} else {
 						removeDataFromURL('fbmKeywords');
 						removeDataFromURL('fbmCategoryId');
-						removeDataFromURL('fbmPriceMin');
-						removeDataFromURL('fbmPriceMax');
+						removeDataFromURL('fbmMinPrice');
+						removeDataFromURL('fbmMaxPrice');
 						removeDataFromURL('fbmSort');
 					}
 
