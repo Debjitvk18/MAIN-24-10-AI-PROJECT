@@ -214,7 +214,20 @@
 			if (fbRecentPostsFromURL) {
 				fbRecentPosts = fbRecentPostsFromURL;
 			}
+		} else {
+			fbKeywords = '';
+			fbCategoryId = '';
+			fbEducationId = '';
+			fbWorkId = '';
+			fbPublicPosts = true;
+			fbRecentPosts = 'Relevancy';
+			fbPostTypes = fbPostTypes.map((postType) => {
+				postType.enabled = true;
+				return postType;
+			});
+		}
 
+		if (selectedFeaturesFromURL && selectedFeaturesFromURL.includes('facebook-marketplace')) {
 			// Fetch Facebook Marketplace Keywords
 			const fbmKeywordsFromURL = getDataFromURL('fbmKeywords');
 			if (fbmKeywordsFromURL) {
@@ -245,20 +258,11 @@
 				fbmSort = fbmSortFromURL;
 			}
 		} else {
-			fbKeywords = '';
-			fbCategoryId = '';
-			fbEducationId = '';
-			fbWorkId = '';
-			fbPublicPosts = true;
-			fbRecentPosts = 'Relevancy';
 			fbmKeywords = '';
 			fbmCategoryId = '';
 			fbmMinPrice = '';
-
-			fbPostTypes = fbPostTypes.map((postType) => {
-				postType.enabled = true;
-				return postType;
-			});
+			fbmMaxPrice = '';
+			fbmSort = '';
 		}
 	});
 
