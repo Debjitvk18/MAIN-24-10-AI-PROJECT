@@ -383,62 +383,32 @@
 				errorMessages = null;
 				// pass payload in URL
 				const url = new URL(window.location.href);
+				let baseURL = url.origin + url.pathname.replace(/\/$/, "");
+				baseURL = new URL(baseURL);
+
 				Object.entries(payload).forEach(([key, value]) => {
 					if (key === 'features') {
-						url.searchParams.delete('features[]');
 						if (value?.length) {
-							value.forEach((v) => url.searchParams.append('features[]', v));
+							value.forEach((v) => baseURL.searchParams.append('features[]', v));
 						}
 					} else if (key === 'xPostTypes') {
-						url.searchParams.delete('xPostTypes[]');
 						if (value?.length) {
-							value.forEach((v) => url.searchParams.append('xPostTypes[]', v));
+							value.forEach((v) => baseURL.searchParams.append('xPostTypes[]', v));
 						}
 					} else if (key === 'fbPostTypes') {
-						url.searchParams.delete('fbPostTypes[]');
 						if (value?.length) {
-							value.forEach((v) => url.searchParams.append('fbPostTypes[]', v));
+							value.forEach((v) => baseURL.searchParams.append('fbPostTypes[]', v));
 						}
 					} else {
 						if (key === 'longitude') key = 'long';
 						if (key === 'latitude') key = 'lat';
 						if (key === 'address') key = 'search';
 
-						url.searchParams.set(key, value);
+						baseURL.searchParams.set(key, value);
 					}
 				});
 
-				// Remove X-Twitter filters if X-Twitter is disabled
-				if (!payload.features.includes('x-twitter') && !enabledPlatforms['x-twitter']) {
-					removeDataFromURL('xKeywords');
-					removeDataFromURL('xUsernames');
-					removeDataFromURL('xPostTypes[]');
-				}
-
-				// Remove Facebook filters if Facebook is disabled
-				if (!payload.features.includes('facebook') && !enabledPlatforms['facebook']) {
-					removeDataFromURL('fbKeywords');
-					removeDataFromURL('fbPostTypes[]');
-					removeDataFromURL('fbPublicPosts');
-					removeDataFromURL('fbRecentPosts');
-					removeDataFromURL('fbEducationId');
-					removeDataFromURL('fbWorkId');
-					removeDataFromURL('fbCategoryId');
-				}
-
-				// Remove Facebook Marketplace filters if Facebook Marketplace is disabled
-				if (
-					!payload.features.includes('facebook-marketplace') &&
-					!enabledPlatforms['facebook-marketplace']
-				) {
-					removeDataFromURL('fbmKeywords');
-					removeDataFromURL('fbmCategoryId');
-					removeDataFromURL('fbmMinPrice');
-					removeDataFromURL('fbmMaxPrice');
-					removeDataFromURL('fbmSort');
-				}
-				window.history.replaceState({}, '', url);
-
+				window.history.replaceState({}, '', baseURL);
 				window.location.reload();
 			}
 		} catch (error) {
