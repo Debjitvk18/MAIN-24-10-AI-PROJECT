@@ -672,6 +672,33 @@
 										}
 									});
 									markers[type] = markersForType;
+								} else if (slug === 'facebook-marketplace') {
+									if (!posts.length) return;
+									posts.forEach((post) => {
+										if (post && pointsAdded < count) {
+											if (addedPostIds.includes(post.id)) return false;
+
+											const randomPoints = generateRandomValidPoints(1, circle);
+											const randomPoint = randomPoints[0];
+											if (randomPoint && randomPoint.length === 2) {
+												const mapIcon = post?.historical
+													? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+															?.mapIconHistorical
+													: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+															?.mapIcon;
+												markersForType[post.id] = createMarker(
+													mapIcon,
+													[randomPoint[0], randomPoint[1]] as [number, number],
+													$visibility[slug],
+													post
+												);
+												pointsAdded++;
+
+												addedPostIds.push(post.id);
+											}
+										}
+									});
+									markers[type] = markersForType;
 								} else {
 									const validPosts = filterValidPosts(posts, circle);
 									validPosts.forEach((post) => {

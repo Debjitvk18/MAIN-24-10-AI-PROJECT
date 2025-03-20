@@ -20,7 +20,10 @@
 			posts = [];
 			facebookMarketplaceSocialData.forEach((data) => {
 				Object.entries(data.posts).forEach(([key, value]) => {
-					posts.push(value);
+					if (!postIds.includes(value.id)) {
+						postIds.push(value.id);
+						posts.push(value);
+					}
 				});
 			});
 		}

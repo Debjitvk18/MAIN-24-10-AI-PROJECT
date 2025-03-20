@@ -28,6 +28,14 @@
 				<h2 class="text-lg font-bold flex flex-row gap-2 text-gray-800">
 					{post.currency}
 					{post.price}
+					{#if !post.historical}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								<span class="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+							</Tooltip.Trigger>
+							<Tooltip.Content>New</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
 				</h2>
 				<p class="text-sm text-gray-600">{post.title}</p>
 			</div>

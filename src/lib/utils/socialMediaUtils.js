@@ -196,7 +196,8 @@ const PLATFORM_PARSERS = {
 						lng: null,
 						url: 'https://www.facebook.com/marketplace/item/' + post.node.entity_id,
 						price: (Number(post.node?.data?.price?.amount_with_offset) / 100).toLocaleString(),
-						currency: post.node?.data?.price?.currency || null
+						currency: post.node?.data?.price?.currency || null,
+						historical: data?.historical || false
 					};
 				}
 			})

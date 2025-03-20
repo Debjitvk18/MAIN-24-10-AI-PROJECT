@@ -32,7 +32,17 @@
 				</Avatar.Root>
 			</div>
 			<div class="flex flex-col flex-grow">
-				<h6 class="text-black text-lg">{post.name}</h6>
+				<h6 class="text-black text-lg">
+					{post.name}
+					{#if !post.historical}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								<span class="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+							</Tooltip.Trigger>
+							<Tooltip.Content>New</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
+				</h6>
 				<p class="text-gray-600 text-sm">{post.info}</p>
 			</div>
 		</a>
@@ -61,7 +71,17 @@
 				</Avatar.Root>
 			</div>
 			<div class="flex flex-col flex-grow">
-				<h6 class="text-black text-lg">{post.name}</h6>
+				<h6 class="text-black text-lg">
+					{post.name}
+					{#if !post.historical}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								<span class="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+							</Tooltip.Trigger>
+							<Tooltip.Content>New</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
+				</h6>
 				<p class="text-gray-600 text-sm">
 					{post.followers} followers · {post.postsFrequency}
 				</p>
@@ -93,7 +113,17 @@
 				</Avatar.Root>
 			</div>
 			<div class="flex flex-col flex-grow">
-				<h6 class="text-black text-base">{post.name}</h6>
+				<h6 class="text-black text-base">
+					{post.name}
+					{#if !post.historical}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								<span class="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+							</Tooltip.Trigger>
+							<Tooltip.Content>New</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
+				</h6>
 				<p class="text-gray-600 text-sm">{post.info}</p>
 			</div>
 		</a>
@@ -123,7 +153,17 @@
 			</div>
 			<div class="flex flex-col flex-grow">
 				<span class="text-gray-600 text-xs">{post.startText}</span>
-				<h6 class="text-black text-base">{post.name}</h6>
+				<h6 class="text-black text-base">
+					{post.name}
+					{#if !post.historical}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								<span class="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+							</Tooltip.Trigger>
+							<Tooltip.Content>New</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
+				</h6>
 				<p class="text-gray-600 text-sm">{post.attendings} · {post.location}</p>
 			</div>
 		</a>
