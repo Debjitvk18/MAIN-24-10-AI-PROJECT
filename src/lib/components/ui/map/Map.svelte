@@ -87,7 +87,7 @@
 	 */
 	let isSidebarVisible = false;
 
-	let mapMarker = null; // set by onclick on map
+	let mapMarker = null; // set by onclick on a map
 
 	// Markers for social media types
 	let markers: { [key: string]: mapboxgl.Marker[] } = {};
@@ -169,7 +169,7 @@
 				putDataInURL('theme', theme);
 			}
 
-			// Reset when map removed!
+			// Reset when a map removed!
 			onRemove() {
 				this.container.parentNode.removeChild(this.container);
 				this.map = undefined;
@@ -382,6 +382,13 @@
 
 			geocoder.on('result', async (event: any) => {
 				if (event.result && event.result.center) {
+
+					// reload url, when user re-search location
+					if($mapDataLoaded === true) {
+						putDataInURL('search', event.result.place_name);
+						window.location.reload();
+						return;
+					}
 					mapDataLoaded.set(false);
 					resetMap(map, mapMarker);
 
@@ -416,7 +423,7 @@
 					putDataInURL('lat', lat);
 					putDataInURL('long', lng);
 
-					// Fly to new location
+					// Fly to a new location
 					map.flyTo({
 						center: [lng, lat],
 						zoom: 14,
@@ -780,7 +787,7 @@
 						// notify user that, request fetching is done.
 						toast('🚀 All set! Explore the data now.', { position: 'bottom-center' });
 
-						// Add Static dot to indicate that response is complete.
+						// Add Static dot to indicate that the response is complete.
 						map.addSource('static-dot', {
 							type: 'geojson',
 							data: {
