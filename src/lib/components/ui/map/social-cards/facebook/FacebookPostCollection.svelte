@@ -130,7 +130,7 @@
 	</div>
 {/if}
 
-{#if post.type === 'posts'}
+{#if post.type === 'posts' && post.content !== null}
 	<FBPosts {post} {map} {marker} />
 {/if}
 
