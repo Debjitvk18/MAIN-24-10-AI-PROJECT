@@ -983,7 +983,7 @@
 		{#if showSidebar}
 			<!-- Sidebar -->
 			<div class="sidebar {isSidebarVisible ? 'visible' : ''}">
-				<MapSidebar {isSidebarVisible} {markers} {map} />
+				<MapSidebar {isSidebarVisible} {markers} {map} hasChatbot={true} />
 			</div>
 		{/if}
 
