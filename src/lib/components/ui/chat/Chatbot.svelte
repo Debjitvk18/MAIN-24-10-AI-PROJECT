@@ -1,13 +1,14 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { socialMediaJson } from '$lib/stores/mapStore';
 	import TypingIndicator from '../loader/TypingIndicator.svelte';
 	import { MapService } from '$lib/services/map-service';
 	import { getDataFromURL } from '$lib/utils/generalUtils';
 	import Echo from 'laravel-echo';
 	import Pusher from 'pusher-js';
+	import { marked } from 'marked';
 
-	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_ECHO_PUSHER_APP_ID, PUBLIC_API_URL } from '$env/static/public'; // Removed  from here
+	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_ECHO_PUSHER_APP_ID, PUBLIC_API_URL } from '$env/static/public'; 
 	import { AUTH_TOKEN } from '$lib/constants/constants';
 	
 	// Browser environment check
@@ -23,6 +24,7 @@
 	let messages: ChatMessage[] = [];
 	let inputMessage = '';
 	let chatContainer: HTMLElement;
+	let textareaEl: HTMLTextAreaElement;
 	let isProcessing = false;
 	let isFirstMessage = true;
 	let apiResponse = null;
@@ -32,7 +34,22 @@
 	// Initialize MapService
 	const mapService = new MapService();
 	
-	function sendMessage() {
+	// Auto-resize textarea as content changes
+	function resizeTextarea() {
+		if (textareaEl) {
+			// Reset height to auto to get the correct scrollHeight
+			textareaEl.style.height = 'auto';
+			// Set height to scrollHeight to fit content
+			textareaEl.style.height = textareaEl.scrollHeight + 'px';
+		}
+	}
+
+	// Watch for input changes to resize textarea
+	$: if (inputMessage !== undefined && textareaEl) {
+		resizeTextarea();
+	}
+	
+	async function sendMessage() {
 		if (!inputMessage.trim() || isProcessing) return;
 		
 		// Add user message
@@ -46,6 +63,10 @@
 		const userQuery = inputMessage;
 		inputMessage = '';
 		isProcessing = true;
+		
+		// Reset textarea height after clearing content
+		await tick();
+		resizeTextarea();
 		
 		// Scroll to bottom
 		setTimeout(scrollToBottom, 50);
@@ -85,10 +106,29 @@
 					// Keep the typing indicator even in case of error, as requested
 				});
 		} else {
-			setTimeout(() => {
+			// This is a subsequent message in the same conversation
+			// Call generate/{id} endpoint with the message
+			if (conversationId) {
+				const payload = {
+					message: userQuery
+				};
+				
+				// Make API call to /insights/generate/{id}
+				mapService.getPromptInsights(payload, conversationId)
+					.then(response => {
+						console.log('Generate response:', response);
+						// The response will be handled by the Echo listener,
+						// so we keep the typing indicator active
+					})
+					.catch(error => {
+						console.error('Generate API call failed:', error);
+						// Keep typing indicator in case of error
+					});
+			} else {
+				console.error('No conversation ID available for subsequent message');
 				isProcessing = false;
 				setTimeout(scrollToBottom, 50);
-			}, 1000);
+			}
 		}
 	}
 	
@@ -221,8 +261,8 @@
 	}
 	
 	onMount(() => {
-		// Any initialization that requires the window object should be here
-
+		// Resize textarea initially
+		resizeTextarea();
 	});
 	
 	onDestroy(() => {
@@ -249,7 +289,11 @@
 							: 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-tl-none'
 					}"
 				>
-					<p>{message.content}</p>
+					{#if message.role === 'assistant'}
+						<div class="markdown-content">{@html marked(message.content)}</div>
+					{:else}
+						<p>{message.content}</p>
+					{/if}
 					<div class="text-xs mt-1 text-right opacity-70">
 						{message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
 					</div>
@@ -266,10 +310,12 @@
 		<div class="flex items-end gap-2">
 			<div class="flex-grow relative">
 				<textarea
+					bind:this={textareaEl}
 					rows="1"
-					class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+					class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:bg-gray-700 dark:border-gray-600 dark:text-white min-h-[42px] max-h-[200px] overflow-y-auto"
 					placeholder="Ask something..."
 					bind:value={inputMessage}
+					on:input={resizeTextarea}
 					on:keydown={handleKeydown}
 				></textarea>
 			</div>
@@ -285,4 +331,65 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	.markdown-content :global(ul) {
+		list-style-type: disc;
+		padding-left: 1.5em;
+		margin: 0.5em 0;
+	}
+	
+	.markdown-content :global(ol) {
+		list-style-type: decimal;
+		padding-left: 1.5em;
+		margin: 0.5em 0;
+	}
+	
+	.markdown-content :global(h1),
+	.markdown-content :global(h2),
+	.markdown-content :global(h3),
+	.markdown-content :global(h4),
+	.markdown-content :global(h5),
+	.markdown-content :global(h6) {
+		margin: 0.5em 0;
+		font-weight: bold;
+	}
+	
+	.markdown-content :global(p) {
+		margin: 0.5em 0;
+	}
+	
+	.markdown-content :global(a) {
+		color: #3b82f6;
+		text-decoration: underline;
+	}
+	
+	.markdown-content :global(code) {
+		background-color: rgba(0, 0, 0, 0.1);
+		border-radius: 3px;
+		padding: 0.2em 0.4em;
+		font-family: monospace;
+	}
+	
+	.markdown-content :global(pre) {
+		background-color: rgba(0, 0, 0, 0.1);
+		border-radius: 3px;
+		padding: 1em;
+		margin: 0.5em 0;
+		overflow-x: auto;
+	}
+	
+	.markdown-content :global(blockquote) {
+		border-left: 4px solid #e2e8f0;
+		padding-left: 1em;
+		margin: 0.5em 0;
+		color: #4b5563;
+	}
+	
+	.markdown-content :global(hr) {
+		border: 0;
+		border-top: 1px solid #e2e8f0;
+		margin: 1em 0;
+	}
+</style>
 
