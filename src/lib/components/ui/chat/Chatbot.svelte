@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { socialMediaJson } from '$lib/stores/mapStore';
+	import TypingIndicator from '../loader/TypingIndicator.svelte';
+	import { MapService } from '$lib/services/map-service';
+	import { getDataFromURL } from '$lib/utils/generalUtils';
 	
 	// Chat messages state
 	interface ChatMessage {
@@ -13,13 +16,18 @@
 	let inputMessage = '';
 	let chatContainer: HTMLElement;
 	let isProcessing = false;
+	let isFirstMessage = true;
+	let apiResponse = null;
+	
+	// Initialize MapService
+	const mapService = new MapService();
 	
 	onMount(() => {
 		// Add initial welcome message
 		messages = [
 			{
 				role: 'assistant',
-				content: "Hello! I'm your map assistant. Ask me anything about the data shown on the map or how to use the features.",
+				content: "Hello! I'm your assistant. Ask me anything.",
 				timestamp: new Date()
 			}
 		];
@@ -43,23 +51,56 @@
 		// Scroll to bottom
 		setTimeout(scrollToBottom, 50);
 		
-		// Simulate AI response (replace with actual API call)
-		setTimeout(() => {
-			// Get simple response based on context
-			let response = generateResponse(userQuery);
+		if (isFirstMessage) {
+			// Get latitude and longitude from URL or default values
+			const lat = getDataFromURL('lat') || '40.6970243';
+			const lng = getDataFromURL('long') || '-74.1443116';
 			
-			messages = [
-				...messages,
-				{
-					role: 'assistant',
-					content: response,
-					timestamp: new Date()
-				}
-			];
+			// Prepare payload for API
+			const payload = {
+				message: userQuery,
+				latitude: lat,
+				longitude: lng
+			};
 			
-			isProcessing = false;
-			setTimeout(scrollToBottom, 50);
-		}, 1000);
+			// Make API call to /insights/initiate
+			mapService.getInsights(payload)
+				.then(response => {
+					// Store the API response but don't remove the typing indicator
+					apiResponse = response;
+					console.log('API response:', response);
+					
+					// Set isFirstMessage to false to avoid making the API call again
+					isFirstMessage = false;
+					
+					// Note: We're intentionally not setting isProcessing to false
+					// to keep the typing indicator visible as requested
+					
+					// We're also not adding a response message yet, as requested
+				})
+				.catch(error => {
+					console.error('API call failed:', error);
+					// Keep the typing indicator even in case of error, as requested
+				});
+		} else {
+			// For subsequent messages, use the normal response flow
+			setTimeout(() => {
+				// Get simple response based on context
+				let response = generateResponse(userQuery);
+				
+				messages = [
+					...messages,
+					{
+						role: 'assistant',
+						content: response,
+						timestamp: new Date()
+					}
+				];
+				
+				isProcessing = false;
+				setTimeout(scrollToBottom, 50);
+			}, 1000);
+		}
 	}
 	
 	function generateResponse(query: string): string {
@@ -127,7 +168,7 @@
 
 <div class="chatbot-wrapper h-full flex flex-col bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
 	<div class="px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-		<h2 class="text-lg font-bold">Map Assistant</h2>
+		<h2 class="text-lg font-bold">Assistant</h2>
 	</div>
 	
 	<div 
@@ -152,15 +193,7 @@
 		{/each}
 		
 		{#if isProcessing}
-			<div class="flex justify-start mb-4">
-				<div class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-3 rounded-lg rounded-tl-none max-w-[80%]">
-					<div class="typing-indicator">
-						<span></span>
-						<span></span>
-						<span></span>
-					</div>
-				</div>
-			</div>
+			<TypingIndicator />
 		{/if}
 	</div>
 	
@@ -170,7 +203,7 @@
 				<textarea
 					rows="1"
 					class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-					placeholder="Ask something about the map data..."
+					placeholder="Ask something..."
 					bind:value={inputMessage}
 					on:keydown={handleKeydown}
 				></textarea>
@@ -188,33 +221,3 @@
 	</div>
 </div>
 
-<style>
-	.typing-indicator {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-	}
-	
-	.typing-indicator span {
-		width: 8px;
-		height: 8px;
-		background-color: currentColor;
-		border-radius: 50%;
-		opacity: 0.6;
-		animation: typing 1.4s infinite both;
-	}
-	
-	.typing-indicator span:nth-child(2) {
-		animation-delay: 0.2s;
-	}
-	
-	.typing-indicator span:nth-child(3) {
-		animation-delay: 0.4s;
-	}
-	
-	@keyframes typing {
-		0% { opacity: 0.6; transform: scale(1); }
-		50% { opacity: 1; transform: scale(1.2); }
-		100% { opacity: 0.6; transform: scale(1); }
-	}
-</style>
