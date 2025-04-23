@@ -137,8 +137,26 @@
 			.listen('.App\\Events\\MessageReceived', (event) => {
 				console.log('Received message update:', event);
 				
-				// Refresh conversation data by calling generate API
-				refreshConversation(id);
+				 // Process the received event data
+				if (event && event.message && event.message.content) {
+					// Add the assistant response to messages
+					const assistantMessage = {
+						role: 'assistant',
+						content: event.message.content,
+						timestamp: new Date()
+					};
+					
+					messages = [...messages, assistantMessage];
+					
+					// Disable the processing indicator
+					isProcessing = false;
+					
+					// Scroll to bottom after message is added
+					setTimeout(scrollToBottom, 50);
+				} else {
+					// If no valid message content, still disable the loader
+					isProcessing = false;
+				}
 			});
 		
 		console.log(`Started listening for updates on App.Models.Conversation.${id}`);
