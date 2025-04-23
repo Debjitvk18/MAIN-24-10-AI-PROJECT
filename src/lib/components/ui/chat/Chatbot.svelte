@@ -22,17 +22,6 @@
 	// Initialize MapService
 	const mapService = new MapService();
 	
-	onMount(() => {
-		// Add initial welcome message
-		messages = [
-			{
-				role: 'assistant',
-				content: "Hello! I'm your assistant. Ask me anything.",
-				timestamp: new Date()
-			}
-		];
-	});
-	
 	function sendMessage() {
 		if (!inputMessage.trim() || isProcessing) return;
 		
@@ -83,73 +72,11 @@
 					// Keep the typing indicator even in case of error, as requested
 				});
 		} else {
-			// For subsequent messages, use the normal response flow
 			setTimeout(() => {
-				// Get simple response based on context
-				let response = generateResponse(userQuery);
-				
-				messages = [
-					...messages,
-					{
-						role: 'assistant',
-						content: response,
-						timestamp: new Date()
-					}
-				];
-				
 				isProcessing = false;
 				setTimeout(scrollToBottom, 50);
 			}, 1000);
 		}
-	}
-	
-	function generateResponse(query: string): string {
-		// Simple response generation based on the query
-		const lowerQuery = query.toLowerCase();
-		
-		// Data-aware responses
-		if ($socialMediaJson && $socialMediaJson.socialData) {
-			const platforms = $socialMediaJson.socialData.map(p => p.type);
-			const totalItems = $socialMediaJson.socialData.reduce((acc, platform) => {
-				const count = platform.count || 0;
-				return acc + count;
-			}, 0);
-			
-			if (lowerQuery.includes('how many') && 
-			   (lowerQuery.includes('result') || lowerQuery.includes('post') || 
-			    lowerQuery.includes('data'))) {
-				return `There are ${totalItems} total items across ${platforms.length} platforms in the current search.`;
-			}
-			
-			if (lowerQuery.includes('which platform') || lowerQuery.includes('what platform')) {
-				const platformNames = platforms.map(p => {
-					if (p === 'x-twitter') return 'X (Twitter)';
-					if (p === 'facebook-marketplace') return 'Facebook Marketplace';
-					return p.charAt(0).toUpperCase() + p.slice(1);
-				});
-				return `The platforms in this search include: ${platformNames.join(', ')}.`;
-			}
-		}
-		
-		// General responses
-		if (lowerQuery.includes('hello') || lowerQuery.includes('hi')) {
-			return "Hello! How can I help you with the map data today?";
-		}
-		if (lowerQuery.includes('help')) {
-			return "I can help you analyze the social media data on the map. You can ask questions like 'How many posts are there?', 'Which platforms are shown?', or 'How do I filter results?'";
-		}
-		if (lowerQuery.includes('filter')) {
-			return "You can filter map results by clicking the platform icons in the top bar to hide or show specific social media platforms.";
-		}
-		if (lowerQuery.includes('export') || lowerQuery.includes('download')) {
-			return "You can export the data by clicking the 'Export' button in the top-right corner of the map.";
-		}
-		if (lowerQuery.includes('search') || lowerQuery.includes('find')) {
-			return "To search for a location, use the search bar at the top of the map. You can enter an address, coordinates, or a place name.";
-		}
-		
-		// Default response
-		return "I'm here to help with your questions about the map data. Could you provide more details about what you're looking for?";
 	}
 	
 	function scrollToBottom() {
