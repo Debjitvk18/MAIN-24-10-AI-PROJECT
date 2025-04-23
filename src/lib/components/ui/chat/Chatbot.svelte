@@ -1,9 +1,17 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { socialMediaJson } from '$lib/stores/mapStore';
 	import TypingIndicator from '../loader/TypingIndicator.svelte';
 	import { MapService } from '$lib/services/map-service';
 	import { getDataFromURL } from '$lib/utils/generalUtils';
+	import Echo from 'laravel-echo';
+	import Pusher from 'pusher-js';
+
+	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_ECHO_PUSHER_APP_ID, PUBLIC_API_URL } from '$env/static/public'; // Removed  from here
+	import { AUTH_TOKEN } from '$lib/constants/constants';
+	
+	// Browser environment check
+	const isBrowser = typeof window !== 'undefined';
 	
 	// Chat messages state
 	interface ChatMessage {
@@ -18,6 +26,8 @@
 	let isProcessing = false;
 	let isFirstMessage = true;
 	let apiResponse = null;
+	let echoInstance = null;
+	let conversationId = null;
 	
 	// Initialize MapService
 	const mapService = new MapService();
@@ -62,10 +72,13 @@
 					// Set isFirstMessage to false to avoid making the API call again
 					isFirstMessage = false;
 					
-					// Note: We're intentionally not setting isProcessing to false
-					// to keep the typing indicator visible as requested
-					
-					// We're also not adding a response message yet, as requested
+					 // Capture the conversation_id from the response
+					if (response && response.success && response.conversation_id) {
+						conversationId = response.conversation_id;
+						
+						// Initialize Echo and listen for updates on this conversation
+						setupEchoListener(conversationId);
+					}
 				})
 				.catch(error => {
 					console.error('API call failed:', error);
@@ -76,6 +89,103 @@
 				isProcessing = false;
 				setTimeout(scrollToBottom, 50);
 			}, 1000);
+		}
+	}
+	
+	function setupEchoListener(id) {
+		 // Only run in browser environment
+		if (!isBrowser) {
+			return;
+		}
+		
+		// Clean up any existing listener
+		cleanupEchoListener();
+		
+		// Initialize new Echo instance if needed
+		if (!echoInstance) {
+			let authToken = localStorage.getItem(AUTH_TOKEN) || false;
+			console.log('Auth token:', authToken);
+			console.log('PUBLIC_API_URL', PUBLIC_API_URL);
+
+			window.Pusher = Pusher;
+			echoInstance = new Echo({
+				broadcaster: PUBLIC_ECHO_BROADCASTER, // Use environment variable instead of hardcoded value
+				key: PUBLIC_VITE_PUSHER_APP_KEY,
+				cluster: PUBLIC_VITE_PUSHER_APP_CLUSTER,
+				auth: {
+					headers: {
+						Authorization: `Bearer ${authToken}`,
+						'Accept': 'application/json'
+					},
+					withCredentials: true
+				},
+				authEndpoint: PUBLIC_API_URL+'/broadcasting/auth',
+				encrypted: PUBLIC_ECHO_PUSHER_ENCRYPTED === 'true',
+				disableStats: true,
+				wsHost: PUBLIC_ECHO_PUSHER_HOST,
+				wsPort: PUBLIC_ECHO_PUSHER_PORT,
+				wssPort: PUBLIC_ECHO_PUSHER_PORT,
+				forceTLS: PUBLIC_ECHO_PUSHER_SCHEME === 'https',
+				enabledTransports: ['ws', 'wss']
+			});
+
+			console.log('Echo instance initialized:', echoInstance);
+		}
+		
+		// Listen for updates on this conversation channel
+		echoInstance.private(`App.Models.Conversation.${id}`)
+			.listen('.App\\Events\\MessageReceived', (event) => {
+				console.log('Received message update:', event);
+				
+				// Refresh conversation data by calling generate API
+				refreshConversation(id);
+			});
+		
+		console.log(`Started listening for updates on App.Models.Conversation.${id}`);
+	}
+	
+	function refreshConversation(id) {
+		// Call the generate API to get latest conversation data
+		mapService.getPromptInsights({}, id)
+			.then(response => {
+				console.log('Conversation refreshed:', response);
+				
+				// Update conversation list/UI with new data
+				if (response && response.success) {
+					// Handle the updated conversation data
+					// This would typically update the messages array with new content
+					
+					// For now, just showing the AI is no longer processing
+					isProcessing = false;
+					
+					// Add AI response if available
+					if (response.message) {
+						const assistantMessage = {
+							role: 'assistant',
+							content: response.message,
+							timestamp: new Date()
+						};
+						
+						messages = [...messages, assistantMessage];
+						setTimeout(scrollToBottom, 50);
+					}
+				}
+			})
+			.catch(error => {
+				console.error('Error refreshing conversation:', error);
+			});
+	}
+	
+	function cleanupEchoListener() {
+		 // Only run in browser environment
+		if (!isBrowser) {
+			return;
+		}
+		
+		// Clean up Echo listener when component unmounts or conversation changes
+		if (echoInstance && conversationId) {
+			echoInstance.leave(`conversation.${conversationId}`);
+			console.log(`Stopped listening on conversation.${conversationId}`);
 		}
 	}
 	
@@ -91,6 +201,16 @@
 			sendMessage();
 		}
 	}
+	
+	onMount(() => {
+		// Any initialization that requires the window object should be here
+
+	});
+	
+	onDestroy(() => {
+		// Clean up Echo listener when component unmounts
+		cleanupEchoListener();
+	});
 </script>
 
 <div class="chatbot-wrapper h-full flex flex-col bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
