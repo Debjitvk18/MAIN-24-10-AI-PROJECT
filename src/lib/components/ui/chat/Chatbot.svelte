@@ -72,9 +72,9 @@
 		setTimeout(scrollToBottom, 50);
 		
 		if (isFirstMessage) {
-			// Get latitude and longitude from URL or default values
-			const lat = getDataFromURL('lat') || '40.6970243';
-			const lng = getDataFromURL('long') || '-74.1443116';
+			// Get latitude and longitude from local storage or default values
+			const lat = localStorage.getItem('lat') || '40.6970243';
+			const lng = localStorage.getItem('lng') || '-74.1443116';
 			
 			// Prepare payload for API
 			const payload = {
