@@ -394,6 +394,445 @@
 			});
 
 			geocoder.on('result', async (event: any) => {
+				if (event.result && event.result.center) {
+					// reload url, when user re-search location
+					if($mapDataLoaded === true) {
+						putDataInURL('search', event.result.place_name);
+						window.location.reload();
+						return;
+					}
+					mapDataLoaded.set(false);
+					resetMap(map, mapMarker);
+
+					// Clear previous markers
+					Object.keys(markers).forEach((key) => {
+						markers[key].forEach((marker) => marker.remove());
+					});
+					markers = {};
+
+					// Clear previous markers
+					Object.keys(markers).forEach((key) => {
+						markers[key].forEach((marker) => marker.remove());
+					});
+					markers = {};
+
+					// Reset visibility
+					SOCIAL_MEDIA_PLATFORMS.forEach(({ slug }) => {
+						visibility.update((state) => ({ ...state, [slug]: false }));
+					});
+
+					// Set loading state
+					SOCIAL_MEDIA_PLATFORMS.forEach(({ slug }) => {
+						dataLoadingState.update((state) => ({ ...state, [slug]: 'loading' }));
+					});
+
+					// extract lat/lng, address
+					const address = event.result.place_name;
+					const [lng, lat] = event.result.center;
+
+					// update url
+					putDataInURL('search', address);
+					putDataInURL('lat', lat);
+					putDataInURL('long', lng);
+
+					// Fly to a new location
+					map.flyTo({
+						center: [lng, lat],
+						zoom: 14,
+						essential: true // make animation smooth
+					});
+
+					// Add pulsing dot effect
+					addPulsingDotAnimation(map, [lng, lat]);
+
+					// Create radius circle
+					circle = addCircleRadius(map, [lng, lat], turf, radiusValueInMeters);
+
+					map.addControl(createResetMapControl(), 'top-right');
+
+					// Prepare payload for API request
+					let payload = {
+						address,
+						latitude: lat,
+						longitude: lng,
+						features: SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => slug)
+					};
+
+					// Use features from URL if available
+					if (getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
+						payload.features = getDataFromURL('features[]');
+					}
+
+					if (getDataFromURL('radius')) {
+						payload.radius = getDataFromURL('radius');
+					}
+
+					if (getDataFromURL('resolution')) {
+						payload.resolution = getDataFromURL('resolution');
+					}
+
+					if (getDataFromURL('timeframe')) {
+						payload.timeframe = getDataFromURL('timeframe');
+						if (payload.timeframe === 'custom') {
+							payload.from = getDataFromURL('from');
+							payload.to = getDataFromURL('to');
+						}
+					}
+
+					// xFilters from url
+					// check if features are in url and contains x-twitter
+					if (payload.features && payload.features.includes('x-twitter')) {
+						if (getDataFromURL('xKeywords')) {
+							payload.xKeywords = getDataFromURL('xKeywords');
+						}
+						if (getDataFromURL('xUsernames')) {
+							payload.xUsernames = getDataFromURL('xUsernames');
+						}
+						if (getDataFromURL('xPostTypes[]') && getDataFromURL('xPostTypes[]').length > 0) {
+							payload.xPostTypes = getDataFromURL('xPostTypes[]');
+						}
+					} else {
+						removeDataFromURL('xKeywords');
+						removeDataFromURL('xUsernames');
+						removeDataFromURL('xPostTypes[]');
+					}
+
+					// Facebook filters from url
+					// check if features are in url and contains facebook
+					if (payload.features && payload.features.includes('facebook')) {
+						if (getDataFromURL('fbKeywords')) {
+							payload.fbKeywords = getDataFromURL('fbKeywords');
+						}
+						if (getDataFromURL('fbPostTypes[]') && getDataFromURL('fbPostTypes[]').length > 0) {
+							payload.fbPostTypes = getDataFromURL('fbPostTypes[]');
+
+							if (payload.fbPostTypes.includes('posts')) {
+								payload.fbPublicPosts = getDataFromURL('fbPublicPosts');
+								payload.fbRecentPosts = getDataFromURL('fbRecentPosts');
+							}
+
+							if (payload.fbPostTypes.includes('users')) {
+								payload.fbEducationId = getDataFromURL('fbEducationId');
+								payload.fbWorkId = getDataFromURL('fbWorkId');
+							}
+
+							if (payload.fbPostTypes.includes('pages')) {
+								payload.fbCategoryId = getDataFromURL('fbCategoryId');
+							}
+						}
+					} else {
+						removeDataFromURL('fbKeywords');
+						removeDataFromURL('fbPostTypes[]');
+						removeDataFromURL('fbPublicPosts');
+						removeDataFromURL('fbRecentPosts');
+						removeDataFromURL('fbEducationId');
+						removeDataFromURL('fbWorkId');
+						removeDataFromURL('fbCategoryId');
+					}
+
+					// Facebook Marketplace filters from url
+					// check if features are in url and contains facebook-marketplace
+					if (payload.features && payload.features.includes('facebook-marketplace')) {
+						if (getDataFromURL('fbmKeywords')) {
+							payload.fbmKeywords = getDataFromURL('fbmKeywords');
+						}
+
+						if (getDataFromURL('fbmCategoryId') && getDataFromURL('fbmCategoryId').length > 0) {
+							payload.fbmCategoryId = getDataFromURL('fbmCategoryId');
+						}
+
+						if (getDataFromURL('fbmMinPrice')) {
+							payload.fbmMinPrice = getDataFromURL('fbmMinPrice');
+						}
+
+						if (getDataFromURL('fbmMaxPrice')) {
+							payload.fbmMaxPrice = getDataFromURL('fbmMaxPrice');
+						}
+
+						if (getDataFromURL('fbmSort')) {
+							payload.fbmSort = getDataFromURL('fbmSort');
+						}
+					} else {
+						removeDataFromURL('fbmKeywords');
+						removeDataFromURL('fbmCategoryId');
+						removeDataFromURL('fbmMinPrice');
+						removeDataFromURL('fbmMaxPrice');
+						removeDataFromURL('fbmSort');
+					}
+
+					let searchId = 0;
+					if (!request_id && !reqId) {
+						// Fetch data
+						const response = await mapService.getMapResults(payload);
+						if (!response.success) {
+							// show MapError Dialog
+							showErrorDialog = true;
+							errorResponse = response;
+							return false;
+						}
+
+						searchId = response.search_id;
+					}
+
+					if (reqId && reqId > 0) {
+						searchId = reqId;
+					}
+
+					if (request_id && request_id > 0) {
+						searchId = request_id;
+					}
+
+					// Show sidebar
+					showSidebar = true;
+					isSidebarVisible = true;
+
+					centerMapOnCircle();
+
+					if (searchId < 1) {
+						// show MapError Dialog
+						showErrorDialog = true;
+						errorResponse = {
+							success: false,
+							message: 'No search results found.',
+							error: 'No search results found.'
+						};
+						return false;
+					}
+
+					searchRequestID.set(Number(searchId));
+
+					// Start SSE
+					const source = new EventSource(`${API_BASE_URL}map/search-sse/${searchId}`);
+					let socialData = [];
+
+					let addedPostIds = [];
+					// update the respective state for each platform.
+					SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => {
+						// Clear existing markers for the platform before adding new ones
+						if (markers[slug]) {
+							markers[slug].forEach((marker) => marker.remove());
+						}
+						markers[slug] = [];
+
+						let markersForType: mapboxgl.Marker[] = [];
+
+						source.addEventListener(slug, function (e) {
+							// update loading state
+							dataLoadingState.update((state) => ({ ...state, [slug]: 'done' }));
+
+							// Parse data to display
+							const data = JSON.parse(e.data);
+
+							const parsedData = parseSocialMediaResponse(data, slug);
+							socialData.push(parsedData);
+							socialMediaJson.update((state) => {
+								const updatedSocialData = [...(state.socialData || []), parsedData];
+								return { ...state, socialData: updatedSocialData };
+							});
+
+							// Visibility
+							visibility.update((state) => ({ ...state, [slug]: true }));
+
+							// Add markers
+							socialData.forEach(({ type, count, posts }) => {
+								if (slug !== type) return;
+
+								let pointsAdded = 0;
+								if (slug === 'x-twitter') {
+									const twitterPosts = Object.entries(posts);
+									twitterPosts[0][1].forEach((post) => {
+										if (slug !== type) return;
+										if (addedPostIds.includes(post.id)) return false;
+
+										const randomPoints = generateRandomValidPoints(1, circle);
+										const randomPoint = randomPoints[0];
+										if (randomPoint && randomPoint.length === 2) {
+											const mapIcon = post?.historical
+												? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+														?.mapIconHistorical
+												: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+														?.mapIcon;
+											markersForType[post.id] = createMarker(
+												mapIcon,
+												[randomPoint[0], randomPoint[1]] as [number, number],
+												$visibility[slug],
+												post
+											);
+											pointsAdded++;
+
+											addedPostIds.push(post.id);
+										}
+									});
+									markers[type] = markersForType;
+								} else if (slug === 'facebook') {
+									const fbPosts = Object.entries(posts);
+									if (!fbPosts.length) return;
+									fbPosts[0][1].forEach((post) => {
+										if (slug !== type) return;
+										if (addedPostIds.includes(post.id)) return false;
+
+										const randomPoints = generateRandomValidPoints(1, circle);
+										const randomPoint = randomPoints[0];
+										if (randomPoint && randomPoint.length === 2) {
+											const mapIcon = post?.historical
+												? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+														?.mapIconHistorical
+												: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+														?.mapIcon;
+											markersForType[post.id] = createMarker(
+												mapIcon,
+												[randomPoint[0], randomPoint[1]] as [number, number],
+												$visibility[slug],
+												post
+											);
+											pointsAdded++;
+
+											addedPostIds.push(post.id);
+										}
+									});
+									markers[type] = markersForType;
+								} else if (slug === 'facebook-marketplace') {
+									if (!posts.length) return;
+									posts.forEach((post) => {
+										if (post && pointsAdded < count) {
+											if (addedPostIds.includes(post.id)) return false;
+
+											const randomPoints = generateRandomValidPoints(1, circle);
+											const randomPoint = randomPoints[0];
+											if (randomPoint && randomPoint.length === 2) {
+												const mapIcon = post?.historical
+													? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+															?.mapIconHistorical
+													: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+															?.mapIcon;
+												markersForType[post.id] = createMarker(
+													mapIcon,
+													[randomPoint[0], randomPoint[1]] as [number, number],
+													$visibility[slug],
+													post
+												);
+												pointsAdded++;
+
+												addedPostIds.push(post.id);
+											}
+										}
+									});
+									markers[type] = markersForType;
+								} else {
+									const validPosts = filterValidPosts(posts, circle);
+									validPosts.forEach((post) => {
+										if (post && pointsAdded < count) {
+											const mapIcon = post?.historical
+												? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+														?.mapIconHistorical
+												: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+														?.mapIcon;
+											markersForType[post.id] = createMarker(
+												mapIcon,
+												[post.lng, post.lat],
+												$visibility[slug],
+												post
+											);
+
+											pointsAdded++;
+										}
+									});
+
+									const invalidPosts = posts.filter(
+										(post) => post && !validPosts.some((validPost) => validPost.id === post.id)
+									);
+									invalidPosts.forEach((post) => {
+										if (slug !== type) return;
+										if (post && pointsAdded < count) {
+											const randomPoints = generateRandomValidPoints(1, circle);
+											const randomPoint = randomPoints[0];
+											if (randomPoint && randomPoint.length === 2) {
+												const mapIcon = post?.historical
+													? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+															?.mapIconHistorical
+													: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+															?.mapIcon;
+												markersForType[post.id] = createMarker(
+													mapIcon,
+													[randomPoint[0], randomPoint[1]] as [number, number],
+													$visibility[slug],
+													post
+												);
+												pointsAdded++;
+											}
+										}
+									});
+
+									markers[type] = markersForType;
+								}
+							});
+						});
+
+						// Handle errors
+						source.addEventListener(`${slug}_error`, function (e) {
+							dataLoadingState.update((state) => ({ ...state, [slug]: 'error' }));
+						});
+					});
+
+					// SSE global error handler
+					source.addEventListener('error', function (e) {
+						const data = JSON.parse(e.data);
+						source.close();
+						showErrorDialog = true;
+						errorResponse = {
+							success: false,
+							message: data.message,
+							error: data.error
+						};
+
+						return false;
+					});
+
+					// SSE complete event
+					source.addEventListener('done', function (e) {
+						// close the SSE
+						source.close();
+
+						// show button to export the data into the JSON
+						mapDataLoaded.set(true);
+
+						// notify user that, request fetching is done.
+						toast('🚀 All set! Explore the data now.', { position: 'bottom-center' });
+
+						// Add Static dot to indicate that the response is complete.
+						map.addSource('static-dot', {
+							type: 'geojson',
+							data: {
+								type: 'FeatureCollection',
+								features: [
+									{
+										type: 'Feature',
+										geometry: {
+											type: 'Point',
+											coordinates: [lng, lat] // Longitude, latitude
+										},
+										properties: {}
+									}
+								]
+							}
+						});
+						map.addLayer({
+							id: 'static-dot-layer',
+							source: 'static-dot',
+							type: 'circle',
+							paint: {
+								'circle-radius': 10,
+								'circle-color': MAP_PRIMARY_COLOR,
+								width: 200,
+								height: 200
+							}
+						});
+
+						// Remove the animation dot
+						map.removeLayer('layer-with-pulsing-dot');
+					});
+				}
+
 				// mapDataLoaded.set(true); // show icons to export data
 				isSidebarVisible = true; // show sidebar wrapper
 				showSidebar = true; // show the content inside the sidebar
