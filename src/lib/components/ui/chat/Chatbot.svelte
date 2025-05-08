@@ -259,10 +259,44 @@
 			sendMessage();
 		}
 	}
+
+	// Get query parameter from URL function
+	function getQueryParam() {
+		if (!isBrowser) return null;
+		const urlParams = new URLSearchParams(window.location.search);
+		return urlParams.get('query');
+	}
+
+	async function processQueryParamOnMount() {
+        const queryParam = getQueryParam();
+        if (queryParam && queryParam.trim() !== '') {
+			// remove the query parameter from the URL
+			const url = new URL(window.location.href);
+			url.searchParams.delete('query');
+			window.history.replaceState({}, document.title, url.toString());
+
+            // Set the textarea value
+            inputMessage = queryParam;
+            
+            // Wait for the next tick to ensure the DOM is updated
+            await tick();
+            
+            // Resize textarea to fit content
+            resizeTextarea();
+            
+            // Auto-submit after a short delay to ensure everything is rendered
+            setTimeout(() => {
+                sendMessage();
+            }, 500);
+        }
+    }
 	
-	onMount(() => {
+	onMount(async () => {
 		// Resize textarea initially
 		resizeTextarea();
+
+		// Process URL query parameter if present
+        await processQueryParamOnMount();
 	});
 	
 	onDestroy(() => {
