@@ -183,6 +183,12 @@
 			fileLoader = false;
 		}
 	}
+
+	function adjustTextareaHeight(event) {
+		const textarea = event.target;
+		textarea.style.height = 'auto';
+		textarea.style.height = textarea.scrollHeight + 'px';
+	}
 </script>
 
 <section class="bg-white bg-gradient-to-b from-blue-50 to-blue-100">
@@ -282,8 +288,15 @@
 			class="grid max-w-screen-xl text-center xl:text-left px-4 py-8 mx-auto lg:gap-8 gap-8 xl:gap-0 lg:py-[100px] lg:pt-[60px] lg:pb-[130px] lg:grid-cols-12"
 		>
 			<div class="place-self-center lg:col-span-6 h-auto md:h-[350px] lg:h-[350px]">
-				<Tabs.Root value="address">
+				<Tabs.Root value="agent">
 					<Tabs.List class="mb-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+						<Tabs.Trigger
+							value="agent"
+							class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+						>
+							Search by Agent
+						</Tabs.Trigger>
+
 						<Tabs.Trigger
 							value="address"
 							class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
@@ -299,6 +312,44 @@
 						</Tabs.Trigger>
 					</Tabs.List>
 
+					<Tabs.Content value="agent">
+						<h1
+							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl"
+						>
+							Live Market Location Intelligence
+						</h1>
+						<h2
+							class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600"
+						>
+							Leverage advanced location analytics to gain real-time insights, optimize site
+							selection, understand customer behavior, and drive data-driven growth.
+						</h2>
+						<form class="max-w-full xl:max-w-md">
+							<label class="mb-2 text-sm font-medium text-gray-900 sr-only" for="default-search">
+								Search
+							</label>
+						
+							<div class="relative w-full">
+								<textarea
+									autocomplete="off"
+									class="block p-4 pr-14 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-0 placeholder-gray-500 resize-none overflow-hidden leading-normal"
+									id="location-input"
+									required
+									placeholder="Find all sushi restaurant near my location within 5KM radius"
+									rows="1"
+									on:input={adjustTextareaHeight}
+								></textarea>
+								<button
+									class="absolute right-0 top-0 p-4 text-sm font-medium text-white bg-[#2C7BE5] rounded-r-lg border-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 h-[calc(100%-0px)]"
+									disabled
+									type="submit"
+								>
+									<Icon class="w-6 h-6" icon="ic:sharp-search" />
+									<span class="sr-only">Search</span>
+								</button>
+							</div>
+						</form>
+					</Tabs.Content>
 					<Tabs.Content value="address">
 						<h1
 							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl"
