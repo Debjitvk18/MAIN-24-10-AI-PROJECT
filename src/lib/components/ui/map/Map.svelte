@@ -58,6 +58,7 @@
 	import MapExportJson from '$lib/components/ui/map/MapExportJson.svelte';
 	import MapDataInsights from './MapDataInsights.svelte';
 	import { user } from '$lib/stores/authStore';
+	import { getUserLocation } from '$lib/utils/locationUtils';
 
 	// Default Data...
 	let showLoadingOverlay = false;
@@ -295,34 +296,26 @@
 
 		mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
 
-		if (navigator.geolocation) {
-			navigator.geolocation.getCurrentPosition(successLocation, errorLocation, {
-			enableHighAccuracy: true
-			});
-		} else {
-			alert('Geolocation is not supported by your browser');
-		}
+		getUserLocation()
+            .then(position => {
+                const lng = position.coords.longitude;
+                const lat = position.coords.latitude;
+                const coords = [lng, lat];
+                
+                // Center map and add marker
+                map.setCenter(coords);
+                map.setZoom(14);
 
-		// Define successLocation before it's used
-		function successLocation(position) {
-			const lng = position.coords.longitude;
-			const lat = position.coords.latitude;
-			const coords = [lng, lat];
-			
-			// Center map and add marker
-			map.setCenter(coords);
-			map.setZoom(14);
+                new mapboxgl.Marker().setLngLat(coords).addTo(map);
 
-			new mapboxgl.Marker().setLngLat(coords).addTo(map);
-
-			const coordinatesString = `${lng},${lat}`;
-			geocoder.setInput(coordinatesString);
-			geocoder.query(coordinatesString);
-		}
-
-		function errorLocation() {
-			alert('Unable to retrieve your location');
-		}
+                const coordinatesString = `${lng},${lat}`;
+                geocoder.setInput(coordinatesString);
+                geocoder.query(coordinatesString);
+            })
+            .catch(error => {
+                console.error("Geolocation error:", error.message);
+                alert('Unable to retrieve your location: ' + error.message);
+            });
 
 		map = new mapboxgl.Map({
 			container: mapContainer, // Container ID

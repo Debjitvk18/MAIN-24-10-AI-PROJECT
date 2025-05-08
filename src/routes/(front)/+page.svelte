@@ -22,12 +22,31 @@
 	import Partners from '$lib/components/ui/home/Partners.svelte';
 	import Insight from '$lib/components/ui/home/Insight.svelte';
 	import Poi from '$lib/components/ui/home/Poi.svelte';
+	import { getUserLocation } from '$lib/utils/locationUtils';
 
 	// Function to fetch location suggestions
 
 	let chart;
+	
+	let agentQuery = "";
+	let agentLat = null;
+	let agentLong = null;
+	
 
 	onMount(async () => {
+		getUserLocation()
+            .then(position => {
+                agentLong = position.coords.longitude;
+                agentLat = position.coords.latitude;
+				console.log('Longitude:', agentLong);
+				console.log('Latitude:', agentLat);
+				localStorage.setItem('lat', agentLat);
+				localStorage.setItem('lng', agentLong);
+			})
+			.catch(error => {
+				console.error("Geolocation error:", error.message);
+                alert('Unable to retrieve your location: ' + error.message);
+			});
 		if (typeof window !== 'undefined') {
 			const { default: ApexCharts } = await import('apexcharts');
 
@@ -189,6 +208,20 @@
 		textarea.style.height = 'auto';
 		textarea.style.height = textarea.scrollHeight + 'px';
 	}
+
+
+	function handleAgentSearch() {
+		agentQuery = document.getElementById('location-input').value;
+		if(!agentQuery) {
+			toast.error('Please enter a search query');
+			return;
+		}
+		if (!agentLat || !agentLong) {
+			agentLat = localStorage.getItem('lat') || null;
+			agentLong = localStorage.getItem('lng') || null;
+		}
+		window.location.href = `/try-demo?query=${agentQuery}&lat=${agentLat}&long=${agentLong}`;
+	}
 </script>
 
 <section class="bg-white bg-gradient-to-b from-blue-50 to-blue-100">
@@ -340,9 +373,9 @@
 									on:input={adjustTextareaHeight}
 								></textarea>
 								<button
+									on:click={handleAgentSearch}
 									class="absolute right-0 top-0 p-4 text-sm font-medium text-white bg-[#2C7BE5] rounded-r-lg border-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 h-[calc(100%-0px)]"
-									disabled
-									type="submit"
+									type="button"
 								>
 									<Icon class="w-6 h-6" icon="ic:sharp-search" />
 									<span class="sr-only">Search</span>
