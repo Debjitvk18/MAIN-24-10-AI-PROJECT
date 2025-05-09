@@ -512,7 +512,7 @@
 					// Create radius circle
 					circle = addCircleRadius(map, [lng, lat], turf, radiusValueInMeters);
 
-					map.addControl(createResetMapControl(), 'top-right');
+					// map.addControl(createResetMapControl(), 'top-right');
 
 					let searchId = 0;
 					if(mode !== "agent") {

@@ -388,7 +388,7 @@
 									class="block p-4 pr-14 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-0 placeholder-gray-500 resize-none overflow-hidden leading-normal"
 									id="location-input"
 									required
-									placeholder="Find all sushi restaurant near my location within 5KM radius"
+									placeholder="Please enter your query..."
 									rows="1"
 									on:input={adjustTextareaHeight}
 								></textarea>
