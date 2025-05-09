@@ -232,9 +232,10 @@
 				agentLong = data.features[0].center[0];
 				
 				place = data.features[0].place_name; // Store the place name
-				toast.success(`Location found: ${place}`); // Notify user of the found location
+				// toast.success(`Location found: ${place}`); // Notify user of the found location
 			} else {
-				toast.error('No location found');
+				console.log('No location found with the given coordinates');
+				// toast.error('No location found');
 				return;
 			}
 
