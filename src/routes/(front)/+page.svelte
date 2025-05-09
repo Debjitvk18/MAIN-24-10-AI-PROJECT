@@ -23,6 +23,7 @@
 	import Insight from '$lib/components/ui/home/Insight.svelte';
 	import Poi from '$lib/components/ui/home/Poi.svelte';
 	import { getUserLocation } from '$lib/utils/locationUtils';
+	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 
 	// Function to fetch location suggestions
 
@@ -220,7 +221,25 @@
 			agentLat = localStorage.getItem('lat') || null;
 			agentLong = localStorage.getItem('lng') || null;
 		}
-		window.location.href = `/try-demo?query=${agentQuery}&lat=${agentLat}&long=${agentLong}&mode=agent`;
+
+		let place = "";
+
+		fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${agentLong},${agentLat}.json?access_token=${PUBLIC_MAPBOX_ACCESS_TOKEN}`)
+		.then(res => res.json())
+		.then(data => {
+			if (data.features && data.features.length > 0) {
+				agentLat = data.features[0].center[1];
+				agentLong = data.features[0].center[0];
+				
+				place = data.features[0].place_name; // Store the place name
+				toast.success(`Location found: ${place}`); // Notify user of the found location
+			} else {
+				toast.error('No location found');
+				return;
+			}
+
+			window.location.href = `/try-demo?query=${agentQuery}&lat=${agentLat}&long=${agentLong}&mode=agent&search=${place}`;
+		});
 	}
 </script>
 

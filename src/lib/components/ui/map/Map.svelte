@@ -128,9 +128,18 @@
 	$: request_id = getDataFromURL('request_id');
 	$: if(hasMounted && mode === 'agent' && request_id > 0) {
 		console.log('request_id', request_id);
-		geocoder.setInput(formatCoordinates(reqLong, reqLat));
-		geocoder.query(formatCoordinates(reqLong, reqLat));
-		
+				
+		const search = getDataFromURL('search');
+		// Handle search query if it exists
+		if (search) {
+			geocoder.setInput(search);
+			geocoder.query(search);
+		} else {
+			geocoder.setInput(formatCoordinates(reqLong, reqLat));
+			geocoder.query(formatCoordinates(reqLong, reqLat));
+		}
+
+
 		// Store coordinates in localStorage
 		localStorage.setItem('lat', reqLat);
 		localStorage.setItem('lng', reqLong);
@@ -347,12 +356,20 @@
 
                 new mapboxgl.Marker().setLngLat(coords).addTo(map);
 
-                geocoder.setInput(formatCoordinates(lng, lat));
-				geocoder.query(formatCoordinates(lng, lat));
+				const search = getDataFromURL('search');
                 
                 // Store coordinates in localStorage
                 localStorage.setItem('lat', lat);
                 localStorage.setItem('lng', lng);
+
+                // Handle search query if it exists
+                if (search) {
+                    geocoder.setInput(search);
+                    geocoder.query(search);
+                } else {
+					geocoder.setInput(formatCoordinates(lng, lat));
+					geocoder.query(formatCoordinates(lng, lat));
+				}
             })
             .catch(error => {
                 console.error("Geolocation error:", error.message);
