@@ -920,17 +920,48 @@
 			});
 
 			const handleResults = (event) => {
-				const firstSuggestion = event.features[0];
-				if(undefined === firstSuggestion) {
+				// First check if we have results
+				if (!event.features || event.features.length === 0) {
 					return;
 				}
-				geocoder.setInput(firstSuggestion.place_name);
-				geocoder.query(firstSuggestion.place_name);
+				
+				// Remove the event handler immediately to prevent recursion
 				geocoder.off('results', handleResults);
-			};
+				
+				const firstSuggestion = event.features[0];
+				
+				// Set input but don't trigger additional queries
+				geocoder.setInput(firstSuggestion.place_name);
+				
+				// Hide the suggestions dropdown immediately
+				const suggestionsEl = document.querySelector('.mapboxgl-ctrl-geocoder .suggestions');
+				if (suggestionsEl) {
+					suggestionsEl.style.display = 'none';
+				}
+				
+				// Debounce the actual selection to avoid too many API calls
+				clearTimeout(window._geocoderTimeout);
+				window._geocoderTimeout = setTimeout(() => {
+					// Create a simplified result object
+					const resultEvent = {
+					result: {
+						place_name: firstSuggestion.place_name,
+						center: firstSuggestion.center,
+						geometry: firstSuggestion.geometry,
+						properties: firstSuggestion.properties,
+						id: firstSuggestion.id,
+						text: firstSuggestion.text
+					}
+					};
+					
+					// Trigger the result event manually
+					geocoder._eventEmitter.emit('result', resultEvent);
+				}, 300); // Add a delay to prevent rapid API calls
+				};
 
-			geocoder.off('results', handleResults);
-			geocoder.on('results', handleResults);
+				// Set up the event handler when needed, not continuously
+				geocoder.off('results', handleResults);
+				geocoder.on('results', handleResults);
 	}
 
 	onDestroy(() => {
