@@ -7,6 +7,7 @@
 	import Echo from 'laravel-echo';
 	import Pusher from 'pusher-js';
 	import { marked } from 'marked';
+	import { goto } from '$app/navigation';
 
 	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_ECHO_PUSHER_APP_ID, PUBLIC_API_URL } from '$env/static/public'; 
 	import { AUTH_TOKEN } from '$lib/constants/constants';
@@ -96,6 +97,20 @@
 					 // Capture the conversation_id from the response
 					if (response && response.success && response.conversation_id) {
 						conversationId = response.conversation_id;
+
+						// get all query parameters from the URL
+						const lat = getDataFromURL('lat');
+						const lng = getDataFromURL('long');
+						const mode = "agent";
+						const requestId = response.request_id;
+						const search = getDataFromURL('search');
+
+
+						// // pass the request_id to the url
+						// const url = new URL(window.location.href);
+						// url.searchParams.set('request_id', response.request_id);
+						// window.history.replaceState({}, document.title, url.toString());
+						goto(`?mode=agent&lat=${lat}&long=${lng}&request_id=${response.request_id}&search=${search}`, { replaceState: true, keepfocus: true, noscroll: true });
 						
 						// Initialize Echo and listen for updates on this conversation
 						setupEchoListener(conversationId);

@@ -68,6 +68,7 @@
 	let circle;
 	let map: mapboxgl.Map;
 	let mapContainer: HTMLElement;
+	let geocoder: MapboxGeocoder; // Declare geocoder variable
 	let showSidebar = false;
 	let reqId: number;
 	let reqLat: number;
@@ -75,6 +76,14 @@
 	let request_id: number;
 	let showErrorDialog = false;
 	let errorResponse = {};
+
+	let lastSseId = 0;
+
+	const rawRadius = getDataFromURL('radius');
+	const radiusValue = [parseInt(rawRadius, 10) || 1];
+	const radiusValueInMeters = radiusValue[0] * 1000;
+
+	let hasMounted = false;
 
 	dataLoadingState.set(
 		Object.fromEntries(SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => [slug, 'initial']))
@@ -114,6 +123,25 @@
 		// save request id to store, to use in the save search popup.
 		searchRequestID.set(Number(request_id || reqId));
 	});
+
+	$: mode = getDataFromURL('mode');
+	$: request_id = getDataFromURL('request_id');
+	$: if(hasMounted && mode === 'agent' && request_id > 0) {
+		console.log('request_id', request_id);
+		const coordinatesString = `${reqLong},${reqLat}`;
+		console.log("coordinatesString", coordinatesString);
+		geocoder.setInput(coordinatesString);
+		console.log("geocoder.setInput - done");
+		geocoder.query(coordinatesString);
+		console.log("geocoder.query - done");
+		
+		// Store coordinates in localStorage
+		localStorage.setItem('lat', reqLat);
+		localStorage.setItem('lng', reqLong);
+		console.log("local set - done");
+		renderGeocoder();
+		console.log("geocoder end - done");
+	}
 
 	/**
 	 * Creates a custom style switcher control for a Mapbox map, allowing users
@@ -290,12 +318,27 @@
 	onMount(() => {
 		mapDataLoaded.set(false);
 
-		const rawRadius = getDataFromURL('radius');
-		const radiusValue = [parseInt(rawRadius, 10) || 1];
-		const radiusValueInMeters = radiusValue[0] * 1000;
-
 		mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
 
+		map = new mapboxgl.Map({
+			container: mapContainer, // Container ID
+			style: 'mapbox://styles/mapbox/streets-v12', // Map style to use
+			center: [-122.25948, 37.87221], // Starting position [lng, lat]
+			zoom: 12 // Starting zoom level
+		});
+
+	
+		geocoder = new MapboxGeocoder({
+			accessToken: mapboxgl.accessToken,
+			localGeocoder: parseCoordinates,
+			mapboxgl: mapboxgl,
+			marker: false,
+			placeholder: 'Search by lng,lat or address...'
+		});
+
+		map.addControl(geocoder);
+
+		// Now that map and geocoder exist, we can handle getUserLocation
 		getUserLocation()
             .then(position => {
                 const lng = position.coords.longitude;
@@ -311,30 +354,16 @@
                 const coordinatesString = `${lng},${lat}`;
                 geocoder.setInput(coordinatesString);
                 geocoder.query(coordinatesString);
+                
+                // Store coordinates in localStorage
+                localStorage.setItem('lat', lat);
+                localStorage.setItem('lng', lng);
             })
             .catch(error => {
                 console.error("Geolocation error:", error.message);
                 alert('Unable to retrieve your location: ' + error.message);
             });
 
-		map = new mapboxgl.Map({
-			container: mapContainer, // Container ID
-			style: 'mapbox://styles/mapbox/streets-v12', // Map style to use
-			center: [-122.25948, 37.87221], // Starting position [lng, lat]
-			zoom: 12 // Starting zoom level
-		});
-
-		const geocoder = new MapboxGeocoder({
-			accessToken: mapboxgl.accessToken,
-			localGeocoder: parseCoordinates,
-			mapboxgl: mapboxgl,
-			marker: false,
-			placeholder: 'Search by lng,lat or address...'
-		});
-
-		map.addControl(geocoder);
-
-		// add control to switch between map and satellite view
 		map.addControl(
 			new mapboxgl.NavigationControl({
 				showCompass: false,
@@ -386,8 +415,44 @@
 				}
 			});
 
-			geocoder.on('result', async (event: any) => {
+			hasMounted = true;
+
+			renderGeocoder();
+
+			if (searchQuery) {
+				geocoder.query(searchQuery);
+				const activeSuggestion = document.querySelector('.suggestions');
+				if (activeSuggestion) {
+					setTimeout(() => {
+						activeSuggestion.style.display = 'none';
+					}, 500);
+				}
+			}
+
+			// const handleResults = (event) => {
+			// 	const firstSuggestion = event.features[0];
+			// 	if(undefined === firstSuggestion) {
+			// 		return;
+			// 	}
+			// 	geocoder.setInput(firstSuggestion.place_name);
+			// 	geocoder.query(firstSuggestion.place_name);
+			// 	geocoder.off('results', handleResults);
+			// };
+
+			// geocoder.off('results', handleResults);
+			// geocoder.on('results', handleResults);
+		});
+	});
+
+	function renderGeocoder() {
+		geocoder.on('result', async (event: any) => {
 				if (event.result && event.result.center) {
+					// check if url contains mode=agent
+					let mode = "";
+					if (getDataFromURL('mode') && getDataFromURL('mode') === 'agent') {
+						mode = 'agent';
+					}
+
 					// reload url, when user re-search location
 					if($mapDataLoaded === true) {
 						putDataInURL('search', event.result.place_name);
@@ -396,12 +461,6 @@
 					}
 					mapDataLoaded.set(false);
 					resetMap(map, mapMarker);
-
-					// Clear previous markers
-					Object.keys(markers).forEach((key) => {
-						markers[key].forEach((marker) => marker.remove());
-					});
-					markers = {};
 
 					// Clear previous markers
 					Object.keys(markers).forEach((key) => {
@@ -443,135 +502,141 @@
 
 					map.addControl(createResetMapControl(), 'top-right');
 
-					// Prepare payload for API request
-					let payload = {
-						address,
-						latitude: lat,
-						longitude: lng,
-						features: SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => slug)
-					};
-
-					// Use features from URL if available
-					if (getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
-						payload.features = getDataFromURL('features[]');
-					}
-
-					if (getDataFromURL('radius')) {
-						payload.radius = getDataFromURL('radius');
-					}
-
-					if (getDataFromURL('resolution')) {
-						payload.resolution = getDataFromURL('resolution');
-					}
-
-					if (getDataFromURL('timeframe')) {
-						payload.timeframe = getDataFromURL('timeframe');
-						if (payload.timeframe === 'custom') {
-							payload.from = getDataFromURL('from');
-							payload.to = getDataFromURL('to');
-						}
-					}
-
-					// xFilters from url
-					// check if features are in url and contains x-twitter
-					if (payload.features && payload.features.includes('x-twitter')) {
-						if (getDataFromURL('xKeywords')) {
-							payload.xKeywords = getDataFromURL('xKeywords');
-						}
-						if (getDataFromURL('xUsernames')) {
-							payload.xUsernames = getDataFromURL('xUsernames');
-						}
-						if (getDataFromURL('xPostTypes[]') && getDataFromURL('xPostTypes[]').length > 0) {
-							payload.xPostTypes = getDataFromURL('xPostTypes[]');
-						}
-					} else {
-						removeDataFromURL('xKeywords');
-						removeDataFromURL('xUsernames');
-						removeDataFromURL('xPostTypes[]');
-					}
-
-					// Facebook filters from url
-					// check if features are in url and contains facebook
-					if (payload.features && payload.features.includes('facebook')) {
-						if (getDataFromURL('fbKeywords')) {
-							payload.fbKeywords = getDataFromURL('fbKeywords');
-						}
-						if (getDataFromURL('fbPostTypes[]') && getDataFromURL('fbPostTypes[]').length > 0) {
-							payload.fbPostTypes = getDataFromURL('fbPostTypes[]');
-
-							if (payload.fbPostTypes.includes('posts')) {
-								payload.fbPublicPosts = getDataFromURL('fbPublicPosts');
-								payload.fbRecentPosts = getDataFromURL('fbRecentPosts');
-							}
-
-							if (payload.fbPostTypes.includes('users')) {
-								payload.fbEducationId = getDataFromURL('fbEducationId');
-								payload.fbWorkId = getDataFromURL('fbWorkId');
-							}
-
-							if (payload.fbPostTypes.includes('pages')) {
-								payload.fbCategoryId = getDataFromURL('fbCategoryId');
-							}
-						}
-					} else {
-						removeDataFromURL('fbKeywords');
-						removeDataFromURL('fbPostTypes[]');
-						removeDataFromURL('fbPublicPosts');
-						removeDataFromURL('fbRecentPosts');
-						removeDataFromURL('fbEducationId');
-						removeDataFromURL('fbWorkId');
-						removeDataFromURL('fbCategoryId');
-					}
-
-					// Facebook Marketplace filters from url
-					// check if features are in url and contains facebook-marketplace
-					if (payload.features && payload.features.includes('facebook-marketplace')) {
-						if (getDataFromURL('fbmKeywords')) {
-							payload.fbmKeywords = getDataFromURL('fbmKeywords');
-						}
-
-						if (getDataFromURL('fbmCategoryId') && getDataFromURL('fbmCategoryId').length > 0) {
-							payload.fbmCategoryId = getDataFromURL('fbmCategoryId');
-						}
-
-						if (getDataFromURL('fbmMinPrice')) {
-							payload.fbmMinPrice = getDataFromURL('fbmMinPrice');
-						}
-
-						if (getDataFromURL('fbmMaxPrice')) {
-							payload.fbmMaxPrice = getDataFromURL('fbmMaxPrice');
-						}
-
-						if (getDataFromURL('fbmSort')) {
-							payload.fbmSort = getDataFromURL('fbmSort');
-						}
-					} else {
-						removeDataFromURL('fbmKeywords');
-						removeDataFromURL('fbmCategoryId');
-						removeDataFromURL('fbmMinPrice');
-						removeDataFromURL('fbmMaxPrice');
-						removeDataFromURL('fbmSort');
-					}
-
 					let searchId = 0;
-					if (!request_id && !reqId) {
-						// Fetch data
-						const response = await mapService.getMapResults(payload);
-						if (!response.success) {
-							// show MapError Dialog
-							showErrorDialog = true;
-							errorResponse = response;
-							return false;
+					if(mode !== "agent") {
+						// Prepare payload for API request
+						let payload = {
+							address,
+							latitude: lat,
+							longitude: lng,
+							features: SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => slug)
+						};
+
+						// Use features from URL if available
+						if (getDataFromURL('features[]') && getDataFromURL('features[]').length > 0) {
+							payload.features = getDataFromURL('features[]');
 						}
 
-						searchId = response.search_id;
-					}
+						if (getDataFromURL('radius')) {
+							payload.radius = getDataFromURL('radius');
+						}
+
+						if (getDataFromURL('resolution')) {
+							payload.resolution = getDataFromURL('resolution');
+						}
+
+						if (getDataFromURL('timeframe')) {
+							payload.timeframe = getDataFromURL('timeframe');
+							if (payload.timeframe === 'custom') {
+								payload.from = getDataFromURL('from');
+								payload.to = getDataFromURL('to');
+							}
+						}
+
+						// xFilters from url
+						// check if features are in url and contains x-twitter
+						if (payload.features && payload.features.includes('x-twitter')) {
+							if (getDataFromURL('xKeywords')) {
+								payload.xKeywords = getDataFromURL('xKeywords');
+							}
+							if (getDataFromURL('xUsernames')) {
+								payload.xUsernames = getDataFromURL('xUsernames');
+							}
+							if (getDataFromURL('xPostTypes[]') && getDataFromURL('xPostTypes[]').length > 0) {
+								payload.xPostTypes = getDataFromURL('xPostTypes[]');
+							}
+						} else {
+							removeDataFromURL('xKeywords');
+							removeDataFromURL('xUsernames');
+							removeDataFromURL('xPostTypes[]');
+						}
+
+						// Facebook filters from url
+						// check if features are in url and contains facebook
+						if (payload.features && payload.features.includes('facebook')) {
+							if (getDataFromURL('fbKeywords')) {
+								payload.fbKeywords = getDataFromURL('fbKeywords');
+							}
+							if (getDataFromURL('fbPostTypes[]') && getDataFromURL('fbPostTypes[]').length > 0) {
+								payload.fbPostTypes = getDataFromURL('fbPostTypes[]');
+
+								if (payload.fbPostTypes.includes('posts')) {
+									payload.fbPublicPosts = getDataFromURL('fbPublicPosts');
+									payload.fbRecentPosts = getDataFromURL('fbRecentPosts');
+								}
+
+								if (payload.fbPostTypes.includes('users')) {
+									payload.fbEducationId = getDataFromURL('fbEducationId');
+									payload.fbWorkId = getDataFromURL('fbWorkId');
+								}
+
+								if (payload.fbPostTypes.includes('pages')) {
+									payload.fbCategoryId = getDataFromURL('fbCategoryId');
+								}
+							}
+						} else {
+							removeDataFromURL('fbKeywords');
+							removeDataFromURL('fbPostTypes[]');
+							removeDataFromURL('fbPublicPosts');
+							removeDataFromURL('fbRecentPosts');
+							removeDataFromURL('fbEducationId');
+							removeDataFromURL('fbWorkId');
+							removeDataFromURL('fbCategoryId');
+						}
+
+						// Facebook Marketplace filters from url
+						// check if features are in url and contains facebook-marketplace
+						if (payload.features && payload.features.includes('facebook-marketplace')) {
+							if (getDataFromURL('fbmKeywords')) {
+								payload.fbmKeywords = getDataFromURL('fbmKeywords');
+							}
+
+							if (getDataFromURL('fbmCategoryId') && getDataFromURL('fbmCategoryId').length > 0) {
+								payload.fbmCategoryId = getDataFromURL('fbmCategoryId');
+							}
+
+							if (getDataFromURL('fbmMinPrice')) {
+								payload.fbmMinPrice = getDataFromURL('fbmMinPrice');
+							}
+
+							if (getDataFromURL('fbmMaxPrice')) {
+								payload.fbmMaxPrice = getDataFromURL('fbmMaxPrice');
+							}
+
+							if (getDataFromURL('fbmSort')) {
+								payload.fbmSort = getDataFromURL('fbmSort');
+							}
+						} else {
+							removeDataFromURL('fbmKeywords');
+							removeDataFromURL('fbmCategoryId');
+							removeDataFromURL('fbmMinPrice');
+							removeDataFromURL('fbmMaxPrice');
+							removeDataFromURL('fbmSort');
+						}
+
+						if (!request_id && !reqId) {
+							// Fetch data
+							const response = await mapService.getMapResults(payload);
+							if (!response.success) {
+								// show MapError Dialog
+								showErrorDialog = true;
+								errorResponse = response;
+								return false;
+							}
+
+							searchId = response.search_id;
+						}
+					} // mode !== "agent"
 
 					if (reqId && reqId > 0) {
 						searchId = reqId;
 					}
 
 					if (request_id && request_id > 0) {
+						if(mode === "agent") {
+							removeDataFromURL('request_id');
+							removeDataFromURL('mode');
+						}
 						searchId = request_id;
 					}
 
@@ -581,7 +646,7 @@
 
 					centerMapOnCircle();
 
-					if (searchId < 1) {
+					if (searchId < 1 && mode !== "agent") {
 						// show MapError Dialog
 						showErrorDialog = true;
 						errorResponse = {
@@ -592,102 +657,51 @@
 						return false;
 					}
 
-					searchRequestID.set(Number(searchId));
+					if(searchId > 0 && searchId !== lastSseId) {
+						lastSseId = searchId;
+						searchRequestID.set(Number(searchId));
 
-					// Start SSE
-					const source = new EventSource(`${API_BASE_URL}map/search-sse/${searchId}`);
-					let socialData = [];
+						// Start SSE
+						const source = new EventSource(`${API_BASE_URL}map/search-sse/${searchId}/?mode=${mode}`);
+						let socialData = [];
 
-					let addedPostIds = [];
-					// update the respective state for each platform.
-					SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => {
-						// Clear existing markers for the platform before adding new ones
-						if (markers[slug]) {
-							markers[slug].forEach((marker) => marker.remove());
-						}
-						markers[slug] = [];
+						let addedPostIds = [];
+						// update the respective state for each platform.
+						SOCIAL_MEDIA_PLATFORMS.map(({ slug }) => {
+							// Clear existing markers for the platform before adding new ones
+							if (markers[slug]) {
+								markers[slug].forEach((marker) => marker.remove());
+							}
+							markers[slug] = [];
 
-						let markersForType: mapboxgl.Marker[] = [];
+							let markersForType: mapboxgl.Marker[] = [];
 
-						source.addEventListener(slug, function (e) {
-							// update loading state
-							dataLoadingState.update((state) => ({ ...state, [slug]: 'done' }));
+							source.addEventListener(slug, function (e) {
+								// update loading state
+								dataLoadingState.update((state) => ({ ...state, [slug]: 'done' }));
 
-							// Parse data to display
-							const data = JSON.parse(e.data);
+								// Parse data to display
+								const data = JSON.parse(e.data);
 
-							const parsedData = parseSocialMediaResponse(data, slug);
-							socialData.push(parsedData);
-							socialMediaJson.update((state) => {
-								const updatedSocialData = [...(state.socialData || []), parsedData];
-								return { ...state, socialData: updatedSocialData };
-							});
+								const parsedData = parseSocialMediaResponse(data, slug);
+								socialData.push(parsedData);
+								socialMediaJson.update((state) => {
+									const updatedSocialData = [...(state.socialData || []), parsedData];
+									return { ...state, socialData: updatedSocialData };
+								});
 
-							// Visibility
-							visibility.update((state) => ({ ...state, [slug]: true }));
+								// Visibility
+								visibility.update((state) => ({ ...state, [slug]: true }));
 
-							// Add markers
-							socialData.forEach(({ type, count, posts }) => {
-								if (slug !== type) return;
+								// Add markers
+								socialData.forEach(({ type, count, posts }) => {
+									if (slug !== type) return;
 
-								let pointsAdded = 0;
-								if (slug === 'x-twitter') {
-									const twitterPosts = Object.entries(posts);
-									twitterPosts[0][1].forEach((post) => {
-										if (slug !== type) return;
-										if (addedPostIds.includes(post.id)) return false;
-
-										const randomPoints = generateRandomValidPoints(1, circle);
-										const randomPoint = randomPoints[0];
-										if (randomPoint && randomPoint.length === 2) {
-											const mapIcon = post?.historical
-												? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
-														?.mapIconHistorical
-												: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
-														?.mapIcon;
-											markersForType[post.id] = createMarker(
-												mapIcon,
-												[randomPoint[0], randomPoint[1]] as [number, number],
-												$visibility[slug],
-												post
-											);
-											pointsAdded++;
-
-											addedPostIds.push(post.id);
-										}
-									});
-									markers[type] = markersForType;
-								} else if (slug === 'facebook') {
-									const fbPosts = Object.entries(posts);
-									if (!fbPosts.length) return;
-									fbPosts[0][1].forEach((post) => {
-										if (slug !== type) return;
-										if (addedPostIds.includes(post.id)) return false;
-
-										const randomPoints = generateRandomValidPoints(1, circle);
-										const randomPoint = randomPoints[0];
-										if (randomPoint && randomPoint.length === 2) {
-											const mapIcon = post?.historical
-												? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
-														?.mapIconHistorical
-												: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
-														?.mapIcon;
-											markersForType[post.id] = createMarker(
-												mapIcon,
-												[randomPoint[0], randomPoint[1]] as [number, number],
-												$visibility[slug],
-												post
-											);
-											pointsAdded++;
-
-											addedPostIds.push(post.id);
-										}
-									});
-									markers[type] = markersForType;
-								} else if (slug === 'facebook-marketplace') {
-									if (!posts.length) return;
-									posts.forEach((post) => {
-										if (post && pointsAdded < count) {
+									let pointsAdded = 0;
+									if (slug === 'x-twitter') {
+										const twitterPosts = Object.entries(posts);
+										twitterPosts[0][1].forEach((post) => {
+											if (slug !== type) return;
 											if (addedPostIds.includes(post.id)) return false;
 
 											const randomPoints = generateRandomValidPoints(1, circle);
@@ -708,35 +722,15 @@
 
 												addedPostIds.push(post.id);
 											}
-										}
-									});
-									markers[type] = markersForType;
-								} else {
-									const validPosts = filterValidPosts(posts, circle);
-									validPosts.forEach((post) => {
-										if (post && pointsAdded < count) {
-											const mapIcon = post?.historical
-												? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
-														?.mapIconHistorical
-												: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
-														?.mapIcon;
-											markersForType[post.id] = createMarker(
-												mapIcon,
-												[post.lng, post.lat],
-												$visibility[slug],
-												post
-											);
+										});
+										markers[type] = markersForType;
+									} else if (slug === 'facebook') {
+										const fbPosts = Object.entries(posts);
+										if (!fbPosts.length) return;
+										fbPosts[0][1].forEach((post) => {
+											if (slug !== type) return;
+											if (addedPostIds.includes(post.id)) return false;
 
-											pointsAdded++;
-										}
-									});
-
-									const invalidPosts = posts.filter(
-										(post) => post && !validPosts.some((validPost) => validPost.id === post.id)
-									);
-									invalidPosts.forEach((post) => {
-										if (slug !== type) return;
-										if (post && pointsAdded < count) {
 											const randomPoints = generateRandomValidPoints(1, circle);
 											const randomPoint = randomPoints[0];
 											if (randomPoint && randomPoint.length === 2) {
@@ -752,78 +746,152 @@
 													post
 												);
 												pointsAdded++;
-											}
-										}
-									});
 
-									markers[type] = markersForType;
-								}
+												addedPostIds.push(post.id);
+											}
+										});
+										markers[type] = markersForType;
+									} else if (slug === 'facebook-marketplace') {
+										if (!posts.length) return;
+										posts.forEach((post) => {
+											if (post && pointsAdded < count) {
+												if (addedPostIds.includes(post.id)) return false;
+
+												const randomPoints = generateRandomValidPoints(1, circle);
+												const randomPoint = randomPoints[0];
+												if (randomPoint && randomPoint.length === 2) {
+													const mapIcon = post?.historical
+														? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+																?.mapIconHistorical
+														: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+																?.mapIcon;
+													markersForType[post.id] = createMarker(
+														mapIcon,
+														[randomPoint[0], randomPoint[1]] as [number, number],
+														$visibility[slug],
+														post
+													);
+													pointsAdded++;
+
+													addedPostIds.push(post.id);
+												}
+											}
+										});
+										markers[type] = markersForType;
+									} else {
+										const validPosts = filterValidPosts(posts, circle);
+										validPosts.forEach((post) => {
+											if (post && pointsAdded < count) {
+												const mapIcon = post?.historical
+													? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+															?.mapIconHistorical
+													: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+															?.mapIcon;
+												markersForType[post.id] = createMarker(
+													mapIcon,
+													[post.lng, post.lat],
+													$visibility[slug],
+													post
+												);
+
+												pointsAdded++;
+											}
+										});
+
+										const invalidPosts = posts.filter(
+											(post) => post && !validPosts.some((validPost) => validPost.id === post.id)
+										);
+										invalidPosts.forEach((post) => {
+											if (slug !== type) return;
+											if (post && pointsAdded < count) {
+												const randomPoints = generateRandomValidPoints(1, circle);
+												const randomPoint = randomPoints[0];
+												if (randomPoint && randomPoint.length === 2) {
+													const mapIcon = post?.historical
+														? SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+																?.mapIconHistorical
+														: SOCIAL_MEDIA_PLATFORMS.find((platform) => platform.slug === slug)
+																?.mapIcon;
+													markersForType[post.id] = createMarker(
+														mapIcon,
+														[randomPoint[0], randomPoint[1]] as [number, number],
+														$visibility[slug],
+														post
+													);
+													pointsAdded++;
+												}
+											}
+										});
+
+										markers[type] = markersForType;
+									}
+								});
+							});
+
+							// Handle errors
+							source.addEventListener(`${slug}_error`, function (e) {
+								dataLoadingState.update((state) => ({ ...state, [slug]: 'error' }));
 							});
 						});
 
-						// Handle errors
-						source.addEventListener(`${slug}_error`, function (e) {
-							dataLoadingState.update((state) => ({ ...state, [slug]: 'error' }));
-						});
-					});
+						// SSE global error handler
+						source.addEventListener('error', function (e) {
+							const data = JSON.parse(e.data);
+							source.close();
+							showErrorDialog = true;
+							errorResponse = {
+								success: false,
+								message: data.message,
+								error: data.error
+							};
 
-					// SSE global error handler
-					source.addEventListener('error', function (e) {
-						const data = JSON.parse(e.data);
-						source.close();
-						showErrorDialog = true;
-						errorResponse = {
-							success: false,
-							message: data.message,
-							error: data.error
-						};
-
-						return false;
-					});
-
-					// SSE complete event
-					source.addEventListener('done', function (e) {
-						// close the SSE
-						source.close();
-
-						// show button to export the data into the JSON
-						mapDataLoaded.set(true);
-
-						// notify user that, request fetching is done.
-						toast('🚀 All set! Explore the data now.', { position: 'bottom-center' });
-
-						// Add Static dot to indicate that the response is complete.
-						map.addSource('static-dot', {
-							type: 'geojson',
-							data: {
-								type: 'FeatureCollection',
-								features: [
-									{
-										type: 'Feature',
-										geometry: {
-											type: 'Point',
-											coordinates: [lng, lat] // Longitude, latitude
-										},
-										properties: {}
-									}
-								]
-							}
-						});
-						map.addLayer({
-							id: 'static-dot-layer',
-							source: 'static-dot',
-							type: 'circle',
-							paint: {
-								'circle-radius': 10,
-								'circle-color': MAP_PRIMARY_COLOR,
-								width: 200,
-								height: 200
-							}
+							return false;
 						});
 
-						// Remove the animation dot
-						map.removeLayer('layer-with-pulsing-dot');
-					});
+						// SSE complete event
+						source.addEventListener('done', function (e) {
+							// close the SSE
+							source.close();
+
+							// show button to export the data into the JSON
+							mapDataLoaded.set(true);
+
+							// notify user that, request fetching is done.
+							toast('🚀 All set! Explore the data now.', { position: 'bottom-center' });
+
+							// Add Static dot to indicate that the response is complete.
+							map.addSource('static-dot', {
+								type: 'geojson',
+								data: {
+									type: 'FeatureCollection',
+									features: [
+										{
+											type: 'Feature',
+											geometry: {
+												type: 'Point',
+												coordinates: [lng, lat] // Longitude, latitude
+											},
+											properties: {}
+										}
+									]
+								}
+							});
+							map.addLayer({
+								id: 'static-dot-layer',
+								source: 'static-dot',
+								type: 'circle',
+								paint: {
+									'circle-radius': 10,
+									'circle-color': MAP_PRIMARY_COLOR,
+									width: 200,
+									height: 200
+								}
+							});
+
+							// Remove the animation dot
+							map.removeLayer('layer-with-pulsing-dot');
+						});
+					}
 				}
 
 				// mapDataLoaded.set(true); // show icons to export data
@@ -839,16 +907,6 @@
 				localStorage.setItem('lng', lng);
 			});
 
-			if (searchQuery) {
-				geocoder.query(searchQuery);
-				const activeSuggestion = document.querySelector('.suggestions');
-				if (activeSuggestion) {
-					setTimeout(() => {
-						activeSuggestion.style.display = 'none';
-					}, 500);
-				}
-			}
-
 			const handleResults = (event) => {
 				const firstSuggestion = event.features[0];
 				if(undefined === firstSuggestion) {
@@ -861,8 +919,7 @@
 
 			geocoder.off('results', handleResults);
 			geocoder.on('results', handleResults);
-		});
-	});
+	}
 
 	onDestroy(() => {
 		if (map) {

@@ -220,7 +220,7 @@
 			agentLat = localStorage.getItem('lat') || null;
 			agentLong = localStorage.getItem('lng') || null;
 		}
-		window.location.href = `/try-demo?query=${agentQuery}&lat=${agentLat}&long=${agentLong}`;
+		window.location.href = `/try-demo?query=${agentQuery}&lat=${agentLat}&long=${agentLong}&mode=agent`;
 	}
 </script>
 
