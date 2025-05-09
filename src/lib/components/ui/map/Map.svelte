@@ -58,7 +58,7 @@
 	import MapExportJson from '$lib/components/ui/map/MapExportJson.svelte';
 	import MapDataInsights from './MapDataInsights.svelte';
 	import { user } from '$lib/stores/authStore';
-	import { getUserLocation } from '$lib/utils/locationUtils';
+	import { formatCoordinates, getUserLocation } from '$lib/utils/locationUtils';
 
 	// Default Data...
 	let showLoadingOverlay = false;
@@ -128,12 +128,8 @@
 	$: request_id = getDataFromURL('request_id');
 	$: if(hasMounted && mode === 'agent' && request_id > 0) {
 		console.log('request_id', request_id);
-		const coordinatesString = `${reqLong},${reqLat}`;
-		console.log("coordinatesString", coordinatesString);
-		geocoder.setInput(coordinatesString);
-		console.log("geocoder.setInput - done");
-		geocoder.query(coordinatesString);
-		console.log("geocoder.query - done");
+		geocoder.setInput(formatCoordinates(reqLong, reqLat));
+		geocoder.query(formatCoordinates(reqLong, reqLat));
 		
 		// Store coordinates in localStorage
 		localStorage.setItem('lat', reqLat);
@@ -341,8 +337,8 @@
 		// Now that map and geocoder exist, we can handle getUserLocation
 		getUserLocation()
             .then(position => {
-                const lng = position.coords.longitude;
-                const lat = position.coords.latitude;
+                let lng = position.coords.longitude;
+                let lat = position.coords.latitude;
                 const coords = [lng, lat];
                 
                 // Center map and add marker
@@ -351,9 +347,8 @@
 
                 new mapboxgl.Marker().setLngLat(coords).addTo(map);
 
-                const coordinatesString = `${lng},${lat}`;
-                geocoder.setInput(coordinatesString);
-                geocoder.query(coordinatesString);
+                geocoder.setInput(formatCoordinates(lng, lat));
+				geocoder.query(formatCoordinates(lng, lat));
                 
                 // Store coordinates in localStorage
                 localStorage.setItem('lat', lat);

@@ -10,7 +10,7 @@ export function getUserLocation(options = {}) {
     const defaultOptions = {
       enableHighAccuracy: true,
       timeout: 10000,
-      maximumAge: 0
+      maximumAge: 0,
     };
     
     const geolocationOptions = { ...defaultOptions, ...options };
@@ -27,4 +27,11 @@ export function getUserLocation(options = {}) {
         geolocationOptions
       );
     });
+}
+
+export function formatCoordinates(lon, lat) {
+	// Limit to 6 digits, trim whitespace, remove trailing zeros
+	const cleanLon = parseFloat(lon).toFixed(6).replace(/\.?0+$/, '');
+	const cleanLat = parseFloat(lat).toFixed(6).replace(/\.?0+$/, '');
+	return `${cleanLon},${cleanLat}`;
 }

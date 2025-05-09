@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, onDestroy, tick } from 'svelte';
-	import { socialMediaJson } from '$lib/stores/mapStore';
 	import TypingIndicator from '../loader/TypingIndicator.svelte';
 	import { MapService } from '$lib/services/map-service';
 	import { getDataFromURL } from '$lib/utils/generalUtils';
@@ -101,16 +100,9 @@
 						// get all query parameters from the URL
 						const lat = getDataFromURL('lat');
 						const lng = getDataFromURL('long');
-						const mode = "agent";
-						const requestId = response.request_id;
 						const search = getDataFromURL('search');
-
-
-						// // pass the request_id to the url
-						// const url = new URL(window.location.href);
-						// url.searchParams.set('request_id', response.request_id);
-						// window.history.replaceState({}, document.title, url.toString());
-						goto(`?mode=agent&lat=${lat}&long=${lng}&request_id=${response.request_id}&search=${search}`, { replaceState: true, keepfocus: true, noscroll: true });
+						const requestId = response.request_id; // Added requestId variable
+						goto(`?mode=agent&lat=${lat}&long=${lng}&request_id=${requestId}&search=${search}`, { replaceState: true, keepfocus: true, noscroll: true });
 						
 						// Initialize Echo and listen for updates on this conversation
 						setupEchoListener(conversationId);
