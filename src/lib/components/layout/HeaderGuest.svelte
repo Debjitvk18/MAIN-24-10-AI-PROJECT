@@ -1,11 +1,19 @@
 <script>
 	import { isLoggedIn, logout } from '$lib/stores/authStore';
 	import Logo from '../general/Logo.svelte';
+	import { page } from '$app/stores';
 
 	let mobileMenu = false;
+	
+	function isActive(path) {
+		if (path === '/' && $page.url.pathname === '/') {
+			return true;
+		}
+		return path !== '/' && $page.url.pathname.startsWith(path);
+	}
 </script>
 
-<header class="bg-white">
+<header class="bg-background">
 	<nav class="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
 		<div class="flex lg:flex-1">
 			<a href="/" class="-m-1.5 p-1.5">
@@ -38,25 +46,68 @@
 			</button>
 		</div>
 		<div class="hidden lg:flex lg:gap-x-12">
-			<a href="/" class="text-sm/6 font-semibold text-gray-900">Home</a>
-			<a href="/plan-&-pricing" class="text-sm/6 font-semibold text-gray-900">Pricing</a>
-			<a href="/" class="text-sm/6 font-semibold text-gray-900">Blog</a>
-			<a href="/" class="text-sm/6 font-semibold text-gray-900">Testimonials</a>
-			<a href="/try-demo" class="text-sm/6 font-semibold text-gray-900" rel="external">Try Demo</a>
+			<a 
+				href="/" 
+				class="text-sm/6 font-semibold transition-colors {isActive('/') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}"
+			>
+				Home
+			</a>
+			<a 
+				href="/plan-&-pricing" 
+				class="text-sm/6 font-semibold transition-colors {isActive('/plan-&-pricing') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}"
+			>
+				Pricing
+			</a>
+			<a 
+				href="/" 
+				class="text-sm/6 font-semibold transition-colors {isActive('/insights') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}"
+			>
+				Blog
+			</a>
+			<a 
+				href="/" 
+				class="text-sm/6 font-semibold transition-colors {isActive('/testimonials') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}"
+			>
+				Testimonials
+			</a>
+			<a 
+				href="/try-demo" 
+				class="text-sm/6 font-semibold transition-colors {isActive('/try-demo') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}" 
+				rel="external"
+			>
+				Try Demo
+			</a>
 		</div>
 		<div class="hidden lg:flex lg:flex-1 lg:justify-end">
 			{#if $isLoggedIn}
-				<a href="/dashboard" class="text-sm/6 font-semibold text-gray-900">Dashboard</a>
+				<a 
+					href="/dashboard" 
+					class="text-sm/6 font-semibold transition-colors {isActive('/dashboard') ? 'text-primary-600' : 'text-gray-900 hover:text-primary-500'}"
+				>
+					Dashboard
+				</a>
 				<span aria-hidden="true" class="mx-2">|</span>
 				<a
 					href="javascript:void(0)"
 					on:click={logout()}
-					class="text-sm/6 font-semibold text-gray-900">Log out</a
+					class="text-sm/6 font-semibold text-gray-900 hover:text-primary-500 transition-colors"
 				>
+					Log out
+				</a>
 			{:else}
-				<a href="/login" class="text-sm/6 font-semibold text-gray-900">Log in </a>
+				<a 
+					href="/login" 
+					class="text-sm/6 font-semibold transition-colors {isActive('/login') ? 'text-primary-600' : 'text-gray-900 hover:text-primary-500'}"
+				>
+					Log in 
+				</a>
 				<span aria-hidden="true" class="mx-2">|</span>
-				<a href="/register" class="text-sm/6 font-semibold text-gray-900">Register</a>
+				<a 
+					href="/register" 
+					class="text-sm/6 font-semibold transition-colors {isActive('/register') ? 'text-primary-600' : 'text-gray-900 hover:text-primary-500'}"
+				>
+					Register
+				</a>
 			{/if}
 		</div>
 	</nav>
@@ -101,36 +152,43 @@
 					<div class="space-y-2 py-6">
 						<a
 							href="/"
-							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Home
+							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold {isActive('/') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
+						>
+							Home
 						</a>
 						<a
 							href="/plan-&-pricing"
-							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Pricing</a
+							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold {isActive('/plan-&-pricing') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
 						>
+							Pricing
+						</a>
 						<a
 							href="/"
-							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Blog</a
+							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold {isActive('/insights') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
 						>
+							Blog
+						</a>
 						<a
 							href="/"
-							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Testimonials</a
+							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold {isActive('/testimonials') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
 						>
+							Testimonials
+						</a>
 					</div>
 					<div class="py-6">
 						<a
 							href="/try-demo"
-							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							rel="external">Try Demo</a
+							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold {isActive('/try-demo') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
+							rel="external"
 						>
+							Try Demo
+						</a>
 						<a
 							href="/register"
-							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
-							>Register</a
+							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold {isActive('/register') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
 						>
+							Register
+						</a>
 					</div>
 				</div>
 			</div>
