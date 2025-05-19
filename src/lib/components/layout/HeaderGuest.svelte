@@ -9,7 +9,7 @@
 	<nav class="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
 		<div class="flex lg:flex-1">
 			<a href="/" class="-m-1.5 p-1.5">
-				<span class="sr-only">Your Company</span>
+				<span class="sr-only">CyberGlobs</span>
 				<Logo />
 			</a>
 		</div>
@@ -39,7 +39,7 @@
 		</div>
 		<div class="hidden lg:flex lg:gap-x-12">
 			<a href="/" class="text-sm/6 font-semibold text-gray-900">Home</a>
-			<a href="/" class="text-sm/6 font-semibold text-gray-900">Pricing</a>
+			<a href="/plan-&-pricing" class="text-sm/6 font-semibold text-gray-900">Pricing</a>
 			<a href="/" class="text-sm/6 font-semibold text-gray-900">Blog</a>
 			<a href="/" class="text-sm/6 font-semibold text-gray-900">Testimonials</a>
 			<a href="/try-demo" class="text-sm/6 font-semibold text-gray-900" rel="external">Try Demo</a>
@@ -105,7 +105,7 @@
 							>Home
 						</a>
 						<a
-							href="/"
+							href="/plan-&-pricing"
 							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
 							>Pricing</a
 						>
