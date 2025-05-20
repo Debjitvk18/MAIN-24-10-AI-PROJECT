@@ -24,111 +24,31 @@
 	import Poi from '$lib/components/ui/home/Poi.svelte';
 	import { getUserLocation } from '$lib/utils/locationUtils';
 	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
+	import BreakingLimit from '$lib/components/ui/home/BreakingLimit.svelte';
+	import Hero from '$lib/components/ui/home/Hero.svelte';
 
 	// Function to fetch location suggestions
 
 	let chart;
-	
-	let agentQuery = "";
+
+	let agentQuery = '';
 	let agentLat = null;
 	let agentLong = null;
-	
 
 	onMount(async () => {
 		getUserLocation()
-            .then(position => {
-                agentLong = position.coords.longitude;
-                agentLat = position.coords.latitude;
+			.then((position) => {
+				agentLong = position.coords.longitude;
+				agentLat = position.coords.latitude;
 				console.log('Longitude:', agentLong);
 				console.log('Latitude:', agentLat);
 				localStorage.setItem('lat', agentLat);
 				localStorage.setItem('lng', agentLong);
 			})
-			.catch(error => {
-				console.error("Geolocation error:", error.message);
-                alert('Unable to retrieve your location: ' + error.message);
+			.catch((error) => {
+				console.error('Geolocation error:', error.message);
+				alert('Unable to retrieve your location: ' + error.message);
 			});
-		if (typeof window !== 'undefined') {
-			const { default: ApexCharts } = await import('apexcharts');
-
-			const options = {
-				chart: {
-					height: '120px',
-					maxWidth: '100%',
-					type: 'area',
-					fontFamily: 'Inter, sans-serif',
-					dropShadow: {
-						enabled: false
-					},
-					toolbar: {
-						show: false
-					}
-				},
-				tooltip: {
-					enabled: true,
-					x: {
-						show: false
-					}
-				},
-				fill: {
-					type: 'gradient',
-					gradient: {
-						opacityFrom: 0.55,
-						opacityTo: 0,
-						shade: '#1C64F2',
-						gradientToColors: ['#1C64F2']
-					}
-				},
-				dataLabels: {
-					enabled: false
-				},
-				stroke: {
-					width: 6
-				},
-				grid: {
-					show: false,
-					strokeDashArray: 4,
-					padding: {
-						left: 2,
-						right: 2,
-						top: 0
-					}
-				},
-				series: [
-					{
-						name: 'New users',
-						data: [6500, 6418, 6456, 6526, 6356, 6456],
-						color: '#1A56DB'
-					}
-				],
-				xaxis: {
-					categories: [
-						'01 February',
-						'02 February',
-						'03 February',
-						'04 February',
-						'05 February',
-						'06 February',
-						'07 February'
-					],
-					labels: {
-						show: false
-					},
-					axisBorder: {
-						show: false
-					},
-					axisTicks: {
-						show: false
-					}
-				},
-				yaxis: {
-					show: false
-				}
-			};
-
-			chart = new ApexCharts(document.querySelector('#chart'), options);
-			chart.render();
-		}
 
 		return () => {
 			if (chart) chart.destroy();
@@ -210,10 +130,9 @@
 		textarea.style.height = textarea.scrollHeight + 'px';
 	}
 
-
 	function handleAgentSearch() {
 		agentQuery = document.getElementById('location-input').value;
-		if(!agentQuery) {
+		if (!agentQuery) {
 			toast.error('Please enter a search query');
 			return;
 		}
@@ -222,32 +141,36 @@
 			agentLong = localStorage.getItem('lng') || null;
 		}
 
-		let place = "";
+		let place = '';
 
-		fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${agentLong},${agentLat}.json?access_token=${PUBLIC_MAPBOX_ACCESS_TOKEN}`)
-		.then(res => res.json())
-		.then(data => {
-			if (data.features && data.features.length > 0) {
-				agentLat = data.features[0].center[1];
-				agentLong = data.features[0].center[0];
-				
-				place = data.features[0].place_name; // Store the place name
-				// toast.success(`Location found: ${place}`); // Notify user of the found location
-			} else {
-				console.log('No location found with the given coordinates');
-				// toast.error('No location found');
-				return;
-			}
+		fetch(
+			`https://api.mapbox.com/geocoding/v5/mapbox.places/${agentLong},${agentLat}.json?access_token=${PUBLIC_MAPBOX_ACCESS_TOKEN}`
+		)
+			.then((res) => res.json())
+			.then((data) => {
+				if (data.features && data.features.length > 0) {
+					agentLat = data.features[0].center[1];
+					agentLong = data.features[0].center[0];
 
-			window.location.href = `/try-demo?query=${agentQuery}&lat=${agentLat}&long=${agentLong}&mode=agent&search=${place}`;
-		});
+					place = data.features[0].place_name; // Store the place name
+					// toast.success(`Location found: ${place}`); // Notify user of the found location
+				} else {
+					console.log('No location found with the given coordinates');
+					// toast.error('No location found');
+					return;
+				}
+
+				window.location.href = `/try-demo?query=${agentQuery}&lat=${agentLat}&long=${agentLong}&mode=agent&search=${place}`;
+			});
 	}
 </script>
+
+<Hero />
 
 <section class="bg-white bg-gradient-to-b from-blue-50 to-blue-100">
 	<div
 		class="bg-cover bg-bottom lg:container md:container"
-		style="background-image: url('{MapBg}');"
+		style="background-image: url('{MapBg}');background-position: 311px 0;"
 	>
 		<div class="relative bg-gray-200 rounded-lg">
 			<!-- Marker 1 -->
@@ -340,48 +263,44 @@
 		<div
 			class="grid max-w-screen-xl text-center xl:text-left px-4 py-8 mx-auto lg:gap-8 gap-8 xl:gap-0 lg:py-[100px] lg:pt-[60px] lg:pb-[130px] lg:grid-cols-12"
 		>
-			<div class="place-self-center lg:col-span-6 h-auto md:h-[350px] lg:h-[350px]">
+	<div class="col-span-12 lg:col-span-10 text-center xl:text-left flex flex-col justify-center items-center xl:items-start space-y-6">
+		<div class="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-900 md:leading-tight">
+			CyberGlobes <br>Live Real-Time Geo-Location data
+		</div>
+		<p class="text-lg md:text-xl text-gray-900 max-w-2xl">
+			Cyberglobes bridges the gap in AI-driven search, delivering real-time, location-based data designed for your needs.
+			Search on your own or let our intelligent chatbot do the work. Stay ahead with the latest updates—while others rely on outdated information.
+		</p>
 				<Tabs.Root value="agent">
-					<Tabs.List class="mb-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+					<Tabs.List class="mb-5 bg-white rounded-lg">
 						<Tabs.Trigger
 							value="agent"
-							class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+							class="px-6 hover:bg-gray-200 hover:text-black text-black font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-gray-100 data-[state=active]:text-black data-[state=active]:shadow-md"
 						>
 							Search by Agent
 						</Tabs.Trigger>
 
 						<Tabs.Trigger
 							value="address"
-							class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+							class="px-6 hover:bg-gray-200 hover:text-black text-black font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-gray-100 data-[state=active]:text-black data-[state=active]:shadow-md"
 						>
 							Search by Address
 						</Tabs.Trigger>
 
 						<Tabs.Trigger
 							value="image"
-							class="px-6  text-white font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md"
+							class="px-6 hover:bg-gray-200 hover:text-black text-black font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-gray-100 data-[state=active]:text-black data-[state=active]:shadow-md"
 						>
 							Search by Image
 						</Tabs.Trigger>
 					</Tabs.List>
 
 					<Tabs.Content value="agent">
-						<h1
-							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl"
-						>
-							Live Market Location Intelligence
-						</h1>
-						<h2
-							class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600"
-						>
-							Leverage advanced location analytics to gain real-time insights, optimize site
-							selection, understand customer behavior, and drive data-driven growth.
-						</h2>
 						<form class="max-w-full xl:max-w-md">
 							<label class="mb-2 text-sm font-medium text-gray-900 sr-only" for="default-search">
 								Search
 							</label>
-						
+
 							<div class="relative w-full">
 								<textarea
 									autocomplete="off"
@@ -404,31 +323,9 @@
 						</form>
 					</Tabs.Content>
 					<Tabs.Content value="address">
-						<h1
-							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl"
-						>
-							Live Market Location Intelligence
-						</h1>
-						<h2
-							class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600"
-						>
-							Leverage advanced location analytics to gain real-time insights, optimize site
-							selection, understand customer behavior, and drive data-driven growth.
-						</h2>
 						<MapSearchBox />
 					</Tabs.Content>
 					<Tabs.Content value="image">
-						<div
-							class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight text-gray-900 leading-none md:text-5xl xl:text-6xl"
-						>
-							Live Market Location Intelligence
-						</div>
-						<div
-							class="max-w-2xl w-f mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl text-gray-600"
-						>
-							Leverage advanced location analytics to gain real-time insights, optimize site
-							selection, understand customer behavior, and drive data-driven growth.
-						</div>
 						<form class="max-w-md w-full">
 							<div
 								class="flex items-center justify-center w-full"
@@ -475,46 +372,12 @@
 					</Tabs.Content>
 				</Tabs.Root>
 			</div>
-
-			<div
-				class="lg:col-span-6 flex items-center lg:place-self-end md:place-self-center justify-center"
-			>
-				<div class="absolute-x top-16 right-16 bg-white shadow-lg rounded-lg p-6 w-80">
-					<h3 class="font-bold text-lg">Lorem</h3>
-					<p class="text-sm text-gray-500">Lorem Ipsum, is simply dummy, text of the</p>
-					<div class="mt-4">
-						<h4 class="text-sm font-semibold">
-							Lorem Ipsum <span class="text-gray-500">Jan 2023 to Dec 2023</span>
-						</h4>
-						<div id="chart" class="h-[135px]"></div>
-						<div class="flex justify-between mt-4 text-sm">
-							<div>
-								<p class="font-bold text-gray-800">1.2M</p>
-								<p class="text-gray-500">Twiter</p>
-							</div>
-							<div>
-								<p class="font-bold text-gray-800">299.2K</p>
-								<p class="text-gray-500">Panoids</p>
-							</div>
-							<div>
-								<p class="font-bold text-gray-800">42K</p>
-								<p class="text-gray-500">Others</p>
-							</div>
-						</div>
-						<button
-							on:click={() => goto('try-demo')}
-							class="w-full mt-4 bg-[#2C7BE5] text-white font-bold py-2 rounded-lg hover:bg-blue-600"
-						>
-							Get Started
-						</button>
-					</div>
-				</div>
-			</div>
 		</div>
 	</div>
 </section>
 <Partners />
 <Fetaures />
+<BreakingLimit />
 <Why />
 <Insight />
 <Poi />
@@ -523,8 +386,8 @@
 
 <style>
 	.poi-1 {
-		left: 64%;
-		top: 218px;
+		left: 70%;
+		top: 50px;
 	}
 
 	.poi-2 {
@@ -533,16 +396,16 @@
 	}
 
 	.poi-3 {
-		left: 54%;
-		top: 368px;
+		top: 200px;
+		left: 80%;
 	}
 
 	.poi-4 {
-		top: 160px;
-		left: 55%;
+		left: 75%;
+		top: 368px;
 	}
 	.poi-5 {
-		top: 500px;
+		top: 400px;
 		left: 45%;
 	}
 

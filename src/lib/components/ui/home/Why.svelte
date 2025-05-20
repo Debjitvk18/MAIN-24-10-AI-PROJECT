@@ -3,7 +3,9 @@
 
 	import * as Carousel from '$lib/components/ui/carousel/index.ts';
 
-	import { onMount } from 'svelte';
+	import AiModals from './AIModals.svelte';
+	import OtherAI from '$lib/assets/elements/other-ai.jpg';
+	import CyberGlobs from '$lib/assets/elements/cyberglobs.jpg';
 
 	let api;
 	let current = 0;
@@ -62,12 +64,66 @@
 	];
 </script>
 
-<section class="container mx-auto px-6 py-20">
-	<h2
-		class="text-3xl sm:text-4xl text-center md:text-5xl font-bold text-gray-900 leading-tight mb-10 md:mb-20"
-	>
+<AiModals />
+
+<section class="px-6 py-20">
+	<div class="container mx-auto ">
+	<h2 class="text-3xl sm:text-4xl text-center md:text-5xl font-bold text-primary-900 leading-tight">
 		Why CyberGlobes.ai?
 	</h2>
+	<p
+		class="mt-4 text-lg text-gray-600 text-center dark:text-gray-300 max-w-4xl mx-auto sm:mt-8 mb-10 md:mb-8"
+	>
+		Unlike platforms that rely on static maps or stale information, Cyberglobes connects you to the
+		living, breathing reality of any location.
+	</p>
+
+	<div class="md:grid grid-cols-2 gap-8 mb-10 max-w-3xl mx-auto hidden md:block">
+		<div class="flex flex-col items-center">
+			<p class="text-lg text-primary-900 font-bold text-center dark:text-gray-300 my-4">
+				Other AI.
+			</p>
+			<img src={OtherAI} alt="Other AI" class="w-full h-auto" />
+		</div>
+		<div class="flex flex-col items-center">
+			<p class="text-lg text-primary-900 font-bold text-center dark:text-gray-300 my-4">
+				CyberGlobes AI.
+			</p>
+			<img src={CyberGlobs} alt="CyberGlobes" class="w-full h-auto" />
+		</div>
+	</div>
+
+	<Carousel.Root
+		bind:api
+		class="block md:hidden w-full"
+		plugins={[plugin]}
+		options={{ loop: true, align: 'start', dragFree: true }}
+	>
+		<Carousel.Content class="flex gap-6 mb-10">
+			<Carousel.Item class="min-w-full flex justify-center">
+				<div class="flex flex-col items-center">
+					<p class="text-lg text-primary-900 font-bold text-center dark:text-gray-300 my-4">
+						Other AI.
+					</p>
+					<img src={OtherAI} alt="Other AI" class="w-full h-auto" />
+				</div>
+				<div class="flex flex-col items-center">
+					<p class="text-lg text-primary-900 font-bold text-center dark:text-gray-300 my-4">
+						CyberGlobes AI.
+					</p>
+					<img src={CyberGlobs} alt="CyberGlobes" class="w-full h-auto" />
+				</div>
+			</Carousel.Item>
+		</Carousel.Content>
+	</Carousel.Root>
+
+	<p class="text-lg text-gray-600 text-center dark:text-gray-300 max-w-4xl mx-auto mb-10">
+		We don’t just show you where something is, we reveal what’s actually happening there in real
+		time. By analyzing live movement patterns, user behavior, environmental signals, and digital
+		activity, Cyberglobes delivers fresh, context-rich insights that reflect the true state of any
+		place, moment by moment. Whether you're tracking a trend, planning a visit, or investigating an
+		area, you get dynamic, reliable data—not yesterday’s headlines.
+	</p>
 
 	<!-- Mobile Carousel -->
 	<Carousel.Root
@@ -130,5 +186,6 @@
 				</div>
 			</div>
 		{/each}
+	</div>
 	</div>
 </section>
