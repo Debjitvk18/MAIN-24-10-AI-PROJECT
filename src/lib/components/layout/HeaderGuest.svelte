@@ -63,7 +63,7 @@
 				class="text-sm/6 font-semibold transition-colors {isActive('/try-demo') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}" 
 				rel="external"
 			>
-				Try Demo
+				Make Search
 			</a>
 			<a 
 				href="/how-it-works" 
@@ -175,7 +175,7 @@
 							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold {isActive('/try-demo') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
 							rel="external"
 						>
-							Try Demo
+							Make Search
 						</a>
 
 					</div>

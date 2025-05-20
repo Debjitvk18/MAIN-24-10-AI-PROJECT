@@ -4,6 +4,7 @@
 	import DifferenceCard from '$lib/components/ui/about-us/DifferenceCard.svelte';
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
+	import Cta from '$lib/components/ui/home/Cta.svelte';
 	
 	// Animation control variables
 	let mounted = false;
@@ -280,3 +281,4 @@
 
     </div>
 </section>
+<Cta />

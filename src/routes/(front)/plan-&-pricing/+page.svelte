@@ -1,4 +1,5 @@
 <script>
+	import Cta from '$lib/components/ui/home/Cta.svelte';
 	import Icon from '@iconify/svelte';
 </script>
 <section class="bg-white dark:bg-gray-900 py-14 lg:py-18">
@@ -71,3 +72,4 @@
     </div>
   </div>
 </section>
+<Cta />

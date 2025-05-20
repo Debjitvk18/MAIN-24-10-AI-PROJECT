@@ -5,6 +5,7 @@
 	import SearchByAddress from '$lib/assets/elements/search-by-address.png';
 	import SearchByImage from '$lib/assets/elements/search-by-image.jpg';
 	import AdditionalSearch from '$lib/assets/elements/additional-search.jpg';
+	import Cta from '$lib/components/ui/home/Cta.svelte';
 
 	const features = [
 		{
@@ -68,7 +69,7 @@
 	</div>
 </section>
 
-<section class="bg-gray-50 dark:bg-black py-24">
+<section class="bg-gray-50 dark:bg-black pt-24 pb-5">
 	<div class="container mx-auto">
 		<!-- Header -->
 		<div class="text-center mb-20">
@@ -214,3 +215,4 @@ to give you what traditional tools can’t:
 		</div>
 	</div>
 </section>
+<Cta />
