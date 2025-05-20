@@ -53,12 +53,6 @@
 				Home
 			</a>
 			<a 
-				href="/plan-&-pricing" 
-				class="text-sm/6 font-semibold transition-colors {isActive('/plan-&-pricing') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}"
-			>
-				Pricing
-			</a>
-			<a 
 				href="/" 
 				class="text-sm/6 font-semibold transition-colors {isActive('/insights') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}"
 			>
@@ -76,6 +70,19 @@
 				rel="external"
 			>
 				Try Demo
+			</a>
+			<a 
+				href="/plan-&-pricing" 
+				class="text-sm/6 font-semibold transition-colors {isActive('/plan-&-pricing') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}"
+			>
+				Pricing
+			</a>
+
+			<a 
+				href="/about-us" 
+				class="text-sm/6 font-semibold transition-colors {isActive('/about-us') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}"
+			>
+				About Us
 			</a>
 		</div>
 		<div class="hidden lg:flex lg:flex-1 lg:justify-end">
@@ -157,12 +164,6 @@
 							Home
 						</a>
 						<a
-							href="/plan-&-pricing"
-							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold {isActive('/plan-&-pricing') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
-						>
-							Pricing
-						</a>
-						<a
 							href="/"
 							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold {isActive('/insights') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
 						>
@@ -183,12 +184,43 @@
 						>
 							Try Demo
 						</a>
+
 						<a
-							href="/register"
-							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold {isActive('/register') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
+							href="/plan-&-pricing"
+							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold {isActive('/plan-&-pricing') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
 						>
-							Register
+							Pricing
 						</a>
+
+						<a
+							href="/about-us"
+							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold {isActive('/about-us') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
+						>
+							About Us
+						</a>
+						{#if $isLoggedIn}
+							<a
+								href="/dashboard"
+								class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold {isActive('/dashboard') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
+							>
+								Dashboard
+							</a>
+							<a
+								href="javascript:void(0)"
+								on:click={logout()}
+								class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
+							>
+								Log out
+							</a>
+						{:else}
+							<a
+								href="/register"
+								class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold {isActive('/register') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
+							>
+								Register
+							</a>
+						{/if}
+
 					</div>
 				</div>
 			</div>

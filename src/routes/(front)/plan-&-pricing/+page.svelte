@@ -1,10 +1,10 @@
 <script>
 	import Icon from '@iconify/svelte';
 </script>
-<section class="bg-white dark:bg-gray-900 py-14 lg:py-20">
+<section class="bg-white dark:bg-gray-900 py-14 lg:py-18">
   <div class="max-w-screen-xl mx-auto px-4 lg:px-6">
     <div class="max-w-screen-md mx-auto text-center mb-12">
-      <h2 class="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-4">Plan and Pricing</h2>
+      <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-900 leading-tight mb-6">Plan and Pricing</h2>
       <p class="text-lg text-gray-700 dark:text-gray-400">
         Choose the way you want to use Cyberglobes — flexible pay-as-you-go access or unlimited insights with a monthly plan.
       </p>
