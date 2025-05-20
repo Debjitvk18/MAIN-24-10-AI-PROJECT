@@ -59,17 +59,17 @@
 				Blog
 			</a>
 			<a 
-				href="/" 
-				class="text-sm/6 font-semibold transition-colors {isActive('/testimonials') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}"
-			>
-				Testimonials
-			</a>
-			<a 
 				href="/try-demo" 
 				class="text-sm/6 font-semibold transition-colors {isActive('/try-demo') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}" 
 				rel="external"
 			>
 				Try Demo
+			</a>
+			<a 
+				href="/how-it-works" 
+				class="text-sm/6 font-semibold transition-colors {isActive('/how-it-works') ? 'text-primary-600 border-primary-500' : 'text-gray-900 hover:text-primary-500'}"
+			>
+				How it works
 			</a>
 			<a 
 				href="/plan-&-pricing" 
@@ -169,20 +169,23 @@
 						>
 							Blog
 						</a>
-						<a
-							href="/"
-							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold {isActive('/testimonials') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
-						>
-							Testimonials
-						</a>
-					</div>
-					<div class="py-6">
+
 						<a
 							href="/try-demo"
 							class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold {isActive('/try-demo') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
 							rel="external"
 						>
 							Try Demo
+						</a>
+
+					</div>
+					<div class="py-6">
+
+						<a
+							href="/how-it-works"
+							class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold {isActive('/how-it-works') ? 'bg-primary-50 text-primary-600' : 'text-gray-900 hover:bg-gray-50'}"
+						>
+							How it works
 						</a>
 
 						<a

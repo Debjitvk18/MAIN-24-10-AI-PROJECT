@@ -51,11 +51,6 @@
 		};
 	});
 	
-	// Handle industry card click
-	function handleIndustryClick(industry) {
-		console.log(`Navigating to industry page: ${industry.title}`);
-		// In a real implementation, use goto() or similar for navigation
-	}
 	
 	const industries = [
 		{ icon: 'mdi:cart-outline', title: 'Retail & Consumer Insights' },

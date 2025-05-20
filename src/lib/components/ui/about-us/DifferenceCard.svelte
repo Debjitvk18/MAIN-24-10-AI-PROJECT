@@ -21,7 +21,7 @@
   
   <!-- Content -->
   <h3 class="font-bold text-gray-900 mb-4 text-xl group-hover:text-primary-700 transition-colors duration-300">{title}</h3>
-  <p class="text-gray-700 leading-relaxed text-md group-hover:text-gray-800 transition-colors duration-300">
+  <p class="text-gray-700 leading-relaxed text-md group-hover:text-gray-800 transition-colors duration-300 text-md lg:text-[16px]">
     {@html description}
   </p>
   
