@@ -261,7 +261,7 @@
 		</div>
 
 		<div
-			class="grid max-w-screen-xl text-center xl:text-left px-4 py-8 mx-auto lg:gap-8 gap-8 xl:gap-0 lg:py-[100px] lg:pt-[60px] lg:pb-[130px] lg:grid-cols-12"
+			class="grid max-w-screen-xl text-center xl:text-left md:px-0 px-4 py-8 lg:gap-8 gap-8 xl:gap-0 lg:py-[100px] lg:pt-[60px] lg:pb-[130px] lg:grid-cols-12"
 		>
 	<div class="col-span-12 lg:col-span-10 text-center xl:text-left flex flex-col justify-center items-center xl:items-start space-y-6">
 		<div class="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-900 md:leading-tight">
@@ -272,31 +272,31 @@
 			Search on your own or let our intelligent chatbot do the work. Stay ahead with the latest updates—while others rely on outdated information.
 		</p>
 				<Tabs.Root value="agent">
-					<Tabs.List class="mb-5 bg-white rounded-lg">
+					<Tabs.List class="mb-5 bg-white rounded-lg md:h-14">
 						<Tabs.Trigger
 							value="agent"
-							class="px-6 hover:bg-gray-200 hover:text-black text-black font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-gray-100 data-[state=active]:text-black data-[state=active]:shadow-md"
+							class="flex-1 py-2 px-2 sm:px-4 md:px-4 md:mx-1 hover:bg-gray-200 hover:text-black text-black font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-gray-100 data-[state=active]:text-black data-[state=active]:shadow-md text-xs sm:text-sm md:text-base"
 						>
-							Search by Agent
+							<span class="block truncate">Search by Agent</span>
 						</Tabs.Trigger>
 
 						<Tabs.Trigger
 							value="address"
-							class="px-6 hover:bg-gray-200 hover:text-black text-black font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-gray-100 data-[state=active]:text-black data-[state=active]:shadow-md"
+							class="flex-1 py-2 px-2 sm:px-4 md:px-4 md:mx-1 hover:bg-gray-200 hover:text-black text-black font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-gray-100 data-[state=active]:text-black data-[state=active]:shadow-md text-xs sm:text-sm md:text-base"
 						>
-							Search by Address
+							<span class="block truncate">Search by Address</span>
 						</Tabs.Trigger>
 
 						<Tabs.Trigger
 							value="image"
-							class="px-6 hover:bg-gray-200 hover:text-black text-black font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-gray-100 data-[state=active]:text-black data-[state=active]:shadow-md"
+							class="flex-1 py-2 px-2 sm:px-4 md:px-4 md:mx-1 hover:bg-gray-200 hover:text-black text-black font-semibold rounded-md transition-all duration-300 ease-in-out data-[state=active]:bg-gray-100 data-[state=active]:text-black data-[state=active]:shadow-md text-xs sm:text-sm md:text-base"
 						>
-							Search by Image
+							<span class="block truncate">Search by Image</span>
 						</Tabs.Trigger>
 					</Tabs.List>
 
 					<Tabs.Content value="agent">
-						<form class="max-w-full xl:max-w-md">
+						<form class="max-w-full">
 							<label class="mb-2 text-sm font-medium text-gray-900 sr-only" for="default-search">
 								Search
 							</label>
@@ -326,7 +326,7 @@
 						<MapSearchBox />
 					</Tabs.Content>
 					<Tabs.Content value="image">
-						<form class="max-w-md w-full">
+						<form class="max-w-full">
 							<div
 								class="flex items-center justify-center w-full"
 								on:drop={handleDrop}

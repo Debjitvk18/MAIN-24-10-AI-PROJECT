@@ -52,10 +52,7 @@
 	});
 </script>
 
-<section class="text-black py-20">
-	<div class="container mx-auto">
-
-	</div>
+<section class="text-black md:py-20 py-10">
 	<div class="container mx-auto flex flex-col-reverse lg:flex-row items-center gap-10">
 		<!-- Text Content -->
 		<div class="lg:w-1/2">
