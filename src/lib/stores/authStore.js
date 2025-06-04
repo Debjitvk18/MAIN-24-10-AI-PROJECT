@@ -41,7 +41,6 @@ export async function login(data) {
 	localStorage.setItem(USER_KEY, JSON.stringify(data.member));
 	setCookie(AUTH_TOKEN, data.access_token, 60);
 	isLoggedIn.set(true);
-	goto('/dashboard');
 }
 
 export async function getUserData() {

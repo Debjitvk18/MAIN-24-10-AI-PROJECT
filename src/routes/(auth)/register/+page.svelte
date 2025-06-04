@@ -1,10 +1,13 @@
 <script lang="ts">
-	import Logo from '$lib/components/general/Logo.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
 	import { AuthService } from '$lib/services/auth-service';
-	import LoadingButton from '$lib/components/form/buttons/LoadingButton.svelte';
 	import { goto } from '$app/navigation';
 	import Errors from '$lib/components/form/messages/Errors.svelte';
 	import { triggerSuccessToast } from '$lib/stores/toastStore';
+	import LoginBg from '$lib/assets/general/login.jpg';
+	import { login } from '$lib/stores/authStore';
 
 	let name = '';
 	let email = '';
@@ -22,8 +25,13 @@
 		try {
 			const data = await authService.register({ name, email, password, password_confirmation });
 			if (data.success) {
-				goto('/verify-email');
-				triggerSuccessToast(data.message);
+				// Auto login user with the response data
+				const loginData = {
+					access_token: data.access_token,
+					member: data.user
+				};
+				
+				login(loginData);
 			} else {
 				handleErrors(data);
 			}
@@ -47,80 +55,54 @@
 	}
 </script>
 
-<div class="font-sans text-gray-900 antialiased">
-	<div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-		<div>
-			<a href="/" aria-label="Home">
-				<Logo />
-			</a>
-		</div>
-
-		<div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+<div class="w-full lg:grid lg:min-h-[600px] lg:grid-cols-2 xl:min-h-[800px]">
+	<div class="flex items-center justify-center py-12">
+		<div class="mx-auto grid w-[350px] gap-6">
+			<div class="grid gap-2 text-center">
+				<h1 class="text-3xl font-bold">Register</h1>
+				<p class="text-muted-foreground text-balance">
+					Create an account to start using CyberGlobes
+				</p>
+			</div>
 			<Errors {errorMessages} />
-			<form on:submit={handleSubmit}>
-				<div>
-					<label class="block font-medium text-sm text-gray-700" for="name">Name</label>
-					<input
-						class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full"
-						id="name"
-						type="text"
-						bind:value={name}
-						required
-					/>
+			<form class="grid gap-4" on:submit={handleSubmit}>
+				<div class="grid gap-2">
+					<Label for="name">Name</Label>
+					<Input id="name" type="text" bind:value={name} placeholder="John Doe" required />
 				</div>
-				<div class="mt-4">
-					<label class="block font-medium text-sm text-gray-700" for="email">Email</label>
-					<input
-						class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full"
-						id="email"
-						type="email"
-						bind:value={email}
-						required
-					/>
+				<div class="grid gap-2">
+					<Label for="email">Email</Label>
+					<Input id="email" type="email" bind:value={email} placeholder="m@example.com" required />
 				</div>
-				<div class="mt-4">
-					<label class="block font-medium text-sm text-gray-700" for="password">Password</label>
-					<input
-						class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full"
-						id="password"
-						type="password"
-						bind:value={password}
-						required
-						autocomplete="current-password"
-					/>
+				<div class="grid gap-2">
+					<Label for="password">Password</Label>
+					<Input id="password" type="password" bind:value={password} required />
 				</div>
-
-				<div class="mt-4">
-					<label class="block font-medium text-sm text-gray-700" for="password_confirmation"
-						>Confirm Password</label
-					>
-					<input
-						class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm block mt-1 w-full"
-						id="password_confirmation"
-						type="password"
-						bind:value={password_confirmation}
-						required
-						autocomplete="current-password"
-					/>
+				<div class="grid gap-2">
+					<Label for="password_confirmation">Confirm Password</Label>
+					<Input id="password_confirmation" type="password" bind:value={password_confirmation} required />
 				</div>
-
-				<div class="flex items-center justify-end mt-4">
-					<a class="underline text-sm text-gray-600 hover:text-gray-900" href="/login">
-						Already registered?
-					</a>
-
+				<Button type="submit" class="w-full" disabled={isLoading}>
 					{#if isLoading}
-						<LoadingButton buttonText="Register" />
+						Registering...
 					{:else}
-						<button
-							type="submit"
-							class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition ml-4"
-						>
-							Register
-						</button>
+						Register
 					{/if}
-				</div>
+				</Button>
 			</form>
+			<div class="mt-4 text-center text-sm">
+				Already have an account?
+				<a href="/login" class="underline"> Login </a>
+			</div>
 		</div>
+	</div>
+	<div class="bg-muted hidden lg:block">
+		<img
+			src={LoginBg}
+			alt="placeholder"
+			width="1920"
+			height="1080"
+			class="h-screen w-full object-cover dark:brightness-[0.2] dark:grayscale"
+		/>
 	</div>
 </div>

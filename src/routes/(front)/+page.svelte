@@ -26,6 +26,7 @@
 	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 	import BreakingLimit from '$lib/components/ui/home/BreakingLimit.svelte';
 	import Hero from '$lib/components/ui/home/Hero.svelte';
+	import { isLoggedIn } from '$lib/stores/authStore';
 
 	// Function to fetch location suggestions
 
@@ -102,6 +103,24 @@
 	let fileLoader = false;
 	async function uploadFile(file) {
 		if (!file) return;
+
+		if (!$isLoggedIn) {
+			const reader = new FileReader();
+			reader.onload = (event) => {
+				const fileData = event.target.result;
+				const searchParams = {
+					type: 'image',
+					file: fileData,
+					fileName: file.name,
+					fileType: file.type
+				};
+				localStorage.setItem('pendingSearch', JSON.stringify(searchParams));
+				goto('/login?loginredirect=1');
+			};
+			reader.readAsDataURL(file);
+			return;
+		}
+
 		fileLoader = true;
 		let apiService = new ApiService();
 		let formData = new FormData();
@@ -160,7 +179,20 @@
 					return;
 				}
 
-				window.location.href = `/try-demo?query=${agentQuery}&lat=${agentLat}&long=${agentLong}&mode=agent&search=${place}`;
+				let searchUrl = `/try-demo?query=${agentQuery}&lat=${agentLat}&long=${agentLong}&mode=agent&search=${place}`;
+
+				if (!$isLoggedIn) {
+					const searchParams = {
+						query: searchUrl,
+						type: 'agent'
+					};
+					localStorage.setItem('pendingSearch', JSON.stringify(searchParams))
+					goto('/login?loginredirect=1');
+
+					return false;
+				}
+
+				window.location.href = searchUrl;
 			});
 	}
 </script>

@@ -7,6 +7,10 @@
 	import { triggerSuccessToast } from '$lib/stores/toastStore';
 	import Errors from '$lib/components/form/messages/Errors.svelte';
 	import LoginBg from '$lib/assets/general/login.jpg';
+	import { onMount } from 'svelte';
+	import { getCookie } from '$lib/utils/cookies';
+	import { toast } from 'svelte-sonner';
+	import { getDataFromURL, removeDataFromURL } from '$lib/utils/generalUtils';
 
 	let email = '';
 	let password = '';
@@ -14,6 +18,13 @@
 	let isLoading = false;
 
 	const authService = new AuthService();
+
+	onMount(() => {
+		if (localStorage.getItem('pendingSearch')  && getDataFromURL('loginredirect') == '1') {
+			removeDataFromURL('loginredirect');
+			toast.warning("You'll need to log in to use this feature.", { position: 'top-right' });
+		}
+	});
 
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
@@ -27,9 +38,8 @@
 				handleErrors(data);
 			}
 		} catch (error) {
-			errorMessages.push('An unexpected error occurred.');
-		} finally {
 			isLoading = false;
+			errorMessages.push('An unexpected error occurred.');
 		}
 	}
 
