@@ -1,7 +1,9 @@
 <script>
 	import CTABanner from '$lib/assets/general/cta-layer.png';
+	import { isLoggedIn } from '$lib/stores/authStore';
 </script>
 
+{#if !$isLoggedIn}
 <section class="container relative mb-16 md:mb-[120px] mt-24 md:mt-[100px] px-4">
 	<div
 		class="bg-[#f2f4fb] py-12 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between rounded-lg shadow-xlg relative z-10"
@@ -38,3 +40,4 @@
 		<img src={CTABanner} alt="Placer.ai Illustration" class="w-full h-auto" />
 	</div>
 </section>
+{/if}
