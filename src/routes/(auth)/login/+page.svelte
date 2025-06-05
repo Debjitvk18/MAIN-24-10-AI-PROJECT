@@ -37,6 +37,7 @@
 			} else {
 				handleErrors(data);
 			}
+			isLoading = false
 		} catch (error) {
 			isLoading = false;
 			errorMessages.push('An unexpected error occurred.');

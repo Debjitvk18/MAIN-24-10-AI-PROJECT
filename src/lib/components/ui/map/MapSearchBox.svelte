@@ -2,6 +2,9 @@
 	import Icon from '@iconify/svelte';
 	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 	import { onMount, createEventDispatcher } from 'svelte';
+	import { isLoggedIn } from '$lib/stores/authStore';
+	import { goto } from '$app/navigation';
+	import { setCookie } from '$lib/utils/cookies';
 
 	const MAPBOX_API_BASE_URL = 'https://api.mapbox.com/geocoding/v5/mapbox.places';
 	const accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
@@ -52,7 +55,21 @@
 	// Handle suggestion selection
 	function onSuggestionClick(suggestion) {
 		if (redirectOnSelect) {
-			window.location.href = `/try-demo?search=${encodeURIComponent(suggestion.place_name)}&lat=${suggestion.center[1]}&long=${suggestion.center[0]}`;
+
+			const searchUrl = `/try-demo?search=${encodeURIComponent(suggestion.place_name)}&lat=${suggestion.center[1]}&long=${suggestion.center[0]}`;
+
+			if (!$isLoggedIn) {
+				const searchParams = {
+					query: searchUrl,
+					type: 'address'
+				};
+				localStorage.setItem('pendingSearch', JSON.stringify(searchParams))
+				goto('/login?loginredirect=1');
+
+				return false;
+			}
+
+			window.location.href = searchUrl;
 		} else {
 			query = suggestion.place_name;
 			showSuggestions = false;

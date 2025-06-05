@@ -10,6 +10,7 @@
 
 	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_ECHO_PUSHER_APP_ID, PUBLIC_API_URL } from '$env/static/public'; 
 	import { AUTH_TOKEN } from '$lib/constants/constants';
+	import { formatCoordinates } from '$lib/utils/locationUtils';
 	
 	// Browser environment check
 	const isBrowser = typeof window !== 'undefined';
@@ -101,8 +102,11 @@
 						const lat = getDataFromURL('lat');
 						const lng = getDataFromURL('long');
 						const search = getDataFromURL('search');
-						const requestId = response.request_id; // Added requestId variable
-						goto(`?mode=agent&lat=${lat}&long=${lng}&request_id=${requestId}&search=${search}`, { replaceState: true, keepfocus: true, noscroll: true });
+						const requestId = response.search_request.id;
+						let latToFly = formatCoordinates(response.search_request.request_params.latitude || lat);
+						let lngToFly = formatCoordinates(response.search_request.request_params.longitude || lng);
+						let searchQyery = response.search_request.request_params.full_address || search;
+						goto(`?mode=agent&lat=${latToFly}&long=${lngToFly}&request_id=${requestId}&search=${searchQyery}`, { replaceState: true, keepfocus: true, noscroll: true });
 						
 						// Initialize Echo and listen for updates on this conversation
 						setupEchoListener(conversationId);
@@ -151,9 +155,6 @@
 		// Initialize new Echo instance if needed
 		if (!echoInstance) {
 			let authToken = localStorage.getItem(AUTH_TOKEN) || false;
-			console.log('Auth token:', authToken);
-			console.log('PUBLIC_API_URL', PUBLIC_API_URL);
-
 			window.Pusher = Pusher;
 			echoInstance = new Echo({
 				broadcaster: PUBLIC_ECHO_BROADCASTER, // Use environment variable instead of hardcoded value
@@ -176,7 +177,6 @@
 				enabledTransports: ['ws', 'wss']
 			});
 
-			console.log('Echo instance initialized:', echoInstance);
 		}
 		
 		// Listen for updates on this conversation channel
@@ -206,14 +206,12 @@
 				}
 			});
 		
-		console.log(`Started listening for updates on App.Models.Conversation.${id}`);
 	}
 	
 	function refreshConversation(id) {
 		// Call the generate API to get latest conversation data
 		mapService.getPromptInsights({}, id)
 			.then(response => {
-				console.log('Conversation refreshed:', response);
 				
 				// Update conversation list/UI with new data
 				if (response && response.success) {
