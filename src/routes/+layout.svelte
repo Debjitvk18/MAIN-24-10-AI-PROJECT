@@ -10,6 +10,9 @@
 	import { ModeWatcher } from 'mode-watcher';
 	import { Toaster } from '$lib/components/ui/sonner';
 	let { children } = $props();
+	
+	// Flag to track if there are any errors
+	const hasError = $derived($page.error !== undefined && $page.error !== null);
 
 	// const noLayoutRoutes = ['/', '/login', '/register']; // Add routes where you don't want to show the layout
 
@@ -30,7 +33,7 @@
 <!-- {#if !noLayoutRoutes.includes($page.url.pathname)} -->
 <Toaster richColors />
 
-{#if $page.data.layout !== false}
+{#if $page.data.layout !== false && !hasError}
 	<div class="app-container">
 		<ModeWatcher />
 		<Sidebar />
