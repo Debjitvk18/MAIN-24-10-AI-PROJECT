@@ -23,7 +23,8 @@
 	import BreakingLimit from '$lib/components/ui/home/BreakingLimit.svelte';
 	import Hero from '$lib/components/ui/home/Hero.svelte';
 	import { isLoggedIn } from '$lib/stores/authStore';
-	import { USER_LAT, USER_LNG } from '$lib/constants/constants';
+	import { MAP_DEFAULT_LOCATION, USER_LAT, USER_LNG } from '$lib/constants/constants';
+	import { MapService } from '$lib/services/map-service';
 
 	let chart;
 
@@ -37,6 +38,10 @@
 	let selectedLocationIndex = 0;
 	let locationLoader = false;
 	let searchRequestId = null;
+	let agentSearchLoader = false;
+
+	// Map service
+	const mapService = new MapService();
 
 	onMount(async () => {
 		getUserLocation()
@@ -144,7 +149,7 @@
 					let lat = res.search_request.request_params.latitude;
 					let long = res.search_request.request_params.longitude;
 					let id = res.search_request.id;
-					goto(`try-demo?req_id=${id}&lat=${lat}&long=${long}`);
+					goto(`try-demo?`);
 				}
 			} else {
 				toast.error(res.message);
@@ -162,44 +167,43 @@
 			toast.error('Please enter a search query');
 			return;
 		}
-		if (!agentLat || !agentLong) {
-			agentLat = localStorage.getItem(USER_LAT) || null;
-			agentLong = localStorage.getItem(USER_LNG) || null;
+
+		agentSearchLoader = true;
+
+		agentLat = localStorage.getItem(USER_LAT) || MAP_DEFAULT_LOCATION.lat;
+		agentLong = localStorage.getItem(USER_LNG) || MAP_DEFAULT_LOCATION.lng;
+
+		let payload = {
+			message: agentQuery,
+			latitude: agentLat,
+			longitude: agentLong
+		};
+		
+		if (!$isLoggedIn) {
+			localStorage.setItem('pendingSearch', JSON.stringify(payload));
+			goto('/login?loginredirect=1');
+			agentSearchLoader = false;
+			return;
 		}
 
-		let place = '';
+		// Make API call to /insights/initiate
+		mapService.getInsights(payload)
+			.then(response => {
+				if (response.success) {
+					// get conversation_id
+					const conversationId = response.conversation_id;
 
-		fetch(
-			`https://api.mapbox.com/geocoding/v5/mapbox.places/${agentLong},${agentLat}.json?access_token=${PUBLIC_MAPBOX_ACCESS_TOKEN}`
-		)
-			.then((res) => res.json())
-			.then((data) => {
-				if (data.features && data.features.length > 0) {
-					agentLat = data.features[0].center[1];
-					agentLong = data.features[0].center[0];
-
-					place = data.features[0].place_name; // Store the place name
-					// toast.success(`Location found: ${place}`); // Notify user of the found location
+					// redirect to try-demo with conversation_id
+					goto(`try-demo?conversation_id=${conversationId}`);
 				} else {
-					console.log('No location found with the given coordinates');
-					// toast.error('No location found');
-					return;
+					toast.error(response.message);
 				}
-
-				let searchUrl = `/try-demo?query=${agentQuery}&lat=${agentLat}&long=${agentLong}&mode=agent&search=${place}`;
-
-				if (!$isLoggedIn) {
-					const searchParams = {
-						query: searchUrl,
-						type: 'agent'
-					};
-					localStorage.setItem('pendingSearch', JSON.stringify(searchParams))
-					goto('/login?loginredirect=1');
-
-					return false;
-				}
-
-				window.location.href = searchUrl;
+			})
+			.catch(error => {
+				toast.error('Search failed: ' + error);
+			})
+			.finally(() => {
+				agentSearchLoader = false;
 			});
 	}
 
@@ -387,10 +391,15 @@
 								></textarea>
 								<button
 									on:click={handleAgentSearch}
-									class="absolute right-0 top-0 p-4 text-sm font-medium text-white bg-[#2C7BE5] rounded-r-lg border-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 h-[calc(100%-0px)]"
+									class="absolute right-0 top-0 p-4 text-sm font-medium text-white bg-[#2C7BE5] rounded-r-lg border-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 h-[calc(100%-0px)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
 									type="button"
+									disabled={agentSearchLoader}
 								>
-									<Icon class="w-6 h-6" icon="ic:sharp-search" />
+									{#if agentSearchLoader}
+										<Icon icon="line-md:loading-twotone-loop" class="w-6 h-6" />
+									{:else}
+										<Icon class="w-6 h-6" icon="ic:sharp-search" />
+									{/if}
 									<span class="sr-only">Search</span>
 								</button>
 							</div>
