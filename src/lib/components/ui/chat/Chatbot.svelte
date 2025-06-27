@@ -99,6 +99,16 @@
 					if (response && response.success && response.conversation_id) {
 						conversationId = response.conversation_id;
 
+						// Check if conversation_id is already in the URL
+						const currentUrl = new URL(window.location.href);
+						const urlConversationId = currentUrl.searchParams.get('conversation_id');
+						
+						// If conversation_id is not in URL, append it
+						if (!urlConversationId) {
+							currentUrl.searchParams.set('conversation_id', conversationId);
+							window.history.pushState({}, '', currentUrl.toString());
+						}
+
 						// get all query parameters from the URL
 						const lat = getDataFromURL('lat');
 						const lng = getDataFromURL('long');
