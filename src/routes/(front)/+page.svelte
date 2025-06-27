@@ -43,16 +43,15 @@
 	onMount(async () => {
 		getUserLocation()
 			.then((position) => {
+				// Only save if user explicitly granted permission
 				agentLong = position.coords.longitude;
 				agentLat = position.coords.latitude;
-				console.log('Longitude:', agentLong);
-				console.log('Latitude:', agentLat);
 				localStorage.setItem(USER_LAT, agentLat);
 				localStorage.setItem(USER_LNG, agentLong);
 			})
 			.catch((error) => {
-				console.error('Geolocation error:', error.message);
-				alert('Unable to retrieve your location: ' + error.message);
+				// Do nothing for permission denied or no action
+				console.log('Location access not granted:', error.message);
 			});
 	});
 
