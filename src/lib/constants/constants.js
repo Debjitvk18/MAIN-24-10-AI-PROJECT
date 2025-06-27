@@ -16,9 +16,15 @@ export const API_BASE_URL = `${PUBLIC_API_URL}/api/v1/`;
 // ================= LocalStorage Keys =================
 export const AUTH_TOKEN = 'serviceapp-token';
 export const USER_KEY = 'serviceapp-user';
+export const USER_LAT = 'serviceapp-user-lat';
+export const USER_LNG = 'serviceapp-user-lng';
 
 // ================= Defaults =================
 export const NON_PANEL_ROUTES = ['login', 'register', 'forgot-password', 'reset-password'];
+export const MAP_DEFAULT_LOCATION = {
+	lat: 26.9124, // Jaipur, Rajasthan, India
+	lng: 75.7873 // Jaipur, Rajasthan, India
+};
 
 // ================= Fixed URLS =================
 export const PANOID_BASE_URL = 'https://www.google.com/maps/@?api=1&map_action=pano&pano=';

@@ -1,8 +1,4 @@
 <script>
-	import BlogCard from '$lib/components/ui/card/BlogCard.svelte';
-	import TestimoinalCard from '$lib/components/ui/card/TestimoinalCard.svelte';
-	import Faq from '$lib/components/ui/home/Faq.svelte';
-	import Pricing from '$lib/components/ui/pricing/Pricing.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import FacebookIcon from '$lib/assets/svg/marker/fb-mark.svg?raw';
@@ -27,14 +23,20 @@
 	import BreakingLimit from '$lib/components/ui/home/BreakingLimit.svelte';
 	import Hero from '$lib/components/ui/home/Hero.svelte';
 	import { isLoggedIn } from '$lib/stores/authStore';
-
-	// Function to fetch location suggestions
+	import { USER_LAT, USER_LNG } from '$lib/constants/constants';
 
 	let chart;
 
 	let agentQuery = '';
 	let agentLat = null;
 	let agentLong = null;
+	
+	// Location selection modal variables
+	let showLocationModal = false;
+	let locationOptions = [];
+	let selectedLocationIndex = 0;
+	let locationLoader = false;
+	let searchRequestId = null;
 
 	onMount(async () => {
 		getUserLocation()
@@ -43,8 +45,8 @@
 				agentLat = position.coords.latitude;
 				console.log('Longitude:', agentLong);
 				console.log('Latitude:', agentLat);
-				localStorage.setItem('lat', agentLat);
-				localStorage.setItem('lng', agentLong);
+				localStorage.setItem(USER_LAT, agentLat);
+				localStorage.setItem(USER_LNG, agentLong);
 			})
 			.catch((error) => {
 				console.error('Geolocation error:', error.message);
@@ -129,10 +131,21 @@
 		try {
 			const res = await apiService.makeApiCall(`map/image-search/`, formData, 'POST', 'formdata');
 			if (res.success) {
-				let lat = res.search_request.request_params.latitude;
-				let long = res.search_request.request_params.longitude;
-				let id = res.search_request.id;
-				goto(`try-demo?req_id=${id}&lat=${lat}&long=${long}`);
+				// Store the search request ID
+				searchRequestId = res.search_request.id;
+				
+				// Get location options from the response
+				if (res.search_request.request_params.image_coordinates && res.search_request.request_params.image_coordinates.length > 0) {
+					locationOptions = res.search_request.request_params.image_coordinates;
+					selectedLocationIndex = 0;
+					showLocationModal = true;
+				} else {
+					// Fallback to original behavior if no locations are provided
+					let lat = res.search_request.request_params.latitude;
+					let long = res.search_request.request_params.longitude;
+					let id = res.search_request.id;
+					goto(`try-demo?req_id=${id}&lat=${lat}&long=${long}`);
+				}
 			} else {
 				toast.error(res.message);
 			}
@@ -143,12 +156,6 @@
 		}
 	}
 
-	function adjustTextareaHeight(event) {
-		const textarea = event.target;
-		textarea.style.height = 'auto';
-		textarea.style.height = textarea.scrollHeight + 'px';
-	}
-
 	function handleAgentSearch() {
 		agentQuery = document.getElementById('location-input').value;
 		if (!agentQuery) {
@@ -156,8 +163,8 @@
 			return;
 		}
 		if (!agentLat || !agentLong) {
-			agentLat = localStorage.getItem('lat') || null;
-			agentLong = localStorage.getItem('lng') || null;
+			agentLat = localStorage.getItem(USER_LAT) || null;
+			agentLong = localStorage.getItem(USER_LNG) || null;
 		}
 
 		let place = '';
@@ -194,6 +201,41 @@
 
 				window.location.href = searchUrl;
 			});
+	}
+
+
+	function handleLocationSelect(index) {
+		selectedLocationIndex = index;
+	}
+
+	function handleContinueWithLocation() {
+		locationLoader = true;
+		
+		if (locationOptions.length > 0 && selectedLocationIndex >= 0) {
+			const selectedLocation = locationOptions[selectedLocationIndex];
+			
+			// Save selected location to localStorage (coordinates are [lng, lat])
+			localStorage.setItem(USER_LAT, selectedLocation.coordinates[1]);
+			localStorage.setItem(USER_LNG, selectedLocation.coordinates[0]);
+			
+			// Redirect to try-demo page
+			goto(`try-demo`);
+		} else {
+			toast.error('Please select a location');
+			locationLoader = false;
+		}
+	}
+
+	function closeLocationModal() {
+		showLocationModal = false;
+		locationOptions = [];
+		selectedLocationIndex = 0;
+	}
+
+	function adjustTextareaHeight(event) {
+		const textarea = event.target;
+		textarea.style.height = 'auto';
+		textarea.style.height = textarea.scrollHeight + 'px';
 	}
 </script>
 
@@ -415,6 +457,136 @@
 <Poi />
 
 <Cta />
+
+<!-- Location selection modal -->
+{#if showLocationModal}
+<div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+	<div class="relative bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-lg mx-auto transform transition-all">
+		<!-- Header -->
+		<div class="flex items-center justify-between p-6 border-b border-gray-200">
+			<div class="flex items-center gap-3">
+				<div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+					<Icon icon="lucide:map-pin" class="w-4 h-4 text-blue-600" />
+				</div>
+				<h3 class="text-xl font-semibold text-gray-900">Select Location</h3>
+			</div>
+			<button 
+				on:click={closeLocationModal} 
+				class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+			>
+				<Icon icon="lucide:x" class="w-5 h-5 text-gray-500" />
+			</button>
+		</div>
+		
+		<!-- Content -->
+		<div class="p-6">
+			{#if locationLoader}
+				<div class="flex flex-col items-center justify-center py-12">
+					<Icon icon="line-md:loading-twotone-loop" class="w-8 h-8 text-blue-600 mb-3" />
+					<p class="text-gray-600">Processing your selection...</p>
+				</div>
+			{:else if locationOptions.length > 0}
+				<div class="space-y-3 max-h-72 overflow-y-auto pr-2">
+					{#each locationOptions as location, index}
+						<div 
+							class="group relative p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:shadow-md
+							{selectedLocationIndex === index 
+								? 'border-blue-500 bg-blue-50 shadow-sm' 
+								: 'border-gray-200 hover:border-gray-300 bg-white'}"
+							on:click={() => handleLocationSelect(index)}
+						>
+							<!-- Selection indicator -->
+							<div class="absolute top-3 right-3">
+								{#if selectedLocationIndex === index}
+									<div class="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+										<Icon icon="lucide:check" class="w-3 h-3 text-white" />
+									</div>
+								{:else}
+									<div class="w-5 h-5 border-2 border-gray-300 rounded-full group-hover:border-gray-400"></div>
+								{/if}
+							</div>
+							
+							<!-- Location info -->
+							<div class="pr-8">
+								<div class="flex items-start gap-3">
+									<div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
+										<Icon icon="lucide:map-pin" class="w-4 h-4 text-gray-600" />
+									</div>
+									<div class="flex-1 min-w-0">
+										<h4 class="font-medium text-gray-900 mb-1 leading-tight">
+											{location.name || `Location ${index + 1}`}
+										</h4>
+										{#if location.address}
+											<p class="text-sm text-gray-600 mb-2 leading-relaxed">{location.address}</p>
+										{/if}
+										
+										<!-- Coordinates and match score -->
+										<div class="flex flex-wrap gap-3 text-xs">
+											<div class="flex items-center gap-1 text-gray-500">
+												<Icon icon="lucide:navigation" class="w-3 h-3" />
+												<span>{location.coordinates[1].toFixed(4)}, {location.coordinates[0].toFixed(4)}</span>
+											</div>
+											{#if location.similarity_score_1km}
+												<div class="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full">
+													<Icon icon="lucide:target" class="w-3 h-3" />
+													<span class="font-medium">{Math.round(location.similarity_score_1km * 100)}% match</span>
+												</div>
+											{/if}
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<div class="text-center py-12">
+					<div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+						<Icon icon="lucide:map-pin-off" class="w-8 h-8 text-gray-400" />
+					</div>
+					<h4 class="text-lg font-medium text-gray-900 mb-2">No locations found</h4>
+					<p class="text-gray-600">Please try again with a different image.</p>
+				</div>
+			{/if}
+		</div>
+		
+		<!-- Footer -->
+		{#if locationOptions.length > 0}
+			<div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50/50">
+				<button
+					on:click={closeLocationModal}
+					class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+					disabled={locationLoader}
+				>
+					Cancel
+				</button>
+				<button
+					on:click={handleContinueWithLocation}
+					class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+					disabled={locationLoader}
+				>
+					{#if locationLoader}
+						<Icon icon="line-md:loading-twotone-loop" class="w-4 h-4" />
+						Processing...
+					{:else}
+						<Icon icon="lucide:arrow-right" class="w-4 h-4" />
+						Continue
+					{/if}
+				</button>
+			</div>
+		{:else if !locationLoader}
+			<div class="flex justify-center p-6 border-t border-gray-200 bg-gray-50/50">
+				<button
+					on:click={closeLocationModal}
+					class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+				>
+					Close
+				</button>
+			</div>
+		{/if}
+	</div>
+</div>
+{/if}
 
 <style>
 	.poi-1 {
