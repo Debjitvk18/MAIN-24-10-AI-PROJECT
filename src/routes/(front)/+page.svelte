@@ -207,9 +207,9 @@
 		if (locationOptions.length > 0 && selectedLocationIndex >= 0) {
 			const selectedLocation = locationOptions[selectedLocationIndex];
 			
-			// Save selected location to localStorage (coordinates are [lng, lat])
-			localStorage.setItem(USER_LAT, selectedLocation.coordinates[1]);
-			localStorage.setItem(USER_LNG, selectedLocation.coordinates[0]);
+			// Save selected location to localStorage (coordinates are [lat, lng])
+			localStorage.setItem(USER_LAT, selectedLocation.coordinates[0]);
+			localStorage.setItem(USER_LNG, selectedLocation.coordinates[1]);
 			
 			// Redirect to try-demo page
 			goto(`try-demo`);
