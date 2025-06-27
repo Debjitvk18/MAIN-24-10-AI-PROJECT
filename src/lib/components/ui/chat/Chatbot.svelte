@@ -11,7 +11,7 @@
 	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_ECHO_PUSHER_APP_ID, PUBLIC_API_URL } from '$env/static/public'; 
 	import { AUTH_TOKEN, USER_LAT, USER_LNG, MAP_DEFAULT_LOCATION } from '$lib/constants/constants';
 	import { formatCoordinates } from '$lib/utils/locationUtils';
-	import { locationUpdate } from '$lib/stores/mapStore';
+	import { locationUpdate, receivedPoints } from '$lib/stores/mapStore';
 	
 	// Browser environment check
 	const isBrowser = typeof window !== 'undefined';
@@ -107,7 +107,6 @@
 						let latToFly = formatCoordinates(response.search_request.request_params.latitude || lat);
 						let lngToFly = formatCoordinates(response.search_request.request_params.longitude || lng);
 						let searchQyery = response.search_request.request_params.full_address || search;
-						goto(`?mode=agent&lat=${latToFly}&long=${lngToFly}&request_id=${requestId}&search=${searchQyery}`, { replaceState: true, keepfocus: true, noscroll: true });
 						
 						// Initialize Echo and listen for updates on this conversation
 						setupEchoListener(conversationId);
@@ -183,6 +182,7 @@
 		// Listen for updates on this conversation channel
 		echoInstance.private(`App.Models.Conversation.${id}`)
 			.listen('.App\\Events\\LocationReceived', (event) => {
+				console.log('LocationReceived event:', event);
 				// Extract lat/lng from the response and save to local storage
 				if (event && event.attributes) {
 					try {
@@ -200,13 +200,70 @@
 								latitude: parseFloat(attributes.latitude),
 								longitude: parseFloat(attributes.longitude)
 							});
+
+							console.log('Location updated:', {
+								latitude: parseFloat(attributes.latitude),
+								longitude: parseFloat(attributes.longitude)
+							});
 						}
 					} catch (error) {
 						console.error('Error parsing location attributes:', error);
 					}
 				}
 			})
+			.listen('.App\\Events\\PointReceived', (event) => {
+				console.log('PointReceived event:', event);
+				// Handle received points from the PointReceived event
+				if (event && event.point) {
+					try {
+						// Extract point data from the event structure
+						const pointData = event.point;
+						const metadata = pointData.metadata || {};
+						const location = metadata.location || {};
+						
+						// Create a normalized point object for our application
+						const normalizedPoint = {
+							id: metadata.placeId || `point_${Date.now()}`,
+							title: metadata.title || 'Unknown Place',
+							description: pointData.pageContent || metadata.categoryName || '',
+							latitude: location.lat,
+							longitude: location.lng,
+							address: metadata.address || '',
+							type: metadata.categoryName || 'Point of Interest',
+							price: metadata.price || null,
+							phone: metadata.phone || null,
+							website: metadata.url || metadata.website || null,
+							url: metadata.url || metadata.website || null,
+							imageUrl: metadata.imageUrl || null,
+							neighborhood: metadata.neighborhood || null,
+							city: metadata.city || '',
+							postalCode: metadata.postalCode || '',
+							countryCode: metadata.countryCode || '',
+							reviewsCount: metadata.reviewsCount || null,
+							openingHours: metadata.openingHours || [],
+							additionalInfo: metadata.additionalInfo || {},
+							conversationId: event.conversation_id,
+							metadata: metadata
+						};
+						
+						// Only add if we have valid coordinates
+						if (normalizedPoint.latitude && normalizedPoint.longitude) {
+							// Update the receivedPoints store
+							receivedPoints.update(currentPoints => {
+								return [...currentPoints, normalizedPoint];
+							});
+							
+							console.log('Point processed and added:', normalizedPoint);
+						} else {
+							console.warn('Point received but missing coordinates:', event);
+						}
+					} catch (error) {
+						console.error('Error processing received point:', error);
+					}
+				}
+			})
 			.listen('.App\\Events\\MessageReceived', (event) => {
+				console.log('MessageReceived event:', event);
 				// Process the received event data
 				if (event && event.message && event.message.content) {
 					// Add the assistant response to messages
@@ -330,6 +387,9 @@
 	onDestroy(() => {
 		// Clean up Echo listener when component unmounts
 		cleanupEchoListener();
+		
+		// Clear received points when component unmounts
+		receivedPoints.set([]);
 	});
 </script>
 

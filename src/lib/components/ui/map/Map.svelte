@@ -38,6 +38,7 @@
 		addPulsingDotAnimation,
 		resetMap
 	} from '$lib/utils/mapUtils';
+	import { clearReceivedPoints } from '$lib/stores/mapStore';
 
 	// UI Components
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
@@ -52,7 +53,8 @@
 		searchRequestID,
 		socialMediaJson,
 		visibility,
-		locationUpdate
+		locationUpdate,
+		receivedPoints
 	} from '$lib/stores/mapStore';
 	import ErrorDialog from '$lib/components/general/dialog/ErrorDialog.svelte';
 	import { parseSocialMediaResponse } from '$lib/utils/socialMediaUtils';
@@ -98,6 +100,12 @@
 
 	// Markers for social media types
 	let markers: { [key: string]: mapboxgl.Marker[] } = {};
+
+	// Markers for received points  
+	let pointMarkers: mapboxgl.Marker[] = [];
+
+	// Map to track point markers by their IDs
+	let pointMarkersMap: { [key: string]: mapboxgl.Marker } = {};
 
 	// Map service
 	const mapService = new MapService();
@@ -468,6 +476,11 @@
 		});
 		markers = {};
 
+		// Remove all point markers
+		pointMarkers.forEach(marker => marker.remove());
+		pointMarkers = [];
+		pointMarkersMap = {};
+
 		// Remove the main map marker if it exists
 		if (mapMarker) {
 			mapMarker.remove();
@@ -483,7 +496,6 @@
 		// Clear circle data
 		if (map.getSource('circle')) {
 			map.getSource('circle').setData({
-				type: 'FeatureCollection',
 				features: []
 			});
 		}
@@ -491,7 +503,6 @@
 		// Clear single-point data
 		if (map.getSource('single-point')) {
 			map.getSource('single-point').setData({
-				type: 'FeatureCollection',
 				features: []
 			});
 		}
@@ -515,6 +526,9 @@
 
 		// Add the initial marker back
 		initialMarker = new mapboxgl.Marker().setLngLat(initialCenter).addTo(map);
+
+		// Clear received points from store
+		clearReceivedPoints();
 	}
 
 	/**
@@ -556,6 +570,76 @@
 			locationUpdate.set(null);
 		}
 	}
+
+	// Subscribe to received points updates
+	$: if ($receivedPoints && $receivedPoints.length > 0 && hasMounted) {
+		addPointsToMap($receivedPoints);
+	}
+
+	/**
+	 * Creates a marker for a received point using the panoids-pin.svg icon
+	 */
+	function createPointMarker(point: any): mapboxgl.Marker {
+		const el = document.createElement('div');
+		el.className = 'point-marker';
+		el.innerHTML = `<svg width="35" height="35" viewBox="0 0 19 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<path d="M16.2174 2.88104C14.3618 0.959467 11.9299 -0.000527252 9.49796 2.17244e-07C7.06762 0.000527687 4.63676 0.961051 2.78222 2.88104C-0.927405 6.7226 -0.927405 12.9512 2.78222 16.7928L9.49954 23.7492L16.2174 16.7928C19.9275 12.9512 19.9275 6.7226 16.2174 2.88104Z" fill="#2C7BE5"/>
+			<path d="M15 9.5C15 12.5376 12.5376 15 9.5 15C6.46243 15 4 12.5376 4 9.5C4 6.46243 6.46243 4 9.5 4C12.5376 4 15 6.46243 15 9.5Z" fill="white"/>
+		</svg>`;
+		el.style.cursor = 'pointer';
+		el.id = `point-${point.id}`;
+
+		// Add click event to show popup with point information
+		el.addEventListener('click', (event) => {
+			event.stopPropagation();
+			
+			// Create popup content
+			const popupContent = `
+				<div class="p-3 max-w-xs">
+					<h3 class="font-semibold text-sm mb-2">${point.title || 'Unknown Place'}</h3>
+					${point.type ? `<p class="text-xs text-gray-600 mb-1">${point.type}</p>` : ''}
+					${point.address ? `<p class="text-xs text-gray-500 mb-2">${point.address}</p>` : ''}
+					${point.price ? `<p class="text-xs text-green-600 font-medium mb-1">Price: ${point.price}</p>` : ''}
+					${point.phone ? `<p class="text-xs text-gray-500 mb-1">📞 ${point.phone}</p>` : ''}
+					${point.url || point.website ? `<a href="${point.url || point.website}" target="_blank" class="text-xs text-blue-600 underline">Visit Website</a>` : ''}
+				</div>
+			`;
+			
+			// Create and show popup
+			new mapboxgl.Popup({
+				closeOnClick: true,
+				closeButton: true,
+				maxWidth: '300px'
+			})
+			.setLngLat([point.longitude, point.latitude])
+			.setHTML(popupContent)
+			.addTo(map);
+		});
+
+		// Create the marker
+		return new mapboxgl.Marker(el)
+			.setLngLat([point.longitude, point.latitude])
+			.addTo(map);
+	}
+
+	/**
+	 * Adds all received points as markers on the map
+	 */
+	function addPointsToMap(points: any[]) {
+		// Clear existing point markers
+		pointMarkers.forEach(marker => marker.remove());
+		pointMarkers = [];
+		pointMarkersMap = {};
+
+		// Add new point markers
+		points.forEach(point => {
+			if (point.latitude && point.longitude) {
+				const marker = createPointMarker(point);
+				pointMarkers.push(marker);
+				pointMarkersMap[point.id] = marker;
+			}
+		});
+	}
 </script>
 
 <svelte:head>
@@ -571,7 +655,7 @@
 	<div class="flex h-full flex-1 relative">
 		<!-- Sidebar - Always visible -->
 		<div class="sidebar visible">
-			<MapSidebar {isSidebarVisible} {markers} {map} hasChatbot={true} />
+			<MapSidebar {isSidebarVisible} {markers} {map} {pointMarkersMap} hasChatbot={true} />
 		</div>
 
 		<div class="h-full relative flex-1">
@@ -649,6 +733,22 @@
 
 	.sidebar.visible {
 		transform: translateX(0);
+	}
+
+	.point-marker {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+	}
+
+	.point-marker svg {
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+		transition: transform 0.2s ease;
+	}
+
+	.point-marker:hover svg {
+		transform: scale(1.1);
 	}
 
 	#map {

@@ -22,3 +22,11 @@ export const mapDataLoaded = writable(false);
 
 // Store for handling location updates from chatbot
 export const locationUpdate = writable(null);
+
+// Store for received points from PointReceived event
+export const receivedPoints = writable([]);
+
+// Function to clear received points
+export function clearReceivedPoints() {
+	receivedPoints.set([]);
+}

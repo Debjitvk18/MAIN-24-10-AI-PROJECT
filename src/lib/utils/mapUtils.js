@@ -269,3 +269,27 @@ export function pulsingDotAnimation(map) {
 		}
 	};
 }
+
+/**
+ * Highlights a point marker by modifying its visual appearance.
+ *
+ * @param {Object} marker The point marker object to be highlighted.
+ * @param {boolean} [highlight=false] Determines whether the marker should highlight.
+ * @return {void}
+ */
+export function highlightPointMarker(marker, highlight = false) {
+	if (!marker) return;
+
+	const element = marker.getElement();
+	const svgElement = element.querySelector('svg');
+	if (!svgElement) return;
+
+	if (highlight) {
+		svgElement.style.transition = 'transform 0.3s ease-out';
+		svgElement.style.transform = 'scale(1.2)';
+		svgElement.style.filter = 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5))';
+	} else {
+		svgElement.style.transform = 'scale(1)';
+		svgElement.style.filter = 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))';
+	}
+}
