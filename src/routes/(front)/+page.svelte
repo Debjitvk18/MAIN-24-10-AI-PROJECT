@@ -19,14 +19,11 @@
 	import Insight from '$lib/components/ui/home/Insight.svelte';
 	import Poi from '$lib/components/ui/home/Poi.svelte';
 	import { getUserLocation } from '$lib/utils/locationUtils';
-	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 	import BreakingLimit from '$lib/components/ui/home/BreakingLimit.svelte';
 	import Hero from '$lib/components/ui/home/Hero.svelte';
 	import { isLoggedIn } from '$lib/stores/authStore';
 	import { MAP_DEFAULT_LOCATION, USER_LAT, USER_LNG } from '$lib/constants/constants';
 	import { MapService } from '$lib/services/map-service';
-
-	let chart;
 
 	let agentQuery = '';
 	let agentLat = null;
@@ -57,10 +54,6 @@
 				console.error('Geolocation error:', error.message);
 				alert('Unable to retrieve your location: ' + error.message);
 			});
-
-		return () => {
-			if (chart) chart.destroy();
-		};
 	});
 
 	let file = null;
@@ -146,10 +139,7 @@
 					showLocationModal = true;
 				} else {
 					// Fallback to original behavior if no locations are provided
-					let lat = res.search_request.request_params.latitude;
-					let long = res.search_request.request_params.longitude;
-					let id = res.search_request.id;
-					goto(`try-demo?`);
+					goto(`try-demo`);
 				}
 			} else {
 				toast.error(res.message);
