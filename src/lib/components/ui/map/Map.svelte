@@ -10,12 +10,8 @@
 	// Environment variables
 	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 
-	// Services
-	import { MapService } from '$lib/services/map-service';
-
 	// Constants
 	import {
-		API_BASE_URL,
 		MAP_DEFAULT_LOCATION,
 		MAP_PRIMARY_COLOR,
 		MAPBOX_THEMES,
@@ -33,16 +29,10 @@
 		removeDataFromURL,
 		toggleFullScreen
 	} from '$lib/utils/generalUtils';
-	import {
-		addCircleRadius,
-		addPulsingDotAnimation,
-		resetMap
-	} from '$lib/utils/mapUtils';
 	import { clearReceivedPoints } from '$lib/stores/mapStore';
 
 	// UI Components
 	import LoadingOverlay from '$lib/components/ui/spinners/LoadingOverlay.svelte';
-	import { toast } from 'svelte-sonner';
 
 	// Icon Component
 	import MapSidebar from '$lib/components/ui/map/MapSidebar.svelte';
@@ -51,13 +41,11 @@
 		hoveredPostId,
 		mapDataLoaded,
 		searchRequestID,
-		socialMediaJson,
 		visibility,
 		locationUpdate,
 		receivedPoints
 	} from '$lib/stores/mapStore';
 	import ErrorDialog from '$lib/components/general/dialog/ErrorDialog.svelte';
-	import { parseSocialMediaResponse } from '$lib/utils/socialMediaUtils';
 	import MapExportJson from '$lib/components/ui/map/MapExportJson.svelte';
 	import MapDataInsights from './MapDataInsights.svelte';
 	import { user } from '$lib/stores/authStore';
@@ -65,23 +53,15 @@
 	// Default Data...
 	let showLoadingOverlay = false;
 	let overlayLoadingText = 'Loading';
-	let socialMediaIcons;
 	let circle;
 	let map: mapboxgl.Map;
 	let mapContainer: HTMLElement;
-	let showSidebar = true; // Always show sidebar
 	let reqId: number;
 	let reqLat: number;
 	let reqLong: number;
 	let request_id: number;
 	let showErrorDialog = false;
 	let errorResponse = {};
-
-	let lastSseId = 0;
-
-	const rawRadius = getDataFromURL('radius');
-	const radiusValue = [parseInt(rawRadius, 10) || 1];
-	const radiusValueInMeters = radiusValue[0] * 1000;
 
 	let hasMounted = false;
 
@@ -107,9 +87,6 @@
 	// Map to track point markers by their IDs
 	let pointMarkersMap: { [key: string]: mapboxgl.Marker } = {};
 
-	// Map service
-	const mapService = new MapService();
-
 	/**
 	 * A variable that holds the unsubscribe function returned by the subscription to the `page` store.
 	 * The subscription listens to changes in the `$page` object, particularly to retrieve URL parameters
@@ -128,7 +105,6 @@
 		searchRequestID.set(Number(request_id || reqId));
 	});
 
-	$: mode = getDataFromURL('mode');
 	$: request_id = getDataFromURL('request_id');
 
 	/**
@@ -242,67 +218,6 @@
 		return new FullScreenControl();
 	}
 
-	// Add Reset Map to Center controller
-	function createResetMapControl() {
-		class ResetMapControl {
-			onAdd(map) {
-				this.map = map;
-				this.container = document.createElement('div');
-				this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group cyberglobes-map-control';
-				const button = this.createResetMapControlBtn();
-				this.container.appendChild(button);
-				return this.container;
-			}
-
-			createResetMapControlBtn() {
-				const button = document.createElement('button');
-				button.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-resetBtn cyberglobes-map-control-btn';
-				button.type = 'button';
-				button.title = 'Center Results';
-				button.style.padding = '2px';
-				button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 16v-2.5q0-.625.438-1.062T13.5 12H16v1.5h-2.5V16zm1.5 6q-.625 0-1.062-.437T12 20.5V18h1.5v2.5H16V22zm7-6v-2.5H18V12h2.5q.625 0 1.063.438T22 13.5V16zM18 22v-1.5h2.5V18H22v2.5q0 .625-.437 1.063T20.5 22zm2.775-12H18.7q-.65-2.2-2.475-3.6T12 5Q9.075 5 7.037 7.038T5 12q0 1.8.813 3.3T8 17.75V15h2v6H4v-2h2.35Q4.8 17.75 3.9 15.938T3 12q0-1.875.713-3.512t1.924-2.85t2.85-1.925T12 3q3.225 0 5.663 1.988T20.775 10"/></svg>`;
-
-				button.onclick = () => {
-					centerMapOnCircle();
-				};
-
-				return button;
-			}
-
-			onRemove() {
-				this.container.parentNode.removeChild(this.container);
-				this.map = undefined;
-			}
-		}
-
-		return new ResetMapControl();
-	}
-
-	/**
-	 * Centers the map view on a circular area defined by coordinates.
-	 * This method ensures the map displays the entire circular area
-	 * by fitting its bounds to the map view with padding applied.
-	 *
-	 * @return {void} No return value. Logs an error if the `circle` object
-	 *                or its required properties are undefined or invalid.
-	 */
-	function centerMapOnCircle() {
-		if (!circle || !circle.geometry || !circle.geometry.coordinates) {
-			console.error('Error: circle is undefined or missing required properties.');
-			return;
-		}
-
-		// Fit map bounds
-		const bounds = circle.geometry.coordinates[0].reduce(
-			(bounds, coord) => bounds.extend(coord),
-			new mapboxgl.LngLatBounds(
-				circle.geometry.coordinates[0][0],
-				circle.geometry.coordinates[0][0]
-			)
-		);
-		map.fitBounds(bounds, { padding: 20 });
-	}
-
 	onMount(() => {
 		mapDataLoaded.set(false);
 
@@ -394,75 +309,6 @@
 
 		unsubscribe();
 	});
-
-	function createMarker(
-		icon: string,
-		coordinates: [number, number],
-		isVisible: boolean,
-		post: number
-	): mapboxgl.Marker {
-		const el = document.createElement('div');
-		el.className = SOCIAL_MARKER_CLASS;
-		el.innerHTML = icon;
-		el.style.fontSize = MARKER_FONT_SIZE;
-		el.style.display = !isVisible ? 'none' : 'block';
-		el.style.cursor = 'pointer';
-		el.id = post.toString();
-
-		// Ensure the map instance is valid before adding marker
-		if (!map || !map.getCanvasContainer()) {
-			console.error('Map instance is not ready.');
-			return null;
-		}
-
-		// Add click event to highlight the associated sidebar item
-		el.addEventListener('click', (event) => {
-			event.stopPropagation();
-			hoveredPostId.set(post.id);
-		});
-
-		// Create the marker
-		return new mapboxgl.Marker(el).setLngLat(coordinates).addTo(map);
-	}
-
-	function filterValidPosts(posts: { lat: number; lng: number }[], shape: any) {
-		return posts.filter((post) => {
-			if (post && post.lat !== null && post.lng !== null) {
-				return true;
-			}
-		});
-	}
-
-	function generateRandomValidPoints(count: number, circle: any) {
-		const points = [];
-		while (points.length < count) {
-			const randomPoints = turf.randomPoint(count - points.length, { bbox: turf.bbox(circle) });
-
-			randomPoints.features.forEach((feature) => {
-				if (turf.booleanPointInPolygon(feature, circle)) {
-					points.push(feature.geometry.coordinates);
-				}
-			});
-		}
-
-		return points;
-	}
-
-	/**
-	 * Toggles the visibility of markers for a specified type.
-	 *
-	 * @param {string} type - The type of markers whose visibility needs to be toggled.
-	 * @return {void} This function does not return a value.
-	 */
-	function toggleVisibility(type: string) {
-		// Update the visibility object
-		$visibility[type] = !$visibility[type];
-
-		// Show or hide markers
-		Object.values(markers[type]).forEach((marker) => {
-			marker.getElement().style.display = $visibility[type] ? 'block' : 'none';
-		});
-	}
 
 	/**
 	 * Resets the map by removing all markers, clearing sources, and resetting view to initial state
