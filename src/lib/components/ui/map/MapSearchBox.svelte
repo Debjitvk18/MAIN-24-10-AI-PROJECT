@@ -4,7 +4,7 @@
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { isLoggedIn } from '$lib/stores/authStore';
 	import { goto } from '$app/navigation';
-	import { USER_LAT, USER_LNG } from '$lib/constants/constants';
+	import { ACTION_TYPES, QUERY_BEFORE_LOGIN, USER_LAT, USER_LNG } from '$lib/constants/constants';
 
 	const MAPBOX_API_BASE_URL = 'https://api.mapbox.com/geocoding/v5/mapbox.places';
 	const accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
@@ -59,19 +59,19 @@
 		localStorage.setItem(USER_LNG, suggestion.center[0]);
 		
 		if (redirectOnSelect) {
-			const searchUrl = `/try-demo`;
-
 			if (!$isLoggedIn) {
-				const searchParams = {
-					query: searchUrl,
-					type: 'address'
+				const payload = {
+					action: ACTION_TYPES.SEARCH_BY_ADDRESS,
+					query: suggestion.place_name,
+					latitude: suggestion.center[1],
+					longitude: suggestion.center[0]
 				};
-				localStorage.setItem('pendingSearch', JSON.stringify(searchParams));
+				localStorage.setItem(QUERY_BEFORE_LOGIN, JSON.stringify(payload));
 				goto('/login?loginredirect=1');
 				return;
 			}
 
-			window.location.href = searchUrl;
+			window.location.href = '/try-demo';
 		} else {
 			query = suggestion.place_name;
 			showSuggestions = false;

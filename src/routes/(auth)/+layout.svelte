@@ -7,60 +7,43 @@
 	import { ApiService } from '$lib/services/api-service';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
+	import { QUERY_BEFORE_LOGIN, ACTION_TYPES } from '$lib/constants/constants';
 	let { children } = $props();
 
 	async function handlePendingSearch() {
-		const pendingSearch = localStorage.getItem('pendingSearch');
+		const pendingSearch = localStorage.getItem(QUERY_BEFORE_LOGIN);
 		if (pendingSearch) {
 			try {
 				const searchParams = JSON.parse(pendingSearch);
-				localStorage.removeItem('pendingSearch');
 
-				if (['agent', 'address'].includes(searchParams.type)) {
-					return searchParams.query;
-				} else if (searchParams.type == 'image') {
-					const response = await fetch(searchParams.file);
-					const blob = await response.blob();
-					const file = new File([blob], searchParams.fileName, { type: searchParams.fileType });
-					const apiService = new ApiService();
-					let formData = new FormData();
-					formData.append('image', file);
-
-					try {
-						const res = await apiService.makeApiCall(
-							`map/image-search/`,
-							formData,
-							'POST',
-							'formdata'
-						);
-
-						if (res.success) {
-							let lat = res.search_request.request_params.latitude;
-							let long = res.search_request.request_params.longitude;
-							let id = res.search_request.id;
-							return `try-demo?req_id=${id}&lat=${lat}&long=${long}`;
-						} else {
-							toast.error(res.message);
-							return '/dashboard';
-						}
-					} catch (error) {
-						toast.error('Upload failed: ' + error);
-						return '/dashboard';
-					}
+				// if search by address, redirect to try-demo
+				if(searchParams.action === ACTION_TYPES.SEARCH_BY_ADDRESS) {
+					localStorage.removeItem(QUERY_BEFORE_LOGIN);
+					return `/try-demo`;
 				}
 
-				return '/dashboard';
+				// if search by agent, redirect to homepage with query
+				if (searchParams.action === ACTION_TYPES.SEARCH_BY_AGENT) {
+					localStorage.removeItem(QUERY_BEFORE_LOGIN);
+					return `/?logged_in=true&query=${encodeURIComponent(searchParams.message)}`;
+				}
+
+				// if search by image, redirect to homepage with image
+				if (searchParams.action === ACTION_TYPES.SEARCH_BY_IMAGE) {
+					return `/?logged_in=true&image=true`;
+				}
+
+				return '/'; // Default redirect to homepage after login
 			} catch (error) {
 				console.error('Error processing pending search:', error);
-				return '/dashboard';
+				return '/'; // Redirect to homepage on error
 			}
 		}
 
-		return '/dashboard';
+		return '/dashboard'; // Default redirect to homepage when no pending search
 	}
 
 	onMount(() => {
-		console.log(JSON.parse(localStorage.getItem('pendingSearch') || '{}'));
 		checkAuth();
 		const unsubscribe = isLoggedIn.subscribe(async (value) => {
 			if (value) {

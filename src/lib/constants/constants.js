@@ -19,6 +19,7 @@ export const USER_KEY = 'serviceapp-user';
 export const USER_LAT = 'serviceapp-user-lat';
 export const USER_LNG = 'serviceapp-user-lng';
 export const AGENT_FROM_HOME = 'serviceapp-agent-from-home';
+export const QUERY_BEFORE_LOGIN = 'serviceapp-query-before-login';
 
 // ================= Defaults =================
 export const NON_PANEL_ROUTES = ['login', 'register', 'forgot-password', 'reset-password'];
@@ -182,3 +183,10 @@ export const FACEBOOK_MARKETPLACE_SORT_OPTIONS = [
 	{ label: 'Price Ascending', value: 'PRICE_ASCEND' },
 	{ label: 'Price Descending', value: 'PRICE_DESCEND' }
 ];
+
+
+export const ACTION_TYPES = {
+	SEARCH_BY_ADDRESS: 'search_by_address',
+	SEARCH_BY_AGENT: 'search_by_agent',
+	SEARCH_BY_IMAGE: 'search_by_image',
+}

@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import FacebookIcon from '$lib/assets/svg/marker/fb-mark.svg?raw';
 	import TwitterIcon from '$lib/assets/svg/marker/x-mark.svg?raw';
 	import InstaIcon from '$lib/assets/svg/marker/insta-mark.svg?raw';
@@ -22,7 +23,7 @@
 	import BreakingLimit from '$lib/components/ui/home/BreakingLimit.svelte';
 	import Hero from '$lib/components/ui/home/Hero.svelte';
 	import { isLoggedIn } from '$lib/stores/authStore';
-	import { AGENT_FROM_HOME, MAP_DEFAULT_LOCATION, USER_LAT, USER_LNG } from '$lib/constants/constants';
+	import { ACTION_TYPES, AGENT_FROM_HOME, MAP_DEFAULT_LOCATION, QUERY_BEFORE_LOGIN, USER_LAT, USER_LNG } from '$lib/constants/constants';
 	import { MapService } from '$lib/services/map-service';
 
 	let agentQuery = '';
@@ -41,6 +42,73 @@
 	const mapService = new MapService();
 
 	onMount(async () => {
+		// Check for URL query parameters only if user is logged in
+		const urlParams = $page.url.searchParams;
+		const loggedIn = urlParams.get('logged_in');
+		const queryParam = urlParams.get('query');
+		const queryImage = urlParams.get('image');
+		
+		if (loggedIn === 'true' && (queryParam || queryImage)) {
+			// Wait for auth state to be properly set and then check login status
+			setTimeout(async () => {
+				if ($isLoggedIn) {
+					// search by agent.
+					if(queryParam && !queryImage) {
+						// Decode the query parameter and set it in the input
+						const decodedQuery = decodeURIComponent(queryParam);
+						const locationInput = document.getElementById('location-input');
+						if (locationInput) {
+							locationInput.value = decodedQuery;
+							agentQuery = decodedQuery;
+							
+							// Scroll to the input box
+							locationInput.scrollIntoView({ 
+								behavior: 'smooth', 
+								block: 'center' 
+							});
+
+							// remove query parameter from URL
+							const newUrl = new URL(window.location.href);
+							newUrl.searchParams.delete('query');
+							window.history.replaceState({}, '', newUrl.toString());
+							
+							// Trigger the search
+							handleAgentSearch();
+						}
+					}
+
+					// search by image
+					if(!queryParam && queryImage == 'true') {
+						const imageSearch = localStorage.getItem(QUERY_BEFORE_LOGIN);
+						if (imageSearch) {
+							const searchParams = JSON.parse(imageSearch);
+							if(searchParams && searchParams.file) {
+								const response = await fetch(searchParams.file);
+								const blob = await response.blob();
+								const file = new File([blob], searchParams.fileName, { type: searchParams.fileType });
+								localStorage.removeItem(QUERY_BEFORE_LOGIN);
+								uploadFile(file);
+
+								// scroll to the file upload area
+								const dropzone = document.querySelector('.dropzone');
+								if (dropzone) {
+									dropzone.scrollIntoView({ 
+										behavior: 'smooth', 
+										block: 'center' 
+									});
+								}
+							}
+						}
+						
+						// remove query parameter from URL
+						const newUrl = new URL(window.location.href);
+						newUrl.searchParams.delete('image');
+						window.history.replaceState({}, '', newUrl.toString());
+					}
+				}
+			}, 2000);
+		}
+
 		getUserLocation()
 			.then((position) => {
 				// Only save if user explicitly granted permission
@@ -108,12 +176,13 @@
 			reader.onload = (event) => {
 				const fileData = event.target.result;
 				const searchParams = {
+					action: ACTION_TYPES.SEARCH_BY_IMAGE,
 					type: 'image',
 					file: fileData,
 					fileName: file.name,
 					fileType: file.type
 				};
-				localStorage.setItem('pendingSearch', JSON.stringify(searchParams));
+				localStorage.setItem(QUERY_BEFORE_LOGIN, JSON.stringify(searchParams));
 				goto('/login?loginredirect=1');
 			};
 			reader.readAsDataURL(file);
@@ -163,13 +232,14 @@
 		agentLong = localStorage.getItem(USER_LNG) || MAP_DEFAULT_LOCATION.lng;
 
 		let payload = {
+			action: ACTION_TYPES.SEARCH_BY_AGENT,
 			message: agentQuery,
 			latitude: agentLat,
 			longitude: agentLong
 		};
 		
 		if (!$isLoggedIn) {
-			localStorage.setItem('pendingSearch', JSON.stringify(payload));
+			localStorage.setItem(QUERY_BEFORE_LOGIN, JSON.stringify(payload));
 			goto('/login?loginredirect=1');
 			agentSearchLoader = false;
 			return;
