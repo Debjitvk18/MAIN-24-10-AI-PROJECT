@@ -181,10 +181,26 @@
 		
 		// Listen for updates on this conversation channel
 		echoInstance.private(`App.Models.Conversation.${id}`)
+			.listen('.App\\Events\\LocationReceived', (event) => {
+				// Extract lat/lng from the response and save to local storage
+				if (event && event.attributes) {
+					try {
+						// Parse the attributes JSON string
+						const attributes = typeof event.attributes === 'string' 
+							? JSON.parse(event.attributes) 
+							: event.attributes;
+						
+						if (attributes.latitude !== undefined && attributes.longitude !== undefined) {
+							localStorage.setItem(USER_LAT, attributes.latitude.toString());
+							localStorage.setItem(USER_LNG, attributes.longitude.toString());
+						}
+					} catch (error) {
+						console.error('Error parsing location attributes:', error);
+					}
+				}
+			})
 			.listen('.App\\Events\\MessageReceived', (event) => {
-				console.log('Received message update:', event);
-				
-				 // Process the received event data
+				// Process the received event data
 				if (event && event.message && event.message.content) {
 					// Add the assistant response to messages
 					const assistantMessage = {
