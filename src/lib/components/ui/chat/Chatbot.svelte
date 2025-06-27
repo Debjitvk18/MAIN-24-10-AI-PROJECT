@@ -452,7 +452,7 @@
 				<textarea
 					bind:this={textareaEl}
 					rows="1"
-					class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:bg-gray-700 dark:border-gray-600 dark:text-white min-h-[42px] max-h-[200px] overflow-y-auto"
+					class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white min-h-[42px] max-h-[200px] overflow-y-auto"
 					placeholder="Ask something..."
 					bind:value={inputMessage}
 					on:input={resizeTextarea}
