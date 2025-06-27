@@ -19,3 +19,6 @@ export const visibility = writable([]);
 export const activeSocialMedia = writable(null);
 
 export const mapDataLoaded = writable(false);
+
+// Store for handling location updates from chatbot
+export const locationUpdate = writable(null);

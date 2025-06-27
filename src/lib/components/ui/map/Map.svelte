@@ -51,7 +51,8 @@
 		mapDataLoaded,
 		searchRequestID,
 		socialMediaJson,
-		visibility
+		visibility,
+		locationUpdate
 	} from '$lib/stores/mapStore';
 	import ErrorDialog from '$lib/components/general/dialog/ErrorDialog.svelte';
 	import { parseSocialMediaResponse } from '$lib/utils/socialMediaUtils';
@@ -93,6 +94,7 @@
 	let isSidebarVisible = true;
 
 	let mapMarker = null; // set by onclick on a map
+	let initialMarker = null; // marker created on initial mount
 
 	// Markers for social media types
 	let markers: { [key: string]: mapboxgl.Marker[] } = {};
@@ -320,7 +322,7 @@
 		});
 
 		// Add a marker for the initial location
-		new mapboxgl.Marker().setLngLat(mapCenter).addTo(map);
+		initialMarker = new mapboxgl.Marker().setLngLat(mapCenter).addTo(map);
 
 		map.addControl(
 			new mapboxgl.NavigationControl({
@@ -452,6 +454,107 @@
 		Object.values(markers[type]).forEach((marker) => {
 			marker.getElement().style.display = $visibility[type] ? 'block' : 'none';
 		});
+	}
+
+	/**
+	 * Resets the map by removing all markers, clearing sources, and resetting view to initial state
+	 */
+	function resetMapData() {
+		if (!map) return;
+
+		// Remove all social media markers
+		Object.values(markers).forEach(markerArray => {
+			markerArray.forEach(marker => marker.remove());
+		});
+		markers = {};
+
+		// Remove the main map marker if it exists
+		if (mapMarker) {
+			mapMarker.remove();
+			mapMarker = null;
+		}
+
+		// Remove the initial marker if it exists
+		if (initialMarker) {
+			initialMarker.remove();
+			initialMarker = null;
+		}
+
+		// Clear circle data
+		if (map.getSource('circle')) {
+			map.getSource('circle').setData({
+				type: 'FeatureCollection',
+				features: []
+			});
+		}
+
+		// Clear single-point data
+		if (map.getSource('single-point')) {
+			map.getSource('single-point').setData({
+				type: 'FeatureCollection',
+				features: []
+			});
+		}
+
+		circle = null;
+
+		// Reset map to initial state (like page reload)
+		const storedLat = localStorage.getItem(USER_LAT);
+		const storedLng = localStorage.getItem(USER_LNG);
+		
+		let initialCenter;
+		if (storedLat && storedLng) {
+			initialCenter = [parseFloat(storedLng), parseFloat(storedLat)];
+		} else {
+			initialCenter = [MAP_DEFAULT_LOCATION.lng, MAP_DEFAULT_LOCATION.lat];
+		}
+
+		// Reset map view to initial state
+		map.setCenter(initialCenter);
+		map.setZoom(storedLat && storedLng ? 14 : 12);
+
+		// Add the initial marker back
+		initialMarker = new mapboxgl.Marker().setLngLat(initialCenter).addTo(map);
+	}
+
+	/**
+	 * Flies the map to a new location and adds a marker
+	 */
+	function flyToLocationAndAddMarker(lat: number, lng: number) {
+		if (!map) return;
+
+		const coordinates = [lng, lat];
+
+		// Remove the initial marker since we're going to a new location
+		if (initialMarker) {
+			initialMarker.remove();
+			initialMarker = null;
+		}
+
+		// Fly to the new location
+		map.flyTo({
+			center: coordinates,
+			zoom: 14,
+			speed: 1.2,
+			curve: 1.5,
+			essential: true
+		});
+
+		// Add a new marker at the location
+		mapMarker = new mapboxgl.Marker()
+			.setLngLat(coordinates)
+			.addTo(map);
+	}
+
+	// Subscribe to location updates from chatbot
+	$: if ($locationUpdate && hasMounted) {
+		const { latitude, longitude } = $locationUpdate;
+		if (latitude !== undefined && longitude !== undefined) {
+			resetMapData();
+			flyToLocationAndAddMarker(latitude, longitude);
+			// Reset the store value to prevent duplicate calls
+			locationUpdate.set(null);
+		}
 	}
 </script>
 

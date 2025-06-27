@@ -11,6 +11,7 @@
 	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_ECHO_PUSHER_APP_ID, PUBLIC_API_URL } from '$env/static/public'; 
 	import { AUTH_TOKEN, USER_LAT, USER_LNG, MAP_DEFAULT_LOCATION } from '$lib/constants/constants';
 	import { formatCoordinates } from '$lib/utils/locationUtils';
+	import { locationUpdate } from '$lib/stores/mapStore';
 	
 	// Browser environment check
 	const isBrowser = typeof window !== 'undefined';
@@ -193,6 +194,12 @@
 						if (attributes.latitude !== undefined && attributes.longitude !== undefined) {
 							localStorage.setItem(USER_LAT, attributes.latitude.toString());
 							localStorage.setItem(USER_LNG, attributes.longitude.toString());
+							
+							// Trigger map update: reset map, fly to location, and show marker
+							locationUpdate.set({
+								latitude: parseFloat(attributes.latitude),
+								longitude: parseFloat(attributes.longitude)
+							});
 						}
 					} catch (error) {
 						console.error('Error parsing location attributes:', error);
