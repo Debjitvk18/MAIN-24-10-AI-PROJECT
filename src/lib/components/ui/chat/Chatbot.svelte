@@ -9,7 +9,7 @@
 	import { goto } from '$app/navigation';
 
 	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_ECHO_PUSHER_APP_ID, PUBLIC_API_URL } from '$env/static/public'; 
-	import { AUTH_TOKEN, USER_LAT, USER_LNG, MAP_DEFAULT_LOCATION } from '$lib/constants/constants';
+	import { AUTH_TOKEN, USER_LAT, USER_LNG, MAP_DEFAULT_LOCATION, AGENT_FROM_HOME } from '$lib/constants/constants';
 	import { formatCoordinates } from '$lib/utils/locationUtils';
 	import { locationUpdate, receivedPoints } from '$lib/stores/mapStore';
 	
@@ -113,11 +113,6 @@
 						const lat = getDataFromURL('lat');
 						const lng = getDataFromURL('long');
 						const search = getDataFromURL('search');
-						const requestId = response.search_request.id;
-						let latToFly = formatCoordinates(response.search_request.request_params.latitude || lat);
-						let lngToFly = formatCoordinates(response.search_request.request_params.longitude || lng);
-						let searchQyery = response.search_request.request_params.full_address || search;
-						
 						// Initialize Echo and listen for updates on this conversation
 						setupEchoListener(conversationId);
 					}
@@ -161,7 +156,7 @@
 		
 		// Clean up any existing listener
 		cleanupEchoListener();
-		
+
 		// Initialize new Echo instance if needed
 		if (!echoInstance) {
 			let authToken = localStorage.getItem(AUTH_TOKEN) || false;
@@ -295,38 +290,27 @@
 					isProcessing = false;
 				}
 			});
-		
 	}
-	
-	function refreshConversation(id) {
-		// Call the generate API to get latest conversation data
-		mapService.getPromptInsights({}, id)
-			.then(response => {
+
+	function loadConversations(conversationId) {
+		mapService.getInsightsHistory(conversationId).then(data => {
+			// Process the retrieved data
+			if (data && data.success) {
+				// Update messages with the conversation history
+				messages = data.data.messages.map(msg => ({
+					role: msg.role,
+					content: msg.content,
+					timestamp: new Date(msg.created_at)
+				}));
 				
-				// Update conversation list/UI with new data
-				if (response && response.success) {
-					// Handle the updated conversation data
-					// This would typically update the messages array with new content
-					
-					// For now, just showing the AI is no longer processing
-					isProcessing = false;
-					
-					// Add AI response if available
-					if (response.message) {
-						const assistantMessage = {
-							role: 'assistant',
-							content: response.message,
-							timestamp: new Date()
-						};
-						
-						messages = [...messages, assistantMessage];
-						setTimeout(scrollToBottom, 50);
-					}
-				}
-			})
-			.catch(error => {
-				console.error('Error refreshing conversation:', error);
-			});
+				// Scroll to bottom after loading messages
+				setTimeout(scrollToBottom, 50);
+			} else {
+				console.error('Failed to load conversation history:', data);
+			}
+		}).catch(error => {
+			console.error('Error loading conversations:', error);
+		});
 	}
 	
 	function cleanupEchoListener() {
@@ -389,6 +373,30 @@
 	onMount(async () => {
 		// Resize textarea initially
 		resizeTextarea();
+
+		// Check if conversation_id exists in URL and load conversation history
+		if (isBrowser) {
+			const urlParams = new URLSearchParams(window.location.search);
+			const urlConversationId = urlParams.get('conversation_id');
+			
+			if (urlConversationId) {
+				conversationId = urlConversationId;
+				isFirstMessage = false; // Since we're loading an existing conversation
+				
+				// Load the conversation history
+				loadConversations(conversationId);
+				
+				// check if conversation is from home page
+				const isFromHome = localStorage.getItem(AGENT_FROM_HOME);
+				localStorage.removeItem(AGENT_FROM_HOME);
+				if (isFromHome) {
+					isProcessing = true; // Keep processing indicator active
+				}
+
+				// Setup Echo listener for this conversation
+				setupEchoListener(conversationId);
+			}
+		}
 
 		// Process URL query parameter if present
         await processQueryParamOnMount();

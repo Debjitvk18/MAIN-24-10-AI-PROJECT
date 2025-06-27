@@ -22,7 +22,7 @@
 	import BreakingLimit from '$lib/components/ui/home/BreakingLimit.svelte';
 	import Hero from '$lib/components/ui/home/Hero.svelte';
 	import { isLoggedIn } from '$lib/stores/authStore';
-	import { MAP_DEFAULT_LOCATION, USER_LAT, USER_LNG } from '$lib/constants/constants';
+	import { AGENT_FROM_HOME, MAP_DEFAULT_LOCATION, USER_LAT, USER_LNG } from '$lib/constants/constants';
 	import { MapService } from '$lib/services/map-service';
 
 	let agentQuery = '';
@@ -181,6 +181,9 @@
 				if (response.success) {
 					// get conversation_id
 					const conversationId = response.conversation_id;
+
+					// temp flag to indicate the conversation is from home page
+					localStorage.setItem(AGENT_FROM_HOME, 'yes');
 
 					// redirect to try-demo with conversation_id
 					goto(`try-demo?conversation_id=${conversationId}`);

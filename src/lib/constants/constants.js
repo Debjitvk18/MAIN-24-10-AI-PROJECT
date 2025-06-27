@@ -18,6 +18,7 @@ export const AUTH_TOKEN = 'serviceapp-token';
 export const USER_KEY = 'serviceapp-user';
 export const USER_LAT = 'serviceapp-user-lat';
 export const USER_LNG = 'serviceapp-user-lng';
+export const AGENT_FROM_HOME = 'serviceapp-agent-from-home';
 
 // ================= Defaults =================
 export const NON_PANEL_ROUTES = ['login', 'register', 'forgot-password', 'reset-password'];
