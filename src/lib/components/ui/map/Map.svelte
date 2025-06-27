@@ -355,24 +355,7 @@
 
 		circle = null;
 
-		// Reset map to initial state (like page reload)
-		const storedLat = localStorage.getItem(USER_LAT);
-		const storedLng = localStorage.getItem(USER_LNG);
 		
-		let initialCenter;
-		if (storedLat && storedLng) {
-			initialCenter = [parseFloat(storedLng), parseFloat(storedLat)];
-		} else {
-			initialCenter = [MAP_DEFAULT_LOCATION.lng, MAP_DEFAULT_LOCATION.lat];
-		}
-
-		// Reset map view to initial state
-		map.setCenter(initialCenter);
-		map.setZoom(storedLat && storedLng ? 14 : 12);
-
-		// Add the initial marker back
-		initialMarker = new mapboxgl.Marker().setLngLat(initialCenter).addTo(map);
-
 		// Clear received points from store
 		clearReceivedPoints();
 	}
