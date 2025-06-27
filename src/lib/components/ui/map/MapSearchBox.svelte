@@ -4,7 +4,7 @@
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { isLoggedIn } from '$lib/stores/authStore';
 	import { goto } from '$app/navigation';
-	import { setCookie } from '$lib/utils/cookies';
+	import { USER_LAT, USER_LNG } from '$lib/constants/constants';
 
 	const MAPBOX_API_BASE_URL = 'https://api.mapbox.com/geocoding/v5/mapbox.places';
 	const accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
@@ -54,19 +54,21 @@
 
 	// Handle suggestion selection
 	function onSuggestionClick(suggestion) {
+		// Save selected location coordinates to localStorage
+		localStorage.setItem(USER_LAT, suggestion.center[1]);
+		localStorage.setItem(USER_LNG, suggestion.center[0]);
+		
 		if (redirectOnSelect) {
-
-			const searchUrl = `/try-demo?search=${encodeURIComponent(suggestion.place_name)}&lat=${suggestion.center[1]}&long=${suggestion.center[0]}`;
+			const searchUrl = `/try-demo`;
 
 			if (!$isLoggedIn) {
 				const searchParams = {
 					query: searchUrl,
 					type: 'address'
 				};
-				localStorage.setItem('pendingSearch', JSON.stringify(searchParams))
+				localStorage.setItem('pendingSearch', JSON.stringify(searchParams));
 				goto('/login?loginredirect=1');
-
-				return false;
+				return;
 			}
 
 			window.location.href = searchUrl;
@@ -127,7 +129,7 @@
 	</div>
 
 	{#if showSuggestions && suggestions.length > 0}
-		<ul class="bg-white border border-gray-100 w-full z-2" bind:this={suggestionListRef}>
+		<ul class="bg-white border border-gray-100 w-full z-2 text-start" bind:this={suggestionListRef}>
 			{#each suggestions as suggestion (suggestion.id)}
 				<li
 					class="pl-8 pr-2 py-1 border-gray-100 relative cursor-pointer hover:bg-yellow-50 hover:text-gray-900"
