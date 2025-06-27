@@ -44,7 +44,6 @@
 	import { toast } from 'svelte-sonner';
 
 	// Icon Component
-	import MapTopbar from '$lib/components/ui/map/MapTopbar.svelte';
 	import MapSidebar from '$lib/components/ui/map/MapSidebar.svelte';
 	import {
 		dataLoadingState,
@@ -67,7 +66,7 @@
 	let circle;
 	let map: mapboxgl.Map;
 	let mapContainer: HTMLElement;
-	let showSidebar = false;
+	let showSidebar = true; // Always show sidebar
 	let reqId: number;
 	let reqLat: number;
 	let reqLong: number;
@@ -89,11 +88,9 @@
 
 	/**
 	 * A boolean variable that indicates the visibility state of a sidebar component.
-	 *
-	 * When set to `true`, the sidebar is visible to the user.
-	 * When set to `false`, the sidebar is hidden.
+	 * Always set to true since we want the sidebar to always be visible.
 	 */
-	let isSidebarVisible = false;
+	let isSidebarVisible = true;
 
 	let mapMarker = null; // set by onclick on a map
 
@@ -456,18 +453,6 @@
 			marker.getElement().style.display = $visibility[type] ? 'block' : 'none';
 		});
 	}
-
-	/**
-	 * Toggles the visibility of the sidebar and adjusts the map size accordingly.
-	 *
-	 * @return {void} Does not return a value.
-	 */
-	function toggleSidebar() {
-		isSidebarVisible = !isSidebarVisible;
-		setTimeout(() => {
-			map.resize();
-		}, 100);
-	}
 </script>
 
 <svelte:head>
@@ -477,25 +462,14 @@
 <ErrorDialog bind:isOpen={showErrorDialog} error={errorResponse} />
 <LoadingOverlay isLoading={showLoadingOverlay} loadingText={overlayLoadingText} />
 <div
-	class={`h-screen flex flex-col ${isSidebarVisible ? 'sidebar-visible' : ''}`}
+	class="h-screen flex sidebar-visible"
 	id="map-container"
 >
-	<!-- Topbar -->
-	<MapTopbar
-		{isSidebarVisible}
-		{showSidebar}
-		{socialMediaIcons}
-		toggleSidebarVisibility={toggleSidebar}
-		{toggleVisibility}
-	/>
-
 	<div class="flex h-full flex-1 relative">
-		{#if showSidebar}
-			<!-- Sidebar -->
-			<div class="sidebar {isSidebarVisible ? 'visible' : ''}">
-				<MapSidebar {isSidebarVisible} {markers} {map} hasChatbot={true} />
-			</div>
-		{/if}
+		<!-- Sidebar - Always visible -->
+		<div class="sidebar visible">
+			<MapSidebar {isSidebarVisible} {markers} {map} hasChatbot={true} />
+		</div>
 
 		<div class="h-full relative flex-1">
 			<!-- Map Area -->
