@@ -17,11 +17,14 @@
 	// Constants
 	import {
 		API_BASE_URL,
+		MAP_DEFAULT_LOCATION,
 		MAP_PRIMARY_COLOR,
 		MAPBOX_THEMES,
 		MARKER_FONT_SIZE,
 		SOCIAL_MARKER_CLASS,
-		SOCIAL_MEDIA_PLATFORMS
+		SOCIAL_MEDIA_PLATFORMS,
+		USER_LAT,
+		USER_LNG
 	} from '$lib/constants/constants';
 
 	// Utility functions
@@ -139,10 +142,9 @@
 			geocoder.query(formatCoordinates(reqLong, reqLat));
 		}
 
-
-		// Store coordinates in localStorage
-		localStorage.setItem('lat', reqLat);
-		localStorage.setItem('lng', reqLong);
+		// Store coordinates in localStorage using constants
+		localStorage.setItem(USER_LAT, String(reqLat));
+		localStorage.setItem(USER_LNG, String(reqLong));
 		console.log("local set - done");
 		renderGeocoder();
 		console.log("geocoder end - done");
@@ -325,13 +327,31 @@
 
 		mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
 
+		// Check if user coordinates are stored in localStorage
+		const storedLat = localStorage.getItem(USER_LAT);
+		const storedLng = localStorage.getItem(USER_LNG);
+		
+		let mapCenter;
+		let shouldSetUserMarker = false;
+		
+		if (storedLat && storedLng) {
+			// Use stored coordinates if available
+			mapCenter = [parseFloat(storedLng), parseFloat(storedLat)];
+			shouldSetUserMarker = true;
+		} else {
+			// Use default location if no stored coordinates
+			mapCenter = [MAP_DEFAULT_LOCATION.lng, MAP_DEFAULT_LOCATION.lat];
+		}
+
 		map = new mapboxgl.Map({
 			container: mapContainer, // Container ID
 			style: 'mapbox://styles/mapbox/streets-v12', // Map style to use
-			center: [-122.25948, 37.87221], // Starting position [lng, lat]
-			zoom: 12 // Starting zoom level
+			center: mapCenter, // Starting position [lng, lat]
+			zoom: shouldSetUserMarker ? 14 : 12 // Zoom in more if showing user location
 		});
 
+		// Add a marker for the initial location
+		new mapboxgl.Marker().setLngLat(mapCenter).addTo(map);
 	
 		geocoder = new MapboxGeocoder({
 			accessToken: mapboxgl.accessToken,
@@ -343,38 +363,10 @@
 
 		map.addControl(geocoder);
 
-		// Now that map and geocoder exist, we can handle getUserLocation
-		getUserLocation()
-            .then(position => {
-                let lng = position.coords.longitude;
-                let lat = position.coords.latitude;
-                const coords = [lng, lat];
-                
-                // Center map and add marker
-                map.setCenter(coords);
-                map.setZoom(14);
-
-                new mapboxgl.Marker().setLngLat(coords).addTo(map);
-
-				const search = getDataFromURL('search');
-                
-                // Store coordinates in localStorage
-                localStorage.setItem('lat', lat);
-                localStorage.setItem('lng', lng);
-
-                // Handle search query if it exists
-                if (search) {
-                    geocoder.setInput(search);
-                    geocoder.query(search);
-                } else {
-					geocoder.setInput(formatCoordinates(lng, lat));
-					geocoder.query(formatCoordinates(lng, lat));
-				}
-            })
-            .catch(error => {
-                console.error("Geolocation error:", error.message);
-                alert('Unable to retrieve your location: ' + error.message);
-            });
+		// Set initial geocoder input based on the map center
+		if (shouldSetUserMarker) {
+			geocoder.setInput(formatCoordinates(mapCenter[0], mapCenter[1]));
+		}
 
 		map.addControl(
 			new mapboxgl.NavigationControl({
