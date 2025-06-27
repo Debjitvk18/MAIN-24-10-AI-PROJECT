@@ -9,7 +9,7 @@
 	import { goto } from '$app/navigation';
 
 	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_ECHO_PUSHER_APP_ID, PUBLIC_API_URL } from '$env/static/public'; 
-	import { AUTH_TOKEN } from '$lib/constants/constants';
+	import { AUTH_TOKEN, USER_LAT, USER_LNG, MAP_DEFAULT_LOCATION } from '$lib/constants/constants';
 	import { formatCoordinates } from '$lib/utils/locationUtils';
 	
 	// Browser environment check
@@ -74,8 +74,8 @@
 		
 		if (isFirstMessage) {
 			// Get latitude and longitude from local storage or default values
-			const lat = localStorage.getItem('lat') || '40.6970243';
-			const lng = localStorage.getItem('lng') || '-74.1443116';
+			const lat = localStorage.getItem(USER_LAT) || MAP_DEFAULT_LOCATION.lat.toString();
+			const lng = localStorage.getItem(USER_LNG) || MAP_DEFAULT_LOCATION.lng.toString();
 			
 			// Prepare payload for API
 			const payload = {
