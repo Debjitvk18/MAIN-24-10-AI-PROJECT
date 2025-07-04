@@ -7,6 +7,8 @@
 	import Pusher from 'pusher-js';
 	import { marked } from 'marked';
 	import { goto } from '$app/navigation';
+	import Icon from '@iconify/svelte';
+
 
 	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_ECHO_PUSHER_APP_ID, PUBLIC_API_URL } from '$env/static/public'; 
 	import { AUTH_TOKEN, USER_LAT, USER_LNG, MAP_DEFAULT_LOCATION, AGENT_FROM_HOME } from '$lib/constants/constants';
@@ -415,14 +417,32 @@
 		// Clear received points when component unmounts
 		receivedPoints.set([]);
 	});
+
+	function handleNewChat() {
+		if (confirm('Starting a new chat will clear the current conversation.')) {
+			window.location.href = window.location.href.split('?')[0];
+		}
+	}
+
+
 </script>
 
 <div class="chatbot-wrapper h-full flex flex-col bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-	<div class="px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+	<div class="flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
 		<h2 class="text-lg font-bold">Assistant</h2>
-		<div>
-			// nake a new button
-		</div>
+		{#if conversationId}
+			<button
+				class="px-3 py-1 rounded flex items-center gap-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-sm font-medium shadow-sm border border-gray-300 dark:border-gray-600 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition"
+				on:click={() => {
+					handleNewChat();
+				}}
+				type="button"
+			>
+				<Icon icon="line-md:chat-round" class="h-4 w-4" />
+				New Chat
+			</button>
+		{/if}
+
 	</div>
 	
 	<div 
