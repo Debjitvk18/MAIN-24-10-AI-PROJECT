@@ -125,8 +125,14 @@
 			// This is a subsequent message in the same conversation
 			// Call generate/{id} endpoint with the message
 			if (conversationId) {
+
+				const lat = localStorage.getItem(USER_LAT) || MAP_DEFAULT_LOCATION.lat.toString();
+				const lng = localStorage.getItem(USER_LNG) || MAP_DEFAULT_LOCATION.lng.toString();
+
 				const payload = {
-					message: userQuery
+					message: userQuery,
+					latitude: lat,
+					longitude: lng
 				};
 				
 				// Make API call to /insights/generate/{id}
@@ -414,6 +420,9 @@
 <div class="chatbot-wrapper h-full flex flex-col bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
 	<div class="px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
 		<h2 class="text-lg font-bold">Assistant</h2>
+		<div>
+			// nake a new button
+		</div>
 	</div>
 	
 	<div 
