@@ -161,36 +161,38 @@
 			</div>
 		{/if}
 		
-		<!-- Posts Section -->
-		<div 
-			class="posts-container overflow-y-auto flex-shrink-0"
-			style="height: {hasChatbot ? postsContainerHeight : '100%'};"
-			bind:this={postsContainer}
-		>
-			<div class="pb-5 h-full">
-					<div class="w-full mx-auto pb-5">
-						{#if !$receivedPoints || $receivedPoints.length === 0}
-							<MapNoData />
-						{/if}
-
-						<!-- Display received points -->
-						{#if $receivedPoints && $receivedPoints.length > 0}
-							<div class="points-section mt-6 border-t-2 border-blue-200 dark:border-blue-700">
-								<div class="px-2 py-2 max-h-96 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
-									{#each $receivedPoints as point}
-										<PointCard 
-											{point} 
-											onPointClick={handlePointClick}
-											onPointHover={handlePointHover}
-											onPointLeave={handlePointLeave}
-										/>
-									{/each}
-								</div>
-							</div>
-						{/if}
+	<!-- Posts Section -->
+	<div 
+		class="posts-container overflow-y-auto flex-shrink-0 flex flex-col"
+		style="height: {hasChatbot ? postsContainerHeight : '100%'};"
+		bind:this={postsContainer}
+	>
+		<div class="flex-1 flex flex-col">
+			<div class="w-full mx-auto flex-1 flex flex-col">
+				{#if !$receivedPoints || $receivedPoints.length === 0}
+					<div class="flex-1 flex items-center justify-center">
+						<MapNoData />
 					</div>
-				</div>
+				{/if}
+
+				<!-- Display received points -->
+				{#if $receivedPoints && $receivedPoints.length > 0}
+					<div class="points-section flex-1 border-t-2 border-blue-200 dark:border-blue-700 flex flex-col">
+						<div class="px-2 py-2 flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
+							{#each $receivedPoints as point}
+								<PointCard 
+									{point} 
+									onPointClick={handlePointClick}
+									onPointHover={handlePointHover}
+									onPointLeave={handlePointLeave}
+								/>
+							{/each}
+						</div>
+					</div>
+				{/if}
+			</div>
 		</div>
+	</div>
 	</div>
 {/if}
 
