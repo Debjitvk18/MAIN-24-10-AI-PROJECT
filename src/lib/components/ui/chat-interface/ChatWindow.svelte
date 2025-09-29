@@ -19,15 +19,37 @@
 	let hasUserSentMessage = false;
 	let uploadedFile: File | null = null;
 	let fileInputEl: HTMLInputElement;
+	let completedSteps: string[] = [];
 
 	const processSteps = [
-		`**Understanding the user input...**`,
-		`**Creating 5 Todos...**`,
-		`**1. Scrapping Instagram Posts...**`,
-		`**2. Scrapping Instagram Likes...**`,
-		`**3. Scrapping Instagram Comments...**`,
-		`**4. Analyzing using AI...**`,
-		`**5. Finalizing the output...**`,
+		{
+			title: "Understanding the user input...",
+			description: "Analyzing your query and requirements to determine the best approach."
+		},
+		{
+			title: "Creating 5 Todos",
+			description: "Breaking down the task into manageable steps for data collection and analysis."
+		},
+		{
+			title: "1. Scrapping Instagram Posts",
+			description: "Collecting relevant Instagram posts based on your criteria."
+		},
+		{
+			title: "2. Scrapping Instagram Likes", 
+			description: "Gathering engagement data and like patterns from the posts."
+		},
+		{
+			title: "3. Scrapping Instagram Comments",
+			description: "Extracting comments and user interactions for sentiment analysis."
+		},
+		{
+			title: "4. Analyzing using AI",
+			description: "Processing collected data through our AI models for insights."
+		},
+		{
+			title: "5. Finalizing the output",
+			description: "Compiling results and preparing your comprehensive analysis report."
+		}
 	];
 
 	function autoResize() {
@@ -77,20 +99,26 @@
 		}
 		isProcessing = true;
 		hasUserSentMessage = true;
+		completedSteps = [];
 
 		// Reset textarea height
 		if (textareaEl) {
 			textareaEl.style.height = 'auto';
 		}
 
-		// Show processing steps in the special display
+		// Show processing steps progressively
 		for (let i = 0; i < processSteps.length; i++) {
-			currentProcessingStep = processSteps[i];
+			const step = processSteps[i];
+			completedSteps = [...completedSteps, `**${step.title}**\n${step.description}`];
+			currentProcessingStep = completedSteps.join('\n\n');
 			await new Promise(resolve => setTimeout(resolve, 3000));
 		}
 
-		// Clear processing display and show final message
-		currentProcessingStep = '';
+		// Keep the processing display visible - don't clear it
+		// The final message will appear below the processing steps
+		
+		// Small delay before showing final message
+		await new Promise(resolve => setTimeout(resolve, 1000));
 		
 		const finalMessage = {
 			id: `final-${Date.now()}`,
@@ -192,13 +220,21 @@ Your comprehensive analysis is ready! 🎯
 			</div>
 		{:else}
 			{#each messages as message (message.id)}
-				<MessageItem {message} />
+				{#if message.role === 'user'}
+					<MessageItem {message} />
+				{/if}
 			{/each}
-		{/if}
-
-		<!-- Processing Display -->
-		{#if currentProcessingStep}
-			<ProcessingMessage content={currentProcessingStep} />
+			
+			<!-- Processing Display -->
+			{#if currentProcessingStep}
+				<ProcessingMessage content={currentProcessingStep} isComplete={!isProcessing} />
+			{/if}
+			
+			{#each messages as message (message.id)}
+				{#if message.role === 'assistant'}
+					<MessageItem {message} />
+				{/if}
+			{/each}
 		{/if}
 	</div>
 
