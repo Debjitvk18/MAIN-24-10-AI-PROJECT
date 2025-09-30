@@ -10,6 +10,7 @@
 	let selectedStep = 'comments';
 	let hasVisualizationData = true;
 	let sidebarMessages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date}> = [];
+	let lastUserQuery = 'map comments by global regions';
 
 	// Check if we're on mobile screen
 	function checkMobile() {
@@ -26,12 +27,12 @@
 	onMount(() => {
 		checkMobile();
 		
-		// Initialize with default data for Step 3 (comments)
+		// Initialize with default data for Step 3 (comments) with map visualization
 		if (selectedStep === 'comments') {
 			const defaultMessage = {
 				id: 'default-' + Date.now().toString(),
 				role: 'assistant' as const,
-				content: 'I\'ve created a detailed table analyzing your Instagram comments data. It includes sentiment analysis, language distribution, response rates, keyword analysis, and engagement metrics.',
+				content: 'The global map visualization shows Instagram comments data by geographic regions. Each pin displays local comment statistics including sentiment analysis, engagement levels, and regional interaction patterns.',
 				timestamp: new Date()
 			};
 			sidebarMessages = [defaultMessage];
@@ -63,6 +64,10 @@
 
 	function handleSidebarMessage(message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date}) {
 		sidebarMessages = [...sidebarMessages, message];
+		// Track the last user query for chart type detection
+		if (message.role === 'user') {
+			lastUserQuery = message.content;
+		}
 		// Show visualization data only when there are messages and a step is selected
 		hasVisualizationData = sidebarMessages.length > 0 && selectedStep !== '';
 	}
@@ -143,6 +148,7 @@
 			<VisualizationPanel 
 				hasData={hasVisualizationData} 
 				{selectedStep}
+				{lastUserQuery}
 			/>
 		</div>
 	</div>

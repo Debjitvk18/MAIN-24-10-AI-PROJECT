@@ -1,19 +1,29 @@
 <script lang="ts">
+	import { onMount, onDestroy } from 'svelte';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { Button } from '$lib/components/ui/button';
 	import Icon from '@iconify/svelte';
+	import mapboxgl from 'mapbox-gl';
+	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
+	import { MAP_DEFAULT_LOCATION } from '$lib/constants/constants';
 
 	export let hasData = false;
 	export let selectedStep = '';
 	export let lastUserQuery = '';
 
+	let mapContainer: HTMLDivElement;
+	let map: mapboxgl.Map | null = null;
+
 	// Chart type detection from user query
-	function detectChartType(query: string): 'table' | 'bar' | 'pie' | 'line' {
+	function detectChartType(query: string): 'table' | 'bar' | 'pie' | 'line' | 'map' {
 		const lowerQuery = query.toLowerCase();
 		
 		if (lowerQuery.includes('table') || lowerQuery.includes('data') || lowerQuery.includes('list')) {
 			return 'table';
+		}
+		if (lowerQuery.includes('map') || lowerQuery.includes('location') || lowerQuery.includes('geographic') || lowerQuery.includes('global') || lowerQuery.includes('region')) {
+			return 'map';
 		}
 		if (lowerQuery.includes('pie') || lowerQuery.includes('round') || lowerQuery.includes('circle') || lowerQuery.includes('donut')) {
 			return 'pie';
@@ -143,6 +153,202 @@
 	$: detectedChartType = lastUserQuery ? detectChartType(lastUserQuery) : 'bar';
 	$: tableHeaders = getStepTableHeaders();
 
+	// Initialize map when conditions are met
+	$: if (mapContainer && !map && hasData && detectedChartType === 'map') {
+		console.log('Conditions met for map initialization:', { mapContainer: !!mapContainer, map: !!map, hasData, detectedChartType });
+		setTimeout(() => {
+			if (mapContainer && !map) {
+				console.log('Timeout: Initializing map');
+				initializeMap();
+			}
+		}, 500);
+	}
+
+	// Watch for step changes to reinitialize map with new data
+	$: if (map && selectedStep) {
+		// Clear existing markers and add new ones
+		setTimeout(() => {
+			const markers = document.querySelectorAll('.mapboxgl-marker');
+			markers.forEach(marker => marker.remove());
+			addRandomPinsToMap();
+		}, 100);
+	}
+
+	// Alternative trigger - watch for tab changes
+	let currentTabValue = detectedChartType === 'table' ? 'table' : detectedChartType === 'map' ? 'map' : 'chart';
+	$: {
+		const newTabValue = detectedChartType === 'table' ? 'table' : detectedChartType === 'map' ? 'map' : 'chart';
+		if (newTabValue !== currentTabValue) {
+			currentTabValue = newTabValue;
+			if (newTabValue === 'map' && mapContainer && !map && hasData) {
+				console.log('Tab changed to map, initializing...');
+				setTimeout(initializeMap, 500);
+			}
+		}
+	}
+
+	// Map functionality
+	function generateRandomPins() {
+		const pins = [];
+		const baseLocations = [
+			{ lat: 40.7128, lng: -74.0060, city: 'New York' },
+			{ lat: 34.0522, lng: -118.2437, city: 'Los Angeles' },
+			{ lat: 51.5074, lng: -0.1278, city: 'London' },
+			{ lat: 48.8566, lng: 2.3522, city: 'Paris' },
+			{ lat: 35.6762, lng: 139.6503, city: 'Tokyo' },
+			{ lat: -33.8688, lng: 151.2093, city: 'Sydney' },
+			{ lat: 52.5200, lng: 13.4050, city: 'Berlin' },
+			{ lat: 55.7558, lng: 37.6173, city: 'Moscow' },
+			{ lat: 19.4326, lng: -99.1332, city: 'Mexico City' },
+			{ lat: -23.5505, lng: -46.6333, city: 'São Paulo' }
+		];
+
+		for (let i = 0; i < 15; i++) {
+			const baseLocation = baseLocations[Math.floor(Math.random() * baseLocations.length)];
+			const randomOffset = {
+				lat: (Math.random() - 0.5) * 0.1, // Random offset within ~5km
+				lng: (Math.random() - 0.5) * 0.1
+			};
+
+			pins.push({
+				id: i + 1,
+				lat: baseLocation.lat + randomOffset.lat,
+				lng: baseLocation.lng + randomOffset.lng,
+				city: baseLocation.city,
+				likes: Math.floor(Math.random() * 1000) + 100,
+				comments: Math.floor(Math.random() * 100) + 10,
+				engagement: (Math.random() * 10).toFixed(1),
+				type: selectedStep || 'posts'
+			});
+		}
+
+		return pins;
+	}
+
+	function initializeMap() {
+		if (!mapContainer || map) return;
+
+		try {
+			console.log('Initializing map with token:', PUBLIC_MAPBOX_ACCESS_TOKEN ? 'Token available' : 'No token');
+			
+			if (!PUBLIC_MAPBOX_ACCESS_TOKEN) {
+				console.error('Mapbox access token is not available');
+				return;
+			}
+
+			mapboxgl.accessToken = PUBLIC_MAPBOX_ACCESS_TOKEN;
+
+			map = new mapboxgl.Map({
+				container: mapContainer,
+				style: 'mapbox://styles/mapbox/streets-v12',
+				center: [MAP_DEFAULT_LOCATION.lng, MAP_DEFAULT_LOCATION.lat],
+				zoom: 2,
+				attributionControl: false
+			});
+
+			map.on('load', () => {
+				console.log('Map loaded successfully');
+				addRandomPinsToMap();
+			});
+
+			map.on('error', (e) => {
+				console.error('Map error:', e);
+			});
+
+			// Force trigger load event after timeout if it doesn't fire
+			setTimeout(() => {
+				if (map && map.loaded()) {
+					console.log('Map was already loaded, adding pins');
+					addRandomPinsToMap();
+				}
+			}, 2000);
+
+		} catch (error) {
+			console.error('Failed to initialize map:', error);
+		}
+	}
+
+	function addRandomPinsToMap() {
+		if (!map) return;
+
+		const pins = generateRandomPins();
+
+		pins.forEach(pin => {
+			// Create a popup
+			const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+				<div class="p-2">
+					<h3 class="font-semibold text-sm">${pin.city}</h3>
+					<p class="text-xs text-muted-foreground">Instagram ${selectedStep}</p>
+					<div class="mt-2 space-y-1">
+						<div class="flex justify-between text-xs">
+							<span>Likes:</span>
+							<span class="font-medium">${pin.likes}</span>
+						</div>
+						<div class="flex justify-between text-xs">
+							<span>Comments:</span>
+							<span class="font-medium">${pin.comments}</span>
+						</div>
+						<div class="flex justify-between text-xs">
+							<span>Engagement:</span>
+							<span class="font-medium">${pin.engagement}%</span>
+						</div>
+					</div>
+				</div>
+			`);
+
+			// Create marker
+			const marker = new mapboxgl.Marker({
+				color: selectedStep === 'posts' ? '#8B5CF6' : selectedStep === 'likes' ? '#EF4444' : '#3B82F6'
+			})
+				.setLngLat([pin.lng, pin.lat])
+				.setPopup(popup)
+				.addTo(map);
+		});
+	}
+
+	function destroyMap() {
+		if (map) {
+			map.remove();
+			map = null;
+		}
+	}
+
+	onDestroy(() => {
+		destroyMap();
+	});
+
+	// Auto-initialize map when container is available
+	onMount(() => {
+		if (detectedChartType === 'map' && hasData) {
+			setTimeout(() => {
+				if (mapContainer && !map) {
+					console.log('OnMount: Initializing map');
+					initializeMap();
+				}
+			}, 200);
+		}
+	});
+
+	// Svelte action to auto-initialize map when element is visible
+	function autoInitMap(node: HTMLElement) {
+		const observer = new IntersectionObserver((entries) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting && !map && hasData) {
+					console.log('Map container is visible, initializing...');
+					setTimeout(initializeMap, 100);
+				}
+			});
+		}, { threshold: 0.1 });
+
+		observer.observe(node);
+
+		return {
+			destroy() {
+				observer.disconnect();
+			}
+		};
+	}
+
 	function exportData(format: 'csv' | 'json') {
 		if (!hasData || !tableData.length) return;
 		
@@ -199,8 +405,8 @@
 				</p>
 			</div>
 		{:else}
-			<Tabs value={detectedChartType === 'table' ? 'table' : 'chart'} class="w-full h-full">
-				<TabsList class="grid w-full grid-cols-2 mb-4">
+			<Tabs value={detectedChartType === 'table' ? 'table' : detectedChartType === 'map' ? 'map' : 'chart'} class="w-full h-full">
+				<TabsList class="grid w-full grid-cols-3 mb-4">
 					<TabsTrigger value="table" class="flex items-center gap-2">
 						<Icon icon="lucide:table" class="w-4 h-4" />
 						Table View
@@ -208,6 +414,10 @@
 					<TabsTrigger value="chart" class="flex items-center gap-2">
 						<Icon icon="lucide:bar-chart" class="w-4 h-4" />
 						{detectedChartType === 'pie' ? 'Pie Chart' : detectedChartType === 'line' ? 'Line Chart' : 'Bar Chart'}
+					</TabsTrigger>
+					<TabsTrigger value="map" class="flex items-center gap-2">
+						<Icon icon="lucide:map" class="w-4 h-4" />
+						Map View
 					</TabsTrigger>
 				</TabsList>
 
@@ -397,7 +607,87 @@
 						{/if}
 					</div>
 				</TabsContent>
+
+				<TabsContent value="map" class="h-[400px]">
+					<div class="h-full border rounded-lg overflow-hidden relative">
+						<div bind:this={mapContainer} class="w-full h-full" use:autoInitMap>
+							{#if mapContainer && !map}
+								<div class="flex items-center justify-center h-full bg-muted/10">
+									<div class="text-center">
+										<Icon icon="lucide:map" class="w-12 h-12 mx-auto mb-2 opacity-50" />
+										<p class="text-muted-foreground">Loading map...</p>
+										<button 
+											class="mt-2 px-3 py-1 bg-primary text-primary-foreground rounded text-xs"
+											on:click={initializeMap}
+										>
+											Initialize Map
+										</button>
+									</div>
+								</div>
+							{/if}
+						</div>
+						
+						<!-- Map overlay with stats -->
+						<div class="absolute top-4 right-4 bg-background/95 backdrop-blur-sm border rounded-lg p-3 shadow-lg">
+							<h4 class="font-semibold text-sm mb-2">Map Overview</h4>
+							<div class="space-y-1 text-xs">
+								<div class="flex justify-between gap-4">
+									<span class="text-muted-foreground">Data Points:</span>
+									<span class="font-medium">15 locations</span>
+								</div>
+								<div class="flex justify-between gap-4">
+									<span class="text-muted-foreground">Data Type:</span>
+									<span class="font-medium capitalize">Instagram {selectedStep}</span>
+								</div>
+								<div class="flex justify-between gap-4">
+									<span class="text-muted-foreground">Coverage:</span>
+									<span class="font-medium">Global</span>
+								</div>
+							</div>
+						</div>
+
+						<!-- Map controls -->
+						<div class="absolute bottom-4 left-4 flex gap-2">
+							<Button 
+								size="sm" 
+								variant="secondary"
+								class="bg-background/95 backdrop-blur-sm"
+								on:click={() => {
+									if (map) {
+										destroyMap();
+										setTimeout(initializeMap, 100);
+									}
+								}}
+							>
+								<Icon icon="lucide:refresh-cw" class="w-4 h-4 mr-1" />
+								Refresh
+							</Button>
+							<Button 
+								size="sm" 
+								variant="secondary"
+								class="bg-background/95 backdrop-blur-sm"
+								on:click={() => {
+									if (map) {
+										map.flyTo({
+											center: [MAP_DEFAULT_LOCATION.lng, MAP_DEFAULT_LOCATION.lat],
+											zoom: 2,
+											duration: 1000
+										});
+									}
+								}}
+							>
+								<Icon icon="lucide:home" class="w-4 h-4 mr-1" />
+								Reset View
+							</Button>
+						</div>
+					</div>
+				</TabsContent>
 			</Tabs>
 		{/if}
 	</CardContent>
 </Card>
+
+<!-- Map CSS -->
+<svelte:head>
+	<link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+</svelte:head>

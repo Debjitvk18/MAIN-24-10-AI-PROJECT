@@ -99,6 +99,8 @@
 		let chartType = 'bar chart';
 		if (lowerPrompt.includes('table') || lowerPrompt.includes('data') || lowerPrompt.includes('list')) {
 			chartType = 'data table';
+		} else if (lowerPrompt.includes('map') || lowerPrompt.includes('location') || lowerPrompt.includes('geographic') || lowerPrompt.includes('global') || lowerPrompt.includes('region')) {
+			chartType = 'map';
 		} else if (lowerPrompt.includes('pie') || lowerPrompt.includes('round') || lowerPrompt.includes('circle') || lowerPrompt.includes('donut')) {
 			chartType = 'pie chart';
 		} else if (lowerPrompt.includes('line') || lowerPrompt.includes('trend') || lowerPrompt.includes('over time')) {
@@ -111,19 +113,22 @@
 				table: `Here's a detailed data table showing Instagram post analytics. The table includes post types (Photo, Video, Carousel, Reel, Story), engagement metrics like likes and comments, reach data, and posting time analysis.`,
 				'pie chart': `I've created a pie chart showing the distribution of your Instagram post types. You can see the breakdown between Photos, Videos, Carousels, Reels, and Stories to understand your content mix.`,
 				'line chart': `This line chart displays your Instagram post engagement trends over time. You can track how your post performance has evolved and identify peak engagement periods.`,
-				'bar chart': `Here's a bar chart analyzing your Instagram post performance by type. Compare engagement rates across Photos, Videos, Carousels, Reels, and Stories to optimize your content strategy.`
+				'bar chart': `Here's a bar chart analyzing your Instagram post performance by type. Compare engagement rates across Photos, Videos, Carousels, Reels, and Stories to optimize your content strategy.`,
+				'map': `I've plotted your Instagram posts on a global map showing geographic distribution of your content engagement. Each pin represents a location with post data including likes, comments, and engagement rates.`
 			},
 			likes: {
 				table: `I've generated a comprehensive table of your Instagram likes data. It shows demographic breakdowns, geographic distribution, peak engagement hours, weekly patterns, and growth rates.`,
 				'pie chart': `This pie chart visualizes your Instagram likes distribution across different demographics. See which age groups and locations are most engaged with your content.`,
 				'line chart': `The line chart shows your daily Instagram likes trends over the week. Identify your best-performing days and optimal posting times for maximum engagement.`,
-				'bar chart': `Here's a bar chart comparing your Instagram likes across different time periods and demographics. Use this to understand your audience engagement patterns.`
+				'bar chart': `Here's a bar chart comparing your Instagram likes across different time periods and demographics. Use this to understand your audience engagement patterns.`,
+				'map': `The map displays Instagram likes data across global locations. Each marker shows regional engagement metrics, helping you understand where your content resonates most with audiences worldwide.`
 			},
 			comments: {
 				table: `I've created a detailed table analyzing your Instagram comments data. It includes sentiment analysis, language distribution, response rates, keyword analysis, and engagement metrics.`,
 				'pie chart': `This pie chart shows the sentiment distribution of your Instagram comments - Positive, Neutral, and Negative. Monitor your community's response to your content.`,
 				'line chart': `The line chart tracks your Instagram comment engagement over time. See how your community interaction has grown and evolved.`,
-				'bar chart': `Here's a bar chart analyzing your Instagram comments by language and sentiment. Understand your global audience and community feedback patterns.`
+				'bar chart': `Here's a bar chart analyzing your Instagram comments by language and sentiment. Understand your global audience and community feedback patterns.`,
+				'map': `The global map visualization shows Instagram comments data by geographic regions. Each pin displays local comment statistics including sentiment analysis, engagement levels, and regional interaction patterns.`
 			}
 		};
 
@@ -149,21 +154,21 @@
 					'Show me a table of post data',
 					'Create a pie chart of post types',
 					'Generate a bar chart of engagement',
-					'Show me a line chart of trends'
+					'Show posts on map by location'
 				];
 			case 'likes':
 				return [
 					'Display likes data in a table',
 					'Make a pie chart of demographics',
 					'Show daily likes in a bar chart',
-					'Create a line chart of growth'
+					'Map likes by geographic location'
 				];
 			case 'comments':
 				return [
 					'Show comment data table',
 					'Create a pie chart of sentiment',
 					'Make a bar chart by language',
-					'Show trends in a line chart'
+					'Map comments by global regions'
 				];
 			default:
 				return ['Select a data category first'];
