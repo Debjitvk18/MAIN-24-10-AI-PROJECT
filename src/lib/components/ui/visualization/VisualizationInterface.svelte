@@ -1,17 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import InstagramStepsSidebar from './InstagramStepsSidebar.svelte';
-	import ChatBox from './ChatBox.svelte';
 	import VisualizationPanel from './VisualizationPanel.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import Icon from '@iconify/svelte';
 
 	let sidebarVisible = true;
 	let isMobile = false;
-	let selectedStep = '';
-	let currentMessages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date}> = [];
-	let hasVisualizationData = false;
-	let lastUserQuery = '';
+	let selectedStep = 'comments';
+	let hasVisualizationData = true;
+	let sidebarMessages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date}> = [];
 
 	// Check if we're on mobile screen
 	function checkMobile() {
@@ -28,6 +26,17 @@
 	onMount(() => {
 		checkMobile();
 		
+		// Initialize with default data for Step 3 (comments)
+		if (selectedStep === 'comments') {
+			const defaultMessage = {
+				id: 'default-' + Date.now().toString(),
+				role: 'assistant' as const,
+				content: 'I\'ve created a detailed table analyzing your Instagram comments data. It includes sentiment analysis, language distribution, response rates, keyword analysis, and engagement metrics.',
+				timestamp: new Date()
+			};
+			sidebarMessages = [defaultMessage];
+		}
+		
 		const handleResize = () => {
 			checkMobile();
 		};
@@ -42,10 +51,9 @@
 
 	function handleStepSelect(stepId: string) {
 		selectedStep = stepId;
-		// Clear messages when switching steps
-		currentMessages = [];
+		// Clear previous messages when switching steps
+		sidebarMessages = [];
 		hasVisualizationData = false;
-		lastUserQuery = '';
 		
 		// Close sidebar on mobile after selection
 		if (isMobile) {
@@ -53,26 +61,10 @@
 		}
 	}
 
-	function handleNewMessage(message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date}) {
-		// Track the last user query for chart type detection
-		if (message.role === 'user') {
-			lastUserQuery = message.content;
-		}
-
-		// Check if message with same ID exists (for replacing processing messages)
-		const existingIndex = currentMessages.findIndex(m => m.id === message.id);
-		
-		if (existingIndex !== -1) {
-			// Replace existing message
-			currentMessages[existingIndex] = message;
-			currentMessages = [...currentMessages];
-		} else {
-			// Add new message
-			currentMessages = [...currentMessages, message];
-		}
-
-		// Show visualization data when there are messages and a step is selected
-		hasVisualizationData = currentMessages.length > 0 && selectedStep !== '';
+	function handleSidebarMessage(message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date}) {
+		sidebarMessages = [...sidebarMessages, message];
+		// Show visualization data only when there are messages and a step is selected
+		hasVisualizationData = sidebarMessages.length > 0 && selectedStep !== '';
 	}
 </script>
 
@@ -100,7 +92,9 @@
 		{#if sidebarVisible}
 			<InstagramStepsSidebar 
 				selectedStep={selectedStep} 
-				onStepSelect={handleStepSelect} 
+				onStepSelect={handleStepSelect}
+				onNewMessage={handleSidebarMessage}
+				messages={sidebarMessages}
 			/>
 		{/if}
 	</div>
@@ -121,8 +115,9 @@
 				<div>
 					<h1 class="text-xl font-semibold">Instagram Analytics Studio</h1>
 					{#if selectedStep}
+						{@const step = selectedStep === 'posts' ? 'Step 1' : selectedStep === 'likes' ? 'Step 2' : 'Step 3'}
 						<p class="text-sm text-muted-foreground">
-							Analyzing: {selectedStep.charAt(0).toUpperCase() + selectedStep.slice(1)} Data
+							Analyzing: {step} Data
 						</p>
 					{:else}
 						<p class="text-sm text-muted-foreground">
@@ -143,25 +138,12 @@
 			</div>
 		</div>
 
-		<!-- Split Content Area -->
-		<div class="flex-1 flex flex-col lg:flex-row min-h-0">
-			<!-- Chat Window (Top on mobile, Left on desktop) -->
-			<div class="lg:w-2/5 h-1/2 lg:h-full border-b lg:border-b-0 lg:border-r">
-				<ChatBox 
-					messages={currentMessages}
-					onNewMessage={handleNewMessage}
-					{selectedStep}
-				/>
-			</div>
-
-			<!-- Visualization Panel (Bottom on mobile, Right on desktop) -->
-			<div class="lg:w-3/5 h-1/2 lg:h-full">
-				<VisualizationPanel 
-					hasData={hasVisualizationData} 
-					{selectedStep}
-					{lastUserQuery}
-				/>
-			</div>
+		<!-- Visualization Content Area -->
+		<div class="flex-1 min-h-0">
+			<VisualizationPanel 
+				hasData={hasVisualizationData} 
+				{selectedStep}
+			/>
 		</div>
 	</div>
 </div>
