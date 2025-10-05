@@ -4,12 +4,28 @@
 	import MessageItem from './MessageItem.svelte';
 	import ProcessingMessage from './ProcessingMessage.svelte';
 	import Icon from '@iconify/svelte';
+	import { MapService } from '$lib/services/map-service.js';
+	import Echo from 'laravel-echo';
+	import Pusher from 'pusher-js';
+	import { AUTH_TOKEN, USER_LAT, USER_LNG, MAP_DEFAULT_LOCATION } from '$lib/constants/constants.js';
+	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_API_URL } from '$env/static/public';
+	import { putDataInURL } from '$lib/utils/generalUtils';
+	import { browser } from '$app/environment';
 
 	export let toggleSidebar: () => void;
 	export let sidebarVisible: boolean;
 	export let isMobile: boolean;
 	export let messages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}> = [];
 	export let onNewMessage: (message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}) => void;
+	export let conversationResults: Array<any> = [];
+	export let selectedChatId: string = '';
+
+	// Service instances
+	const mapService = new MapService();
+	
+	// Conversation and real-time variables
+	let conversationId: string | null = null;
+	let echoInstance: Echo | null = null;
 
 	let messageInput = '';
 	let messagesContainer: HTMLElement;
@@ -21,36 +37,188 @@
 	let fileInputEl: HTMLInputElement;
 	let completedSteps: string[] = [];
 
-	const processSteps = [
-		{
-			title: "Understanding the user input...",
-			description: "Analyzing your query and requirements to determine the best approach."
-		},
-		{
-			title: "Creating 5 Todos",
-			description: "Breaking down the task into manageable steps for data collection and analysis."
-		},
-		{
-			title: "1. Scrapping Instagram Posts",
-			description: "Collecting relevant Instagram posts based on your criteria."
-		},
-		{
-			title: "2. Scrapping Instagram Likes", 
-			description: "Gathering engagement data and like patterns from the posts."
-		},
-		{
-			title: "3. Scrapping Instagram Comments",
-			description: "Extracting comments and user interactions for sentiment analysis."
-		},
-		{
-			title: "4. Analyzing using AI",
-			description: "Processing collected data through our AI models for insights."
-		},
-		{
-			title: "5. Finalizing the output",
-			description: "Compiling results and preparing your comprehensive analysis report."
+	// Setup Echo listener for real-time updates
+	function setupEchoListener(id: string) {
+		// Only run in browser environment
+		if (!browser) {
+			return;
 		}
-	];
+		
+		// Clean up any existing listener
+		cleanupEchoListener();
+
+		// Initialize new Echo instance if needed
+		if (!echoInstance) {
+			let authToken = localStorage.getItem(AUTH_TOKEN) || false;
+			window.Pusher = Pusher;
+			echoInstance = new Echo({
+				broadcaster: PUBLIC_ECHO_BROADCASTER,
+				key: PUBLIC_VITE_PUSHER_APP_KEY,
+				cluster: PUBLIC_VITE_PUSHER_APP_CLUSTER,
+				auth: {
+					headers: {
+						Authorization: `Bearer ${authToken}`,
+						'Accept': 'application/json'
+					},
+					withCredentials: true
+				},
+				authEndpoint: PUBLIC_API_URL+'/broadcasting/auth',
+				encrypted: PUBLIC_ECHO_PUSHER_ENCRYPTED === 'true',
+				disableStats: true,
+				wsHost: PUBLIC_ECHO_PUSHER_HOST,
+				wsPort: PUBLIC_ECHO_PUSHER_PORT,
+				wssPort: PUBLIC_ECHO_PUSHER_PORT,
+				forceTLS: PUBLIC_ECHO_PUSHER_SCHEME === 'https',
+				enabledTransports: ['ws', 'wss']
+			});
+		}
+		
+		// Listen for updates on this conversation channel
+		echoInstance.private(`App.Models.Conversation.${id}`)
+			.listen('.App\\Events\\LocationReceived', (event) => {
+				console.log('LocationReceived event:', event);
+				// Handle location updates if needed
+			})
+			.listen('.App\\Events\\PointReceived', (event) => {
+				console.log('PointReceived event:', event);
+				// Handle received points from the PointReceived event
+			})
+			.listen('.App\\Events\\MessageReceived', (event) => {
+				console.log('MessageReceived event:', event);
+				// Handle completed message/response
+				if (event && event.message) {
+					// Stop processing state
+					isProcessing = false;
+					
+					// Add the assistant's response
+					const assistantMessage = {
+						id: `assistant-${Date.now()}`,
+						role: 'assistant' as const,
+						content: event.message.content || event.message,
+						timestamp: new Date(),
+						isVoiceInput: false
+					};
+					onNewMessage(assistantMessage);
+					
+					// Clear processing step
+					currentProcessingStep = '';
+				}
+			});
+	}
+
+	// Cleanup function for Echo
+	function cleanupEchoListener() {
+		if (echoInstance && conversationId) {
+			echoInstance.leave(`App.Models.Conversation.${conversationId}`);
+		}
+	}
+
+	// Generate dynamic process steps based on conversation results
+	$: processSteps = generateProcessSteps(conversationResults);
+	
+	// Display results when conversation data is loaded from URL
+	$: if (conversationResults && conversationResults.length > 0 && !currentProcessingStep) {
+		displayExistingResults();
+	}
+
+	// Get appropriate icon for different step types
+	function getStepIcon(stepType: string): string {
+		const iconMap: Record<string, string> = {
+			'analysis': 'lucide:brain',
+			'planning': 'lucide:list-checks',
+			'ai': 'lucide:cpu',
+			'service': 'lucide:search',
+			'scripter': 'lucide:cog',
+			'ai-image': 'lucide:image',
+			'default': 'lucide:play-circle'
+		};
+		
+		return iconMap[stepType] || iconMap['default'];
+	}
+
+	function generateProcessSteps(results: Array<any>) {
+		const steps = [];
+		
+		// First step is always constant when results exist
+		if (results && results.length > 0) {
+			steps.push({
+				title: "Understanding the user input...",
+				description: "Analyzing your query and requirements to determine the best approach.",
+				status: "completed",
+				icon: "lucide:brain",
+				stepType: "analysis"
+			});
+			
+			// Second step shows number of todos
+			steps.push({
+				title: `Creating ${results.length} Todos`,
+				description: "Breaking down the task into manageable steps for data collection and analysis.",
+				status: "completed",
+				icon: "lucide:list-checks",
+				stepType: "planning"
+			});
+			
+			// Add each result as a step
+			results.forEach((result, index) => {
+				const stepType = result.step_type?.toLowerCase() || 'default';
+				steps.push({
+					title: `${result.step_name?.toUpperCase()}: ${result.step_title}`,
+					description: result.step_type,
+					status: result.status,
+					error_details: result.error_details,
+					json_data: result.json_data,
+					icon: getStepIcon(stepType),
+					stepType: stepType
+				});
+			});
+		} else {
+			// Default steps when no results
+			steps.push(
+				{
+					title: "Understanding the user input...",
+					description: "Analyzing your query and requirements to determine the best approach.",
+					status: "inprogress",
+					icon: "lucide:brain",
+					stepType: "analysis"
+				},
+				{
+					title: "Creating Todos",
+					description: "Breaking down the task into manageable steps for data collection and analysis.",
+					status: "todo",
+					icon: "lucide:list-checks",
+					stepType: "planning"
+				}
+			);
+		}
+		
+		return steps;
+	}
+
+	function formatStepWithStatus(step: any): string {
+		let formattedTitle = `**${step.title}**`;
+		let description = step.description;
+		
+		// Add error details for failed steps
+		if (step.status === 'failed' && step.error_details) {
+			description += `\n\n**Error:** ${step.error_details}`;
+		}
+		
+		// Note: Per user requirements, completed steps should not show download links
+		// if (step.status === 'completed' && step.json_data) {
+		//     description += `\n\n[View Results](${step.json_data})`;
+		// }
+		
+		return `${formattedTitle}\n${description}`;
+	}
+
+	function displayExistingResults() {
+		console.log('Displaying existing results:', conversationResults);
+		// Display all steps immediately for loaded conversations
+		completedSteps = processSteps.map(step => formatStepWithStatus(step));
+		currentProcessingStep = completedSteps.join('\n\n');
+		isProcessing = false; // Set to false since these are already completed results
+		console.log('Current processing step set to:', currentProcessingStep);
+	}
 
 	function autoResize() {
 		if (textareaEl) {
@@ -79,14 +247,24 @@
 	}
 
 	async function sendMessage() {
-		if ((!messageInput.trim() && !uploadedFile) || isProcessing || hasUserSentMessage) return;
+		console.log('sendMessage called');
+		console.log('messageInput:', messageInput);
+		console.log('uploadedFile:', uploadedFile);
+		console.log('isProcessing:', isProcessing);
+		console.log('selectedChatId:', selectedChatId);
 
+		if ((!messageInput.trim() && !uploadedFile) || isProcessing) {
+			console.log('Returning early - invalid input or processing');
+			return;
+		}
+
+		const userQuery = messageInput.trim();
 		const userMessage = {
 			id: Date.now().toString(),
 			role: 'user' as const,
 			content: uploadedFile 
-				? `📎 **File uploaded:** ${uploadedFile.name}\n\n${messageInput.trim() || 'Please analyze this file.'}` 
-				: messageInput.trim(),
+				? `📎 **File uploaded:** ${uploadedFile.name}\n\n${userQuery || 'Please analyze this file.'}` 
+				: userQuery,
 			timestamp: new Date(),
 			isVoiceInput: false
 		};
@@ -98,7 +276,6 @@
 			fileInputEl.value = '';
 		}
 		isProcessing = true;
-		hasUserSentMessage = true;
 		completedSteps = [];
 
 		// Reset textarea height
@@ -106,36 +283,61 @@
 			textareaEl.style.height = 'auto';
 		}
 
-		// Show processing steps progressively
-		for (let i = 0; i < processSteps.length; i++) {
-			const step = processSteps[i];
-			completedSteps = [...completedSteps, `**${step.title}**\n${step.description}`];
-			currentProcessingStep = completedSteps.join('\n\n');
-			await new Promise(resolve => setTimeout(resolve, 3000));
+		// Check if we have auth token
+		const authToken = localStorage.getItem(AUTH_TOKEN);
+		console.log('Auth token available:', !!authToken);
+		
+		// Always use initiate API for all messages
+		try {
+			// Get user location from localStorage or use defaults
+			const lat = localStorage.getItem(USER_LAT) || MAP_DEFAULT_LOCATION.lat.toString();
+			const lng = localStorage.getItem(USER_LNG) || MAP_DEFAULT_LOCATION.lng.toString();
+			
+			// Prepare payload for initiate API
+			const payload = {
+				message: userQuery,
+				latitude: parseFloat(lat),
+				longitude: parseFloat(lng)
+			};
+			
+			console.log('Making initiate API call with payload:', payload);
+			
+			// Make API call to insights/initiate
+			const response = await mapService.getInsights(payload);
+			console.log('Initiate API response:', response);
+			
+			if (response && response.success && response.conversation_id) {
+				conversationId = response.conversation_id;
+				
+				// Update URL with the real conversation ID
+				putDataInURL('conversation_id', conversationId);
+				
+				// Set up real-time listener for this conversation
+				setupEchoListener(conversationId);
+				
+				console.log('Conversation initiated successfully:', conversationId);
+			} else {
+				console.error('Failed to initiate conversation:', response);
+				throw new Error(response?.message || 'Failed to initiate conversation');
+			}
+		} catch (error) {
+			console.error('Error calling initiate API:', error);
+			isProcessing = false;
+			
+			// Show error message to user
+			const errorMessage = {
+				id: `error-${Date.now()}`,
+				role: 'assistant' as const,
+				content: `❌ **Error starting conversation**\n\nSorry, I encountered an error while processing your request. Please try again.`,
+				timestamp: new Date(),
+				isVoiceInput: false
+			};
+			onNewMessage(errorMessage);
+			return;
 		}
 
-		// Keep the processing display visible - don't clear it
-		// The final message will appear below the processing steps
-		
-		// Small delay before showing final message
-		await new Promise(resolve => setTimeout(resolve, 1000));
-		
-		const finalMessage = {
-			id: `final-${Date.now()}`,
-			role: 'assistant' as const,
-			content: `**Here's the final output**
-
-Your comprehensive analysis is ready! 🎯
-
-<a href="/visualization" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium no-underline">
-	📊 View Visualization
-</a>`,
-			timestamp: new Date(),
-			isVoiceInput: false
-		};
-
-		onNewMessage(finalMessage);
-		isProcessing = false;
+		// Show initial processing steps
+		currentProcessingStep = "🤖 **Processing your request...**\n\nI'm analyzing your query and preparing the response. This may take a moment.";
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -156,6 +358,18 @@ Your comprehensive analysis is ready! 🎯
 		if (messagesContainer) {
 			messagesContainer.scrollTop = messagesContainer.scrollHeight;
 		}
+		
+		// If we have an existing conversation ID and it's not a new chat, set up listener
+		if (selectedChatId && !selectedChatId.startsWith('new-')) {
+			conversationId = selectedChatId;
+			isFirstMessage = false;
+			setupEchoListener(conversationId);
+		}
+		
+		// Cleanup on component destroy
+		return () => {
+			cleanupEchoListener();
+		};
 	});
 </script>
 
@@ -227,7 +441,12 @@ Your comprehensive analysis is ready! 🎯
 			
 			<!-- Processing Display -->
 			{#if currentProcessingStep}
-				<ProcessingMessage content={currentProcessingStep} isComplete={!isProcessing} />
+				<!-- Processing Message -->
+				<ProcessingMessage 
+					content={currentProcessingStep} 
+					steps={processSteps}
+					isComplete={!isProcessing} 
+				/>
 			{/if}
 			
 			{#each messages as message (message.id)}
@@ -277,14 +496,12 @@ Your comprehensive analysis is ready! 🎯
 						bind:value={messageInput}
 						on:input={autoResize}
 						on:keydown={handleKeydown}
-						placeholder={hasUserSentMessage 
-							? "Chat completed. Start a new conversation to ask more questions." 
-							: uploadedFile 
+						placeholder={uploadedFile 
 								? "Ask questions about the uploaded file..."
 								: "Ask about locations, maps, or geospatial data analysis..."}
 						class="w-full bg-transparent border-0 outline-none resize-none max-h-[120px] placeholder:text-muted-foreground text-sm leading-6 py-1"
 						rows="1"
-						disabled={isProcessing || hasUserSentMessage}
+						disabled={isProcessing}
 					></textarea>
 				</div>
 				
@@ -294,7 +511,7 @@ Your comprehensive analysis is ready! 🎯
 						size="sm"
 						type="button"
 						on:click={handleFileUpload}
-						disabled={isProcessing || hasUserSentMessage}
+						disabled={isProcessing}
 						class="p-2 text-muted-foreground hover:text-foreground rounded-xl"
 						title="Upload file"
 					>
@@ -305,7 +522,7 @@ Your comprehensive analysis is ready! 🎯
 						variant="default"
 						size="sm"
 						type="submit"
-						disabled={(!messageInput.trim() && !uploadedFile) || isProcessing || hasUserSentMessage}
+						disabled={(!messageInput.trim() && !uploadedFile) || isProcessing}
 						class="p-2 rounded-xl min-w-[36px] min-h-[36px]"
 					>
 						<Icon icon={isProcessing ? "lucide:loader-2" : "lucide:send"} class={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />

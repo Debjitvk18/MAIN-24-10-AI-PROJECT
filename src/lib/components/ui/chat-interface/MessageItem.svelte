@@ -23,9 +23,11 @@
 	// Process content - always use markdown parsing for assistant messages
 	function processContent(content: string): string {
 		if (message.role === 'assistant') {
-			return marked(content, { breaks: true });
+			// Ensure content is a string before passing to marked
+			const contentStr = typeof content === 'string' ? content : String(content);
+			return marked(contentStr, { breaks: true });
 		}
-		return content;
+		return typeof content === 'string' ? content : String(content);
 	}
 </script>
 

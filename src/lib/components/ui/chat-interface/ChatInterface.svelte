@@ -8,6 +8,7 @@
 	let isMobile = false;
 	let selectedChatId = '';
 	let currentMessages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}> = [];
+	let conversationResults: Array<any> = [];
 
 	// Mock conversation data
 	const mockConversations: {[key: string]: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}>} = {
@@ -98,6 +99,29 @@
 		}
 	}
 
+	function handleConversationLoaded(conversationData: any) {
+		console.log('Conversation loaded:', conversationData);
+		if (conversationData && conversationData.success && conversationData.data) {
+			// Transform the API messages to match our component structure
+			if (conversationData.data.messages) {
+				currentMessages = conversationData.data.messages.map((msg: any, index: number) => ({
+					id: msg.id || `msg-${index}`,
+					role: msg.role || 'user',
+					content: msg.content || '',
+					timestamp: new Date(msg.created_at || Date.now()),
+					isVoiceInput: false
+				}));
+				console.log('Messages set:', currentMessages);
+			}
+			
+			// Store conversation results for processing steps
+			if (conversationData.data.results) {
+				conversationResults = conversationData.data.results;
+				console.log('Conversation results set:', conversationResults);
+			}
+		}
+	}
+
 	function handleNewMessage(message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}) {
 		// Check if message with same ID exists (for replacing processing messages)
 		const existingIndex = currentMessages.findIndex(m => m.id === message.id);
@@ -113,7 +137,7 @@
 		
 		// If no chat is selected, create a new one
 		if (!selectedChatId) {
-			selectedChatId = Date.now().toString();
+			selectedChatId = `new-${Date.now()}`;
 		}
 	}
 </script>
@@ -140,7 +164,7 @@
 		h-full bg-muted/30 border-r overflow-hidden
 	`}>
 		{#if sidebarVisible}
-			<ChatSidebar {selectedChatId} onChatSelect={handleChatSelect} />
+			<ChatSidebar {selectedChatId} onChatSelect={handleChatSelect} onConversationLoaded={handleConversationLoaded} />
 		{/if}
 	</div>
 
@@ -152,6 +176,8 @@
 			{isMobile} 
 			messages={currentMessages}
 			onNewMessage={handleNewMessage}
+			{conversationResults}
+			{selectedChatId}
 		/>
 	</div>
 </div>
