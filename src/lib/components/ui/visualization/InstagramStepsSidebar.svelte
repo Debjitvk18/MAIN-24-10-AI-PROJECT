@@ -4,51 +4,151 @@
 	import { Input } from '$lib/components/ui/input';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import Icon from '@iconify/svelte';
+	import { ApiService } from '$lib/services/api-service';
+	import { getDataFromURL } from '$lib/utils/generalUtils';
 
 	export let selectedStep = 'comments';
 	export let onStepSelect: (step: string) => void;
 	export let onNewMessage: (message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date}) => void;
+	export let onScripterResults: (results: any[]) => void;
 	export let messages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date}> = [];
+	export let conversationResults: Array<any> = [];
 
 	// Chat functionality
 	let inputMessage = '';
 	let isLoading = false;
+	
+	// API service instance
+	const apiService = new ApiService();
 
-	const instagramSteps = [
-		{
-			id: 'posts',
-			title: 'Step 1',
-			description: 'Analyze post engagement, reach, and performance metrics',
-			icon: 'lucide:image',
-			color: 'from-purple-500 to-pink-500'
-		},
-		{
-			id: 'likes',
-			title: 'Step 2',
-			description: 'Track likes patterns, trends, and user engagement',
-			icon: 'lucide:heart',
-			color: 'from-red-500 to-pink-500'
-		},
-		{
-			id: 'comments',
-			title: 'Step 3',
-			description: 'Analyze comment sentiment, frequency, and interactions',
-			icon: 'lucide:message-circle',
-			color: 'from-blue-500 to-purple-500'
+
+
+	// Generate steps only from conversation results
+	$: dynamicSteps = conversationResults.map((result, index) => ({
+		id: result.id || `step-${index}`,
+		title: getStepTitle(result, index),
+		description: getResultDescription(result),
+		icon: getResultIcon(result),
+		color: getResultColor(index),
+		data: result,
+		type: result.step_type || 'data',
+		stepName: result.step_name,
+		status: result.status
+	}));
+
+	// Set first conversation step as default selected when available
+	$: if (conversationResults.length > 0 && dynamicSteps.length > 0 && !selectedStep) {
+		selectedStep = dynamicSteps[0].id;
+	}
+	
+	// Reset selected step if no conversation results
+	$: if (conversationResults.length === 0 && selectedStep) {
+		selectedStep = '';
+	}
+
+	function getStepTitle(result: any, index: number): string {
+		// Generate from step_type and step_name
+		if (result.step_type && result.step_name) {
+			switch (result.step_type.toLowerCase()) {
+				case 'service': return `Service`;
+				case 'scripter': return `Scripter`;
+				case 'ai': return `AI Analysis`;
+				case 'ai-image': return `AI Image Analysis`;
+				case 'profiler': return `Profiler`;
+				default: return `Step ${result.step_name}`;
+			}
 		}
-	];
+
+		if (result.step_name) {
+			// Truncate long titles for better UI display
+			return result.step_name.length > 50 
+				? result.step_name.substring(0, 50) + '...' 
+				: result.step_name;
+		}
+		
+		return `Step ${index + 1}`;
+	}
+
+	function getResultDescription(result: any): string {
+		// Handle final response step
+		if (result.step_name === 'final_response') {
+			return 'Final conversation results and processed data ready for visualization';
+		}
+		
+		// Use step_title if available and different from title
+		if (result.step_title) {
+			// Show first 100 characters of step_title as description
+			return result.step_title.length > 100 
+				? result.step_title.substring(0, 100) + '...' 
+				: result.step_title;
+		}
+		
+		// Generate description based on step_type
+		if (result.step_type) {
+			switch (result.step_type.toLowerCase()) {
+				case 'service': return 'External service call for data collection and processing';
+				case 'scripter': return 'Data transformation and formatting operations';
+				case 'analyzer': return 'Data analysis and insights generation';
+				case 'ai': return 'AI-powered analysis and intelligent data processing';
+				case 'ai-image': return 'AI image analysis and visual content processing';
+				case 'profiler': return 'Data profiling and statistical analysis operations';
+				default: return `${result.step_type} processing step`;
+			}
+		}
+		
+		return `Step ${result.step_name || 'N/A'} - Click to analyze and visualize data`;
+	}
+
+	function getResultIcon(result: any): string {
+		// Handle final response step
+		if (result.step_name === 'final_response') {
+			return 'lucide:check-circle';
+		}
+		
+		// Determine icon based on step_type
+		if (result.step_type) {
+			switch (result.step_type.toLowerCase()) {
+				case 'service': return 'lucide:globe';
+				case 'scripter': return 'lucide:code';
+				case 'analyzer': return 'lucide:bar-chart-3';
+				case 'ai': return 'lucide:brain';
+				case 'ai-image': return 'lucide:image';
+				case 'profiler': return 'lucide:user-search';
+				default: return 'lucide:settings';
+			}
+		}
+		
+		return 'lucide:circle-dot';
+	}
+
+	function getResultColor(index: number): string {
+		const colors = [
+			'from-purple-500 to-pink-500',
+			'from-blue-500 to-purple-500',
+			'from-green-500 to-blue-500',
+			'from-yellow-500 to-orange-500',
+			'from-red-500 to-pink-500'
+		];
+		return colors[index % colors.length];
+	}
 
 	function selectStep(stepId: string) {
 		onStepSelect(stepId);
 	}
 
 	function getSelectedStepTitle(): string {
-		const step = instagramSteps.find(s => s.id === selectedStep);
-		return step ? step.title : 'Select a Step';
+		if (conversationResults.length === 0) return 'No Conversation Data';
+		const step = dynamicSteps.find(s => s.id === selectedStep);
+		return step ? step.title : 'Select a Conversation Step';
+	}
+
+	function getSelectedStepData(): any {
+		const step = dynamicSteps.find(s => s.id === selectedStep);
+		return step ? step.data : null;
 	}
 
 	// Chat functionality
-	function handleSubmit() {
+	async function handleSubmit() {
 		if (!inputMessage.trim() || isLoading) return;
 
 		if (!selectedStep) {
@@ -56,7 +156,7 @@
 			const errorMessage = {
 				id: Date.now().toString(),
 				role: 'assistant' as const,
-				content: 'Please select an Instagram data category from the dropdown first (Step 1, Step 2, or Step 3), then ask me to create visualizations.',
+				content: 'Please select a conversation step from the dropdown first, then ask me to create visualizations.',
 				timestamp: new Date()
 			};
 			onNewMessage(errorMessage);
@@ -78,17 +178,132 @@
 		inputMessage = '';
 		isLoading = true;
 
-		// Simulate AI response
-		setTimeout(() => {
-			const aiResponse = {
+		try {
+			// Get conversation ID and selected step data
+			const conversationId = getDataFromURL('conversation_id');
+			if (!conversationId) {
+				throw new Error('No conversation ID found');
+			}
+
+			const stepData = getSelectedStepData();
+			if (!stepData) {
+				throw new Error('No step data found for selected step');
+			}
+
+			// Execute scripter API call
+			console.log('Executing scripter with query:', currentQuery);
+			console.log('Step data:', stepData);
+			console.log('Conversation ID:', conversationId);
+
+			const executeResponse = await apiService.executeScripter(
+				currentQuery,
+				stepData.id.toString(),
+				conversationId,
+				'0'
+			);
+
+			if (!executeResponse.success) {
+				throw new Error(executeResponse.message || 'Failed to execute scripter');
+			}
+
+			const sessionId = executeResponse.data?.session_id;
+			if (!sessionId) {
+				throw new Error('No session ID returned from scripter execute');
+			}
+
+			// Show processing message
+			const processingMessage = {
 				id: (Date.now() + 1).toString(),
 				role: 'assistant' as const,
-				content: generateContextualResponse(currentQuery, selectedStep),
+				content: 'Processing your request... This may take a few moments.',
 				timestamp: new Date()
 			};
-			onNewMessage(aiResponse);
+			onNewMessage(processingMessage);
+
+			// Poll for results
+			const results = await pollScripterStatus(sessionId);
+			
+			// Show success message with results
+			const successMessage = {
+				id: (Date.now() + 2).toString(),
+				role: 'assistant' as const,
+				content: `Successfully processed your request! Generated ${results.length} records. The data is now available in the visualization panel.`,
+				timestamp: new Date()
+			};
+			onNewMessage(successMessage);
+
+			// Pass results to visualization panel
+			console.log('Scripter results:', results);
+			onScripterResults(results);
+
+		} catch (error) {
+			console.error('Error processing scripter request:', error);
+			const errorMessage = {
+				id: (Date.now() + 3).toString(),
+				role: 'assistant' as const,
+				content: `Error: ${error.message}. Please try again or select a different step.`,
+				timestamp: new Date()
+			};
+			onNewMessage(errorMessage);
+		} finally {
 			isLoading = false;
-		}, 1500);
+		}
+	}
+
+	// Poll scripter status until completion
+	async function pollScripterStatus(sessionId: string): Promise<any[]> {
+		const maxAttempts = 30; // 5 minutes with 10-second intervals
+		let attempts = 0;
+
+		while (attempts < maxAttempts) {
+			try {
+				console.log(`Polling scripter status (attempt ${attempts + 1}/${maxAttempts})`);
+				
+				const statusResponse = await apiService.getScripterStatus(sessionId);
+
+				if (statusResponse.success) {
+					const status = statusResponse.data?.status;
+					
+					if (status === 'completed') {
+						console.log('Scripter processing completed');
+						
+						// Extract results from the response structure
+						const responseData = statusResponse.data?.response;
+						const results = responseData?.result?.results || responseData?.results || [];
+						
+						// Ensure we return an array
+						if (Array.isArray(results)) {
+							return results;
+						} else if (results && typeof results === 'object') {
+							return [results];
+						} else {
+							return [];
+						}
+						
+					} else if (status === 'failed') {
+						throw new Error(statusResponse.data?.error || 'Scripter processing failed');
+					} else {
+						// Still processing, wait and retry
+						console.log(`Status: ${status}, waiting...`);
+						await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second delay
+						attempts++;
+						continue;
+					}
+				} else {
+					throw new Error(statusResponse.message || 'Failed to get scripter status');
+				}
+			} catch (error) {
+				console.error('Error polling scripter status:', error);
+				attempts++;
+				if (attempts < maxAttempts) {
+					await new Promise(resolve => setTimeout(resolve, 10000));
+				} else {
+					throw error;
+				}
+			}
+		}
+
+		throw new Error('Scripter processing timeout - maximum polling attempts reached');
 	}
 
 	function generateContextualResponse(userPrompt: string, step: string): string {
@@ -148,30 +363,72 @@
 
 	// Suggestion prompts based on selected step
 	function getSuggestions(): string[] {
-		switch (selectedStep) {
-			case 'posts':
+		if (conversationResults.length === 0) return ['No conversation data available'];
+		if (!selectedStep) return ['Select a conversation step first'];
+		
+		const stepData = getSelectedStepData();
+		const stepType = stepData?.type?.toLowerCase() || 'data';
+		
+		// Generate suggestions based on step type
+		switch (stepType) {
+			case 'service':
 				return [
-					'Show me a table of post data',
-					'Create a pie chart of post types',
-					'Generate a bar chart of engagement',
-					'Show posts on map by location'
+					'Show service results in table',
+					'Display data on map',
+					'Create chart from results',
+					'Filter by location or criteria'
 				];
-			case 'likes':
+			case 'scripter':
 				return [
-					'Display likes data in a table',
-					'Make a pie chart of demographics',
-					'Show daily likes in a bar chart',
-					'Map likes by geographic location'
+					'Display processed data table',
+					'Show transformation results',
+					'Create visualization from data',
+					'Filter formatted data'
 				];
-			case 'comments':
+			case 'analyzer':
 				return [
-					'Show comment data table',
-					'Create a pie chart of sentiment',
-					'Make a bar chart by language',
-					'Map comments by global regions'
+					'Show analysis results',
+					'Create insights chart',
+					'Display data patterns',
+					'Filter analytical data'
+				];
+			case 'ai':
+				return [
+					'Show AI analysis results',
+					'Display intelligent insights',
+					'Create AI-generated charts',
+					'Filter AI predictions'
+				];
+			case 'ai-image':
+				return [
+					'Display image analysis results',
+					'Show visual content data',
+					'Create image insights chart',
+					'Filter by image attributes'
+				];
+			case 'profiler':
+				return [
+					'Show profiling results table',
+					'Display statistical summary',
+					'Create profile charts',
+					'Filter profile data'
 				];
 			default:
-				return ['Select a data category first'];
+				// Handle final_response and other types
+				if (stepData?.step_name === 'final_response') {
+					return [
+						'Show final results table',
+						'Display all data on map',
+						'Create summary charts',
+						'Export final data'
+					];
+				}
+				return [
+					'Show me a data table',
+					'Create a chart visualization',
+					'Display on interactive map',
+					'Filter and analyze data'
+				];
 		}
 	}
 
@@ -184,8 +441,15 @@
 <div class="h-full flex flex-col p-4 bg-muted/20">
 	<!-- Header -->
 	<div class="mb-6">
-		<h2 class="text-lg font-semibold mb-2">Instagram Analytics</h2>
-		<p class="text-sm text-muted-foreground">Select a data category to analyze</p>
+		<h2 class="text-lg font-semibold mb-2">
+			{conversationResults.length > 0 ? 'Conversation Steps' : 'Data Analytics'}
+		</h2>
+		<p class="text-sm text-muted-foreground">
+			{conversationResults.length > 0 
+				? `Select from ${conversationResults.length} conversation step${conversationResults.length > 1 ? 's' : ''} to analyze`
+				: 'Select a data category to analyze'
+			}
+		</p>
 		{#if selectedStep}
 			<div class="mt-2 px-3 py-1 bg-primary/10 text-primary text-xs rounded-full inline-block">
 				✓ {getSelectedStepTitle()} Selected
@@ -203,25 +467,35 @@
 				</Button>
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content class="w-[300px]">
-				{#each instagramSteps as step}
-					<DropdownMenu.Item 
-						class="cursor-pointer p-3"
-						on:click={() => selectStep(step.id)}
-					>
-						<div class="flex items-center gap-3 w-full">
-							<div class={`
-								w-6 h-6 rounded-lg bg-gradient-to-r ${step.color} 
-								flex items-center justify-center text-white flex-shrink-0
-							`}>
-								<Icon icon={step.icon} class="w-3 h-3" />
+				{#if dynamicSteps.length > 0}
+					{#each dynamicSteps as step}
+						<DropdownMenu.Item 
+							class="cursor-pointer p-3"
+							on:click={() => selectStep(step.id)}
+						>
+							<div class="flex items-center gap-3 w-full">
+								<div class={`
+									w-6 h-6 rounded-lg bg-gradient-to-r ${step.color} 
+									flex items-center justify-center text-white flex-shrink-0
+								`}>
+									<Icon icon={step.icon} class="w-3 h-3" />
+								</div>
+								<div class="flex-1 min-w-0">
+									<div class="font-medium text-sm">{step.title}</div>
+									<div class="text-xs text-muted-foreground line-clamp-2">{step.description}</div>
+								</div>
 							</div>
-							<div class="flex-1 min-w-0">
-								<div class="font-medium text-sm">{step.title}</div>
-								<div class="text-xs text-muted-foreground line-clamp-2">{step.description}</div>
-							</div>
-						</div>
-					</DropdownMenu.Item>
+						</DropdownMenu.Item>
 				{/each}
+			{:else}
+				<DropdownMenu.Item class="p-3 text-center text-muted-foreground">
+					<div class="flex flex-col items-center gap-2">
+						<Icon icon="lucide:database-x" class="w-6 h-6" />
+						<div class="text-sm">No conversation steps available</div>
+						<div class="text-xs">Please start a conversation first</div>
+					</div>
+				</DropdownMenu.Item>
+			{/if}
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
 	</div>
@@ -297,8 +571,8 @@
 					<Input
 						bind:value={inputMessage}
 						placeholder={selectedStep 
-							? `Ask about Instagram ${selectedStep}... (e.g., "show me a table", "create a pie chart")`
-							: "Select a data category from the dropdown first..."
+							? `Query ${getSelectedStepTitle()} data... (e.g., "show me a table", "create a pie chart", "filter by location")`
+							: "Select a conversation step from the dropdown first..."
 						}
 						class="flex-1"
 						disabled={isLoading || !selectedStep}
@@ -317,7 +591,10 @@
 				{#if selectedStep}
 					<div class="flex items-center gap-2 text-xs text-muted-foreground">
 						<Icon icon="lucide:target" class="w-3 h-3" />
-						<span>Analyzing: Instagram {getSelectedStepTitle()}</span>
+						<span>Analyzing: {getSelectedStepTitle()}</span>
+						{#if getSelectedStepData()?.type}
+							<span class="px-2 py-0.5 bg-muted rounded text-xs">({getSelectedStepData().type})</span>
+						{/if}
 					</div>
 				{/if}
 

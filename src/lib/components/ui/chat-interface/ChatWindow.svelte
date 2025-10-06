@@ -37,6 +37,39 @@
 	let fileInputEl: HTMLInputElement;
 	let completedSteps: string[] = [];
 
+	// Helper function to check if step data is available in conversation results
+	function hasStepData(results: Array<any> = []): boolean {
+		console.log('Checking step data for results:', results);
+		if (!results || results.length === 0) {
+			console.log('No results available');
+			return false;
+		}
+		
+		// Check for various indicators of step data
+		const hasData = results.some(result => 
+			result.json_data || 
+			result.step_name || 
+			result.step_title ||
+			result.step_type ||
+			(result.status && result.status !== 'pending')
+		);
+		
+		console.log('Has step data:', hasData);
+		console.log('Sample result for debugging:', results[0]);
+		return hasData;
+	}
+
+	// Helper function to generate visualization link
+	function generateVisualizationLink(convId: string): string {
+		return `/visualization?conversation_id=${convId}`;
+	}
+
+	// Helper function to append visualization link to content
+	function appendVisualizationLink(content: string, convId: string): string {
+		const visualizationLink = generateVisualizationLink(convId);
+		return `${content}\n\n---\n\n🗺️ **[View Visualization](${visualizationLink})** - Interactive map view of your results`;
+	}
+
 	// Setup Echo listener for real-time updates
 	function setupEchoListener(id: string) {
 		// Only run in browser environment
@@ -90,11 +123,18 @@
 					// Stop processing state
 					isProcessing = false;
 					
+					let messageContent = event.message.content || event.message;
+					
+					// Check if we have step data and append visualization link
+					if (conversationId && (hasStepData(conversationResults) || event.has_step_data)) {
+						messageContent = appendVisualizationLink(messageContent, conversationId);
+					}
+					
 					// Add the assistant's response
 					const assistantMessage = {
 						id: `assistant-${Date.now()}`,
 						role: 'assistant' as const,
-						content: event.message.content || event.message,
+						content: messageContent,
 						timestamp: new Date(),
 						isVoiceInput: false
 					};
@@ -216,6 +256,47 @@
 		// Display all steps immediately for loaded conversations
 		completedSteps = processSteps.map(step => formatStepWithStatus(step));
 		currentProcessingStep = completedSteps.join('\n\n');
+		
+		// Check if we should append visualization link
+		const shouldAddVisualizationLink = hasStepData(conversationResults) || 
+			(conversationResults && conversationResults.length > 0) || 
+			currentProcessingStep.includes('View Step Data');
+			
+		console.log('Should add visualization link:', shouldAddVisualizationLink);
+		
+		if (shouldAddVisualizationLink) {
+			// Try to get conversation ID from multiple sources
+			let convId = conversationId || selectedChatId;
+			
+			// If still no ID, try to extract from conversationResults
+			if (!convId || convId.startsWith('new-')) {
+				// Try to get conversation_id from the first result that has it
+				const resultWithId = conversationResults.find(result => result.conversation_id);
+				if (resultWithId) {
+					convId = resultWithId.conversation_id.toString();
+				}
+			}
+			
+			// Extract conversation ID from URL as fallback
+			if (!convId || convId.startsWith('new-')) {
+				const urlParams = new URLSearchParams(window.location.search);
+				const urlConvId = urlParams.get('conversation_id');
+				if (urlConvId) {
+					convId = urlConvId;
+				}
+			}
+			
+			console.log('Conversation ID for visualization link:', convId);
+			
+			if (convId && !convId.startsWith('new-')) {
+				const visualizationLink = generateVisualizationLink(convId);
+				console.log('Adding visualization link:', visualizationLink);
+				currentProcessingStep += `\n\n---\n\n🗺️ **[View Visualization](${visualizationLink})** - Interactive map view of your results`;
+			} else {
+				console.log('No valid conversation ID found for visualization link');
+			}
+		}
+		
 		isProcessing = false; // Set to false since these are already completed results
 		console.log('Current processing step set to:', currentProcessingStep);
 	}
@@ -362,7 +443,6 @@
 		// If we have an existing conversation ID and it's not a new chat, set up listener
 		if (selectedChatId && !selectedChatId.startsWith('new-')) {
 			conversationId = selectedChatId;
-			isFirstMessage = false;
 			setupEchoListener(conversationId);
 		}
 		

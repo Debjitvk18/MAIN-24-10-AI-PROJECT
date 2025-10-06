@@ -7,17 +7,34 @@
 	import mapboxgl from 'mapbox-gl';
 	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 	import { MAP_DEFAULT_LOCATION } from '$lib/constants/constants';
+	import { ApiService } from '$lib/services/api-service';
+	import { getDataFromURL } from '$lib/utils/generalUtils';
 
 	export let hasData = false;
 	export let selectedStep = '';
 	export let lastUserQuery = '';
+	export let conversationResults: Array<any> = [];
+	export let scripterResults: Array<any> = [];
 
 	let mapContainer: HTMLDivElement;
 	let map: mapboxgl.Map | null = null;
+	
+	// API service for scripter endpoints
+	let apiService = new ApiService();
+	let isLoadingTableData = false;
+	let processedTableData: Array<any> = [];
+	let processingError: string | null = null;
+
+	// Declare variables before reactive statements
+	let tableData: Array<any> = [];
+	let tableHeaders: Array<string> = [];
+	let tableKeys: Array<string> = [];
 
 	// Chart type detection from user query
 	function detectChartType(query: string): 'table' | 'bar' | 'pie' | 'line' | 'map' {
 		const lowerQuery = query.toLowerCase();
+
+		return 'table';
 		
 		if (lowerQuery.includes('table') || lowerQuery.includes('data') || lowerQuery.includes('list')) {
 			return 'table';
@@ -31,8 +48,227 @@
 		if (lowerQuery.includes('line') || lowerQuery.includes('trend') || lowerQuery.includes('over time')) {
 			return 'line';
 		}
-		// Default to bar chart
-		return 'bar';
+		// Default to table view
+		return 'table';
+	}
+
+	// Get selected step data from conversation results
+	function getSelectedStepData(): any {
+		if (!selectedStep || !conversationResults.length) return null;
+		
+		const stepData = conversationResults.find(result => 
+			(result.id || `step-${conversationResults.indexOf(result)}`) === selectedStep
+		);
+		
+		return stepData;
+	}
+
+	// Process step data using scripter API for table generation
+	async function processStepDataForTable(userQuery: string): Promise<any[]> {
+		const stepData = getSelectedStepData();
+		if (!stepData) {
+			throw new Error('No step data found for selected step');
+		}
+
+		const conversationId = getDataFromURL('conversation_id');
+		if (!conversationId) {
+			throw new Error('No conversation ID found');
+		}
+
+		isLoadingTableData = true;
+		processingError = null;
+
+		try {
+			console.log('Processing step data for table with query:', userQuery);
+			console.log('Step data:', stepData);
+
+			// Call scripter execute endpoint
+			const executeResponse = await apiService.makeApiCall(
+				'scripter/execute',
+				{
+					message: userQuery,
+					result_id: stepData.id.toString(),
+					conversation_id: conversationId,
+					sync: '0'  // Async processing
+				},
+				'POST'
+			);
+
+			if (!executeResponse.success) {
+				throw new Error(executeResponse.message || 'Failed to execute scripter');
+			}
+
+			const taskId = executeResponse.task_id;
+			if (!taskId) {
+				throw new Error('No task ID returned from scripter execute');
+			}
+
+			console.log('Scripter task started with ID:', taskId);
+
+			// Poll for status until completion
+			return await pollScripterStatus(taskId);
+
+		} catch (error) {
+			console.error('Error processing step data:', error);
+			processingError = error.message;
+			throw error;
+		} finally {
+			isLoadingTableData = false;
+		}
+	}
+
+	// Poll scripter status endpoint until completion
+	async function pollScripterStatus(taskId: string): Promise<any[]> {
+		const maxAttempts = 30; // 5 minutes with 10-second intervals
+		let attempts = 0;
+
+		while (attempts < maxAttempts) {
+			try {
+				console.log(`Polling scripter status (attempt ${attempts + 1}/${maxAttempts})`);
+				
+				const statusResponse = await apiService.makeApiCall(
+					`scripter/status/${taskId}`,
+					{},
+					'GET'
+				);
+
+				if (statusResponse.success) {
+					const status = statusResponse.status;
+					
+					if (status === 'completed') {
+						console.log('Scripter processing completed');
+						const data = statusResponse.data || statusResponse.result || [];
+						
+						// Ensure we return an array for table display
+						if (Array.isArray(data)) {
+							return data;
+						} else if (data && typeof data === 'object') {
+							return [data];
+						} else {
+							return [];
+						}
+					} else if (status === 'failed') {
+						throw new Error(statusResponse.error || 'Scripter processing failed');
+					} else {
+						// Still processing, wait and retry
+						console.log(`Status: ${status}, waiting...`);
+						await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second delay
+						attempts++;
+						continue;
+					}
+				} else {
+					throw new Error(statusResponse.message || 'Failed to get scripter status');
+				}
+			} catch (error) {
+				console.error('Error polling scripter status:', error);
+				attempts++;
+				if (attempts < maxAttempts) {
+					await new Promise(resolve => setTimeout(resolve, 10000));
+				} else {
+					throw error;
+				}
+			}
+		}
+
+		throw new Error('Scripter processing timeout - maximum polling attempts reached');
+	}
+
+	// Create table data from step's json_data URL
+	async function createTableFromStepData(stepData: any): Promise<any[]> {
+		if (!stepData) return [];
+		
+		try {
+			console.log('Creating table from step data:', stepData);
+			
+			// Check if step has json_data URL
+			if (stepData.json_data) {
+				console.log('Fetching data from json_data URL:', stepData.json_data);
+				isLoadingTableData = true;
+				processingError = null;
+				
+				try {
+					const response = await fetch(stepData.json_data);
+					if (!response.ok) {
+						throw new Error(`Failed to fetch JSON data: ${response.statusText}`);
+					}
+					
+					const jsonData = await response.json();
+					console.log('Fetched JSON data:', jsonData);
+					
+					// Handle different JSON structures
+					if (Array.isArray(jsonData)) {
+						return jsonData;
+					} else if (jsonData && typeof jsonData === 'object') {
+						// If it's an object with a data array property
+						if (jsonData.data && Array.isArray(jsonData.data)) {
+							return jsonData.data;
+						}
+						// If it's an object with results array property
+						else if (jsonData.results && Array.isArray(jsonData.results)) {
+							return jsonData.results;
+						}
+						// If it's a single object, wrap in array
+						else {
+							const flattened = flattenObject(jsonData);
+							return [flattened];
+						}
+					}
+					
+					return [];
+				} catch (fetchError) {
+					console.error('Error fetching JSON data:', fetchError);
+					processingError = `Failed to load data: ${fetchError.message}`;
+					return [];
+				} finally {
+					isLoadingTableData = false;
+				}
+			}
+			
+			// Fallback to step data if no json_data URL
+			if (stepData.data && Array.isArray(stepData.data)) {
+				return stepData.data;
+			}
+			
+			if (Array.isArray(stepData)) {
+				return stepData;
+			}
+			
+			if (typeof stepData === 'object' && stepData !== null) {
+				const flattened = flattenObject(stepData);
+				return [flattened];
+			}
+			
+			return [];
+		} catch (error) {
+			console.error('Error creating table from step data:', error);
+			processingError = `Error processing data: ${error.message}`;
+			return [];
+		}
+	}
+	
+	// Flatten nested objects for table display
+	function flattenObject(obj: any, prefix: string = ''): any {
+		const flattened: any = {};
+		
+		for (const key in obj) {
+			if (obj.hasOwnProperty(key)) {
+				const newKey = prefix ? `${prefix}_${key}` : key;
+				const value = obj[key];
+				
+				if (value && typeof value === 'object' && !Array.isArray(value)) {
+					// Recursively flatten nested objects (limit depth to avoid infinite recursion)
+					if (prefix.split('_').length < 3) {
+						Object.assign(flattened, flattenObject(value, newKey));
+					} else {
+						flattened[newKey] = JSON.stringify(value);
+					}
+				} else {
+					flattened[newKey] = value;
+				}
+			}
+		}
+		
+		return flattened;
 	}
 
 	// Instagram-specific mock data generators
@@ -135,23 +371,179 @@
 		}
 	}
 
+	// Get raw table keys for data mapping
+	function getStepTableKeys() {
+		console.log('getStepTableKeys called:', {
+			scripterResultsLength: scripterResults.length,
+			processedTableDataLength: processedTableData.length,
+			selectedStep
+		});
+
+		// Priority 1: Use scripter results if available
+		if (scripterResults && scripterResults.length > 0) {
+			const firstRow = scripterResults[0];
+			if (firstRow && typeof firstRow === 'object') {
+				const keys = Object.keys(firstRow);
+				console.log('Using scripter result keys:', keys);
+				return keys;
+			}
+		}
+
+		// Priority 2: Use processed data if available
+		if (processedTableData && processedTableData.length > 0) {
+			const firstRow = processedTableData[0];
+			if (firstRow && typeof firstRow === 'object') {
+				const keys = Object.keys(firstRow);
+				console.log('Using processed data keys:', keys);
+				return keys;
+			}
+		}
+
+		// Priority 3: Fall back to default keys for mock data
+		const mockKeys = (() => {
+			switch (selectedStep) {
+				case 'posts':
+					return ['id', 'postType', 'timeSlot', 'likes', 'comments', 'shares', 'reach', 'engagement', 'date'];
+				case 'likes':
+					return ['id', 'demographic', 'location', 'totalLikes', 'avgLikesPerPost', 'peakHour', 'weekDay', 'growthRate', 'date'];
+				case 'comments':
+					return ['id', 'sentiment', 'language', 'commentCount', 'avgWordsPerComment', 'responseRate', 'topKeywords', 'engagement', 'date'];
+				default:
+					return [];
+			}
+		})();
+		console.log('Using mock data keys:', mockKeys);
+		return mockKeys;
+	}
+
 	function getStepTableHeaders() {
-		switch (selectedStep) {
-			case 'posts':
-				return ['ID', 'Post Type', 'Time Slot', 'Likes', 'Comments', 'Shares', 'Reach', 'Engagement %', 'Date'];
-			case 'likes':
-				return ['ID', 'Demographic', 'Location', 'Total Likes', 'Avg/Post', 'Peak Hour', 'Week Day', 'Growth %', 'Date'];
-			case 'comments':
-				return ['ID', 'Sentiment', 'Language', 'Count', 'Avg Words', 'Response %', 'Top Keywords', 'Engagement', 'Date'];
-			default:
-				return [];
+		console.log('getStepTableHeaders called:', {
+			scripterResultsLength: scripterResults.length,
+			processedTableDataLength: processedTableData.length,
+			selectedStep
+		});
+
+		// Priority 1: Use scripter results if available
+		if (scripterResults && scripterResults.length > 0) {
+			const firstRow = scripterResults[0];
+			if (firstRow && typeof firstRow === 'object') {
+				const headers = Object.keys(firstRow).map(key => 
+					// Convert camelCase/snake_case to Title Case
+					key.replace(/([A-Z])/g, ' $1')
+					   .replace(/_/g, ' ')
+					   .replace(/^\w/, c => c.toUpperCase())
+					   .trim()
+				);
+				console.log('Using scripter result headers:', headers);
+				return headers;
+			}
+		}
+
+		// Priority 2: Use processed data if available
+		if (processedTableData && processedTableData.length > 0) {
+			const firstRow = processedTableData[0];
+			if (firstRow && typeof firstRow === 'object') {
+				const headers = Object.keys(firstRow).map(key => 
+					// Convert camelCase/snake_case to Title Case
+					key.replace(/([A-Z])/g, ' $1')
+					   .replace(/_/g, ' ')
+					   .replace(/^\w/, c => c.toUpperCase())
+					   .trim()
+				);
+				console.log('Using processed data headers:', headers);
+				return headers;
+			}
+		}
+
+		// Priority 3: Fall back to step-specific headers for mock data
+		const mockHeaders = (() => {
+			switch (selectedStep) {
+				case 'posts':
+					return ['ID', 'Post Type', 'Time Slot', 'Likes', 'Comments', 'Shares', 'Reach', 'Engagement %', 'Date'];
+				case 'likes':
+					return ['ID', 'Demographic', 'Location', 'Total Likes', 'Avg/Post', 'Peak Hour', 'Week Day', 'Growth %', 'Date'];
+				case 'comments':
+					return ['ID', 'Sentiment', 'Language', 'Count', 'Avg Words', 'Response %', 'Top Keywords', 'Engagement', 'Date'];
+				default:
+					return [];
+			}
+		})();
+		console.log('Using mock data headers:', mockHeaders);
+		return mockHeaders;
+	}
+
+	// Use scripter results first, then processed data, then mock data
+	$: {
+		if (scripterResults && scripterResults.length > 0) {
+			tableData = [...scripterResults]; // Create a copy to trigger reactivity
+			console.log('Using scripter results for table data:', tableData.length, 'rows');
+		} else if (processedTableData && processedTableData.length > 0) {
+			tableData = [...processedTableData];
+			console.log('Using processed table data:', tableData.length, 'rows');
+		} else if (hasData && selectedStep) {
+			tableData = getStepData();
+			console.log('Using mock step data:', tableData.length, 'rows');
+		} else {
+			tableData = [];
+			console.log('No table data available');
 		}
 	}
 
-	$: tableData = hasData && selectedStep ? getStepData() : [];
-	$: chartData = hasData && selectedStep ? generateChartData(selectedStep) : null;
-	$: detectedChartType = lastUserQuery ? detectChartType(lastUserQuery) : 'bar';
-	$: tableHeaders = getStepTableHeaders();
+	// Auto-generate table data when a step is selected
+	$: if (selectedStep && conversationResults.length > 0) {
+		const stepData = getSelectedStepData();
+		if (stepData && !scripterResults.length) {
+			console.log('Auto-generating table data for selected step:', selectedStep);
+			// Reset previous state
+			processedTableData = [];
+			processingError = null;
+			// Create new table data asynchronously
+			createTableFromStepData(stepData).then(data => {
+				processedTableData = data;
+				console.log('Table data updated:', data.length, 'rows');
+			}).catch(error => {
+				console.error('Failed to create table data:', error);
+				processingError = error.message;
+			});
+		}
+	}
+	$: chartData = (hasData && selectedStep) || scripterResults.length > 0 ? generateChartData(selectedStep) : null;
+	$: detectedChartType = lastUserQuery ? detectChartType(lastUserQuery) : 'table';
+	
+	// Force reactive updates when scripter results change
+	$: {
+		// Trigger recalculation when scripter results change
+		const _ = scripterResults.length;
+		tableHeaders = getStepTableHeaders();
+		tableKeys = getStepTableKeys();
+		console.log('Table structure updated:', { headers: tableHeaders.length, keys: tableKeys.length });
+	}
+
+	// Debug reactive statements
+	$: console.log('Debug - VisualizationPanel reactive data:', {
+		scripterResults: scripterResults.length,
+		scripterResultsData: scripterResults,
+		processedTableData: processedTableData.length,
+		hasData,
+		selectedStep,
+		tableData: tableData.length,
+		tableDataContent: tableData,
+		tableHeaders: tableHeaders.length,
+		tableHeadersContent: tableHeaders,
+		tableKeys: tableKeys.length,
+		tableKeysContent: tableKeys,
+		firstRow: tableData[0]
+	});
+
+	// Additional debug for scripter results specifically
+	$: if (scripterResults.length > 0) {
+		console.log('Scripter Results Details:', {
+			count: scripterResults.length,
+			firstItem: scripterResults[0],
+			allKeys: scripterResults[0] ? Object.keys(scripterResults[0]) : [],
+			dataTypes: scripterResults[0] ? Object.entries(scripterResults[0]).map(([key, value]) => ({key, type: typeof value, sample: value})) : []
+		});
+	}
 
 	// Initialize map when conditions are met
 	$: if (mapContainer && !map && hasData && detectedChartType === 'map') {
@@ -349,44 +741,21 @@
 		};
 	}
 
-	function exportData(format: 'csv' | 'json') {
-		if (!hasData || !tableData.length) return;
+	function exportStepData(format: 'json') {
+		const stepData = getSelectedStepData();
+		if (!stepData || !stepData.json_data) return;
 		
-		if (format === 'csv') {
-			const headers = tableHeaders.join(',');
-			const rows = tableData.map(row => Object.values(row).map(val => `"${val}"`).join(','));
-			const csv = [headers, ...rows].join('\n');
-			
-			const blob = new Blob([csv], { type: 'text/csv' });
-			const url = window.URL.createObjectURL(blob);
-			const link = document.createElement('a');
-			link.href = url;
-			link.download = `instagram-${selectedStep}-data.csv`;
-			link.click();
-			window.URL.revokeObjectURL(url);
-		} else {
-			const json = JSON.stringify(tableData, null, 2);
-			const blob = new Blob([json], { type: 'application/json' });
-			const url = window.URL.createObjectURL(blob);
-			const link = document.createElement('a');
-			link.href = url;
-			link.download = `instagram-${selectedStep}-data.json`;
-			link.click();
-			window.URL.revokeObjectURL(url);
-		}
+		// Open JSON file URL in a new tab
+		window.open(stepData.json_data, '_blank');
 	}
 </script>
 
 <Card class="h-full">
 	<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-4">
 		<CardTitle class="text-lg font-semibold">Data Visualization</CardTitle>
-		{#if hasData}
+		{#if getSelectedStepData()?.json_data}
 			<div class="flex gap-2">
-				<Button variant="outline" size="sm" on:click={() => exportData('csv')}>
-					<Icon icon="lucide:download" class="w-4 h-4 mr-2" />
-					CSV
-				</Button>
-				<Button variant="outline" size="sm" on:click={() => exportData('json')}>
+				<Button variant="outline" size="sm" on:click={() => exportStepData('json')}>
 					<Icon icon="lucide:download" class="w-4 h-4 mr-2" />
 					JSON
 				</Button>
@@ -395,7 +764,7 @@
 	</CardHeader>
 	
 	<CardContent class="flex-1">
-		{#if !hasData || !selectedStep}
+		{#if (!hasData || !selectedStep) && scripterResults.length === 0}
 			<div class="flex flex-col items-center justify-center h-[400px] text-center">
 				<Icon icon="lucide:bar-chart-3" class="w-16 h-16 text-muted-foreground mb-4" />
 				<h3 class="text-lg font-medium text-muted-foreground mb-2">Select a Data Category</h3>
@@ -405,7 +774,7 @@
 				</p>
 			</div>
 		{:else}
-			<Tabs value={detectedChartType === 'table' ? 'table' : detectedChartType === 'map' ? 'map' : 'chart'} class="w-full h-full">
+			<Tabs value={scripterResults.length > 0 ? 'table' : (detectedChartType === 'table' ? 'table' : detectedChartType === 'map' ? 'map' : 'chart')} class="w-full h-full">
 				<TabsList class="grid w-full grid-cols-3 mb-4">
 					<TabsTrigger value="table" class="flex items-center gap-2">
 						<Icon icon="lucide:table" class="w-4 h-4" />
@@ -422,44 +791,155 @@
 				</TabsList>
 
 				<TabsContent value="table" class="h-[400px] overflow-hidden">
-					<div class="border rounded-lg overflow-hidden">
-						<div class="overflow-x-auto overflow-y-auto h-full">
-							<table class="w-full text-sm">
-								<thead class="bg-muted sticky top-0">
-									<tr>
-										{#each tableHeaders as header}
-											<th class="text-left p-3 font-medium">{header}</th>
-										{/each}
-									</tr>
-								</thead>
-								<tbody>
-									{#each tableData as row}
-										<tr class="border-t hover:bg-muted/50">
-											{#each Object.values(row) as value, index}
-												<td class="p-3">
-													{#if index === 1 && selectedStep === 'posts'}
-														<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-															{value}
-														</span>
-													{:else if index === 1 && selectedStep === 'comments'}
-														<span class={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium 
-															${value === 'Positive' ? 'bg-green-100 text-green-800' : 
-															  value === 'Negative' ? 'bg-red-100 text-red-800' : 
-															  'bg-gray-100 text-gray-800'}`}>
-															{value}
-														</span>
-													{:else if typeof value === 'number' && value > 100}
-														<span class="font-mono">{value.toLocaleString()}</span>
-													{:else}
-														{value}
-													{/if}
-												</td>
+					<div class="border rounded-lg overflow-hidden h-full flex flex-col">
+						<!-- Table Header with Processing Controls -->
+						<div class="border-b bg-muted/50 p-3 flex items-center justify-between">
+							<div class="flex items-center gap-2">
+								<Icon icon="lucide:table" class="w-4 h-4" />
+								<span class="font-medium">
+									{processedTableData.length > 0 ? 'Processed Data' : 'Step Data'}
+								</span>
+								{#if processedTableData.length > 0}
+									<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+										{processedTableData.length} rows
+									</span>
+								{/if}
+							</div>
+							<div class="flex items-center gap-2">
+								{#if getSelectedStepData()}
+									<Button 
+										size="sm" 
+										variant="outline"
+										on:click={async () => {
+											const stepData = getSelectedStepData();
+											if (stepData) {
+												// Reset state and create new table
+												processedTableData = [];
+												processingError = null;
+												try {
+													const data = await createTableFromStepData(stepData);
+													processedTableData = data;
+												} catch (error) {
+													processingError = error.message;
+												}
+											}
+										}}
+										disabled={isLoadingTableData}
+									>
+										{#if isLoadingTableData}
+											<Icon icon="lucide:loader-2" class="w-3 h-3 mr-1 animate-spin" />
+											Loading...
+										{:else}
+											<Icon icon="lucide:refresh-cw" class="w-3 h-3 mr-1" />
+											Refresh Table Data
+										{/if}
+									</Button>
+								{/if}
+								{#if processedTableData.length > 0}
+									<Button 
+										size="sm" 
+										variant="ghost"
+										on:click={() => { processedTableData = []; processingError = null; }}
+									>
+										<Icon icon="lucide:x" class="w-3 h-3 mr-1" />
+										Clear
+									</Button>
+								{/if}
+							</div>
+						</div>
+
+						<!-- Error Display -->
+						{#if processingError}
+							<div class="p-4 bg-red-50 border-b">
+								<div class="flex items-center gap-2 text-red-800 text-sm">
+									<Icon icon="lucide:alert-circle" class="w-4 h-4" />
+									<span class="font-medium">Processing Error:</span>
+									<span>{processingError}</span>
+								</div>
+							</div>
+						{/if}
+
+						<!-- Loading State -->
+						{#if isLoadingTableData}
+							<div class="flex-1 flex items-center justify-center">
+								<div class="text-center">
+									<Icon icon="lucide:loader-2" class="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
+									<p class="text-sm text-muted-foreground">Processing step data...</p>
+									<p class="text-xs text-muted-foreground mt-1">This may take a few minutes</p>
+								</div>
+							</div>
+						{:else}
+							<!-- Table Content -->
+							<div class="flex-1 overflow-x-auto overflow-y-auto">
+								<table class="w-full text-sm">
+									<thead class="bg-muted sticky top-0">
+										<tr>
+											{#each tableHeaders as header}
+												<th class="text-left p-3 font-medium">{header}</th>
 											{/each}
 										</tr>
-									{/each}
-								</tbody>
-							</table>
-						</div>
+									</thead>
+									<tbody>
+										{#each tableData as row, rowIndex}
+											<tr class="border-t hover:bg-muted/50">
+												{#each tableKeys as key, keyIndex}
+													{@const value = row[key]}
+													<td class="p-3">
+														{#if key === 'image_url' || key === 'imageUrl'}
+															<!-- Image thumbnail -->
+															{#if value}
+																<div class="flex items-center gap-2">
+																	<img 
+																		src={value} 
+																		alt="Thumbnail" 
+																		class="w-12 h-12 object-cover rounded-md border"
+																		on:error={(e) => {
+																			e.target.style.display = 'none';
+																			e.target.nextElementSibling.style.display = 'flex';
+																		}}
+																	/>
+																	<div class="w-12 h-12 bg-muted rounded-md border flex items-center justify-center text-xs text-muted-foreground" style="display: none;">
+																		No Img
+																	</div>
+																	<a href={value} target="_blank" rel="noopener noreferrer" class="text-xs text-blue-600 hover:underline truncate max-w-[100px]">
+																		View
+																	</a>
+																</div>
+															{:else}
+																<span class="text-muted-foreground text-xs">No Image</span>
+															{/if}
+														{:else if key.toLowerCase().includes('price') && value}
+															<!-- Price formatting -->
+															<span class="font-medium text-green-600">{value}</span>
+														{:else if key.toLowerCase().includes('location') && value}
+															<!-- Location formatting -->
+															<span class="inline-flex items-center gap-1 text-sm">
+																<Icon icon="lucide:map-pin" class="w-3 h-3 text-blue-500" />
+																{value}
+															</span>
+														{:else if key.toLowerCase().includes('id') && value}
+															<!-- ID formatting -->
+															<span class="font-mono text-xs bg-muted px-2 py-1 rounded">{value}</span>
+														{:else if typeof value === 'number' && value > 100}
+															<!-- Large number formatting -->
+															<span class="font-mono">{value.toLocaleString()}</span>
+														{:else if value && value.toString().startsWith('http')}
+															<!-- URL formatting -->
+															<a href={value} target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline text-sm truncate max-w-[150px] block">
+																Link
+															</a>
+														{:else}
+															<!-- Default value display -->
+															{value || '-'}
+														{/if}
+													</td>
+												{/each}
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						{/if}
 					</div>
 				</TabsContent>
 

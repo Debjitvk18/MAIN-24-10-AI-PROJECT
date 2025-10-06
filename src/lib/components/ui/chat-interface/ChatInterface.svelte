@@ -99,25 +99,76 @@
 		}
 	}
 
+	// Helper function to check if step data is available in conversation results
+	function hasStepData(results: Array<any> = []): boolean {
+		if (!results || results.length === 0) return false;
+		return results.some(result => 
+			result.json_data || 
+			result.step_name || 
+			result.step_title ||
+			result.step_type ||
+			(result.status && result.status !== 'pending')
+		);
+	}
+
+	// Helper function to append visualization link to content
+	function appendVisualizationLink(content: string, convId: string): string {
+		const visualizationLink = `/visualization?conversation_id=${convId}`;
+		return `${content}\n\n---\n\n🗺️ **[View Visualization](${visualizationLink})** - Interactive map view of your results`;
+	}
+
 	function handleConversationLoaded(conversationData: any) {
 		console.log('Conversation loaded:', conversationData);
 		if (conversationData && conversationData.success && conversationData.data) {
-			// Transform the API messages to match our component structure
-			if (conversationData.data.messages) {
-				currentMessages = conversationData.data.messages.map((msg: any, index: number) => ({
-					id: msg.id || `msg-${index}`,
-					role: msg.role || 'user',
-					content: msg.content || '',
-					timestamp: new Date(msg.created_at || Date.now()),
-					isVoiceInput: false
-				}));
-				console.log('Messages set:', currentMessages);
-			}
-			
-			// Store conversation results for processing steps
+			// Store conversation results for processing steps first
 			if (conversationData.data.results) {
 				conversationResults = conversationData.data.results;
 				console.log('Conversation results set:', conversationResults);
+			}
+
+			// Transform the API messages to match our component structure
+			if (conversationData.data.messages) {
+				console.log('Processing messages:', conversationData.data.messages);
+				console.log('Conversation ID from data:', conversationData.data.conversation_id);
+				console.log('Has step data:', hasStepData(conversationResults));
+				
+				currentMessages = conversationData.data.messages.map((msg: any, index: number) => {
+					let content = msg.content || '';
+					console.log(`Message ${index}: role=${msg.role}, isLast=${index === conversationData.data.messages.length - 1}`);
+					
+					// If this is the final assistant message and we have step data, append visualization link
+					if (msg.role === 'assistant' && 
+						index === conversationData.data.messages.length - 1 && 
+						hasStepData(conversationResults)) {
+						
+						// Try to get conversation ID from multiple sources
+						let convId = conversationData.data.conversation_id || 
+									conversationData.data.id ||
+									(conversationResults.length > 0 ? conversationResults[0].conversation_id : null);
+						
+						// Fallback: extract from URL
+						if (!convId) {
+							const urlParams = new URLSearchParams(window.location.search);
+							convId = urlParams.get('conversation_id');
+						}
+						
+						console.log('Final conversation ID for visualization:', convId);
+						
+						if (convId) {
+							content = appendVisualizationLink(content, convId.toString());
+							console.log('Added visualization link to final message');
+						}
+					}
+					
+					return {
+						id: msg.id || `msg-${index}`,
+						role: msg.role || 'user',
+						content: content,
+						timestamp: new Date(msg.created_at || Date.now()),
+						isVoiceInput: false
+					};
+				});
+				console.log('Messages set:', currentMessages);
 			}
 		}
 	}

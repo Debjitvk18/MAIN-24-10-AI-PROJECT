@@ -1,16 +1,27 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { getDataFromURL } from '$lib/utils/generalUtils';
+	import { ConversationService } from '$lib/services/conversation-service';
 	import InstagramStepsSidebar from './InstagramStepsSidebar.svelte';
 	import VisualizationPanel from './VisualizationPanel.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import Icon from '@iconify/svelte';
 
+	// API data
+	let conversationService = new ConversationService();
+	let conversationData = null;
+	let conversationResults = [];
+	let isLoading = true;
+	let error = null;
+
+	// UI state
 	let sidebarVisible = true;
 	let isMobile = false;
 	let selectedStep = 'comments';
-	let hasVisualizationData = true;
+	let hasVisualizationData = false;
 	let sidebarMessages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date}> = [];
 	let lastUserQuery = 'map comments by global regions';
+	let scripterResults: any[] = [];
 
 	// Check if we're on mobile screen
 	function checkMobile() {
@@ -24,19 +35,9 @@
 		}
 	}
 
-	onMount(() => {
+	onMount(async () => {
 		checkMobile();
-		
-		// Initialize with default data for Step 3 (comments) with map visualization
-		if (selectedStep === 'comments') {
-			const defaultMessage = {
-				id: 'default-' + Date.now().toString(),
-				role: 'assistant' as const,
-				content: 'The global map visualization shows Instagram comments data by geographic regions. Each pin displays local comment statistics including sentiment analysis, engagement levels, and regional interaction patterns.',
-				timestamp: new Date()
-			};
-			sidebarMessages = [defaultMessage];
-		}
+		await loadConversationData();
 		
 		const handleResize = () => {
 			checkMobile();
@@ -46,20 +47,101 @@
 		return () => window.removeEventListener('resize', handleResize);
 	});
 
+	async function loadConversationData() {
+		const conversationId = getDataFromURL('conversation_id');
+		
+		if (!conversationId) {
+			console.warn('No conversation_id found in URL');
+			// Use default data when no conversation ID
+			initializeDefaultData();
+			isLoading = false;
+			return;
+		}
+
+		try {
+			console.log('Loading conversation data for ID:', conversationId);
+			const response = await conversationService.retrieveConversation(conversationId);
+			
+			if (response && response.success) {
+				conversationData = response.data;
+				// Fix: Get results from conversationData.results, not response.results
+				conversationResults = conversationData?.results || response.results || [];
+				
+				// Keep sidebar messages empty - visualization page will handle new queries separately
+				sidebarMessages = [];
+				
+				hasVisualizationData = conversationResults.length > 0;
+				
+				// Set user query from conversation if available
+				if (conversationData && conversationData.user_query) {
+					lastUserQuery = conversationData.user_query;
+				}
+				
+				// Auto-select first step if available and no step is currently selected
+				if (conversationResults.length > 0 && !selectedStep) {
+					selectedStep = conversationResults[0].id || 'step-0';
+				}
+				
+				console.log('Conversation loaded:', {
+					data: conversationData,
+					results: conversationResults.length,
+					selectedStep: selectedStep,
+					note: 'Messages kept empty for visualization queries'
+				});
+			} else {
+				error = 'Failed to load conversation data';
+				console.error('API response error:', response);
+				initializeDefaultData();
+			}
+		} catch (err) {
+			error = 'Error loading conversation: ' + err.message;
+			console.error('Error loading conversation:', err);
+			initializeDefaultData();
+		}
+		
+		isLoading = false;
+	}
+
+	function initializeDefaultData() {
+		// Don't initialize any default data - wait for conversation data
+		hasVisualizationData = false;
+		selectedStep = '';
+		sidebarMessages = [];
+	}
+
 	function toggleSidebar() {
 		sidebarVisible = !sidebarVisible;
 	}
 
 	function handleStepSelect(stepId: string) {
 		selectedStep = stepId;
+		
+		// Find the selected step data
+		const selectedStepData = conversationResults.find(result => 
+			(result.id || `step-${conversationResults.indexOf(result)}`) === stepId
+		);
+		
 		// Clear previous messages when switching steps
 		sidebarMessages = [];
-		hasVisualizationData = false;
+		
+		// Set visualization data availability based on step data
+		hasVisualizationData = !!selectedStepData;
+		
+		// Update last user query based on step data
+		if (selectedStepData) {
+			lastUserQuery = selectedStepData.query || selectedStepData.message || selectedStepData.content || lastUserQuery;
+		}
 		
 		// Close sidebar on mobile after selection
 		if (isMobile) {
 			sidebarVisible = false;
 		}
+		
+		console.log('Step selected:', {
+			stepId,
+			stepData: selectedStepData,
+			hasData: hasVisualizationData
+		});
 	}
 
 	function handleSidebarMessage(message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date}) {
@@ -68,8 +150,15 @@
 		if (message.role === 'user') {
 			lastUserQuery = message.content;
 		}
-		// Show visualization data only when there are messages and a step is selected
-		hasVisualizationData = sidebarMessages.length > 0 && selectedStep !== '';
+		// Show visualization data when there are conversation results and a step is selected
+		hasVisualizationData = conversationResults.length > 0 && selectedStep !== '';
+	}
+
+	function handleScripterResults(results: any[]) {
+		scripterResults = results;
+		// Show visualization data when we have scripter results
+		hasVisualizationData = results.length > 0;
+		console.log('Received scripter results:', results);
 	}
 </script>
 
@@ -99,7 +188,9 @@
 				selectedStep={selectedStep} 
 				onStepSelect={handleStepSelect}
 				onNewMessage={handleSidebarMessage}
+				onScripterResults={handleScripterResults}
 				messages={sidebarMessages}
+				{conversationResults}
 			/>
 		{/if}
 	</div>
@@ -118,15 +209,23 @@
 					<Icon icon="lucide:menu" class="w-5 h-5" />
 				</Button>
 				<div>
-					<h1 class="text-xl font-semibold">Instagram Analytics Studio</h1>
-					{#if selectedStep}
-						{@const step = selectedStep === 'posts' ? 'Step 1' : selectedStep === 'likes' ? 'Step 2' : 'Step 3'}
+					<h1 class="text-xl font-semibold">
+						{conversationResults.length > 0 ? 'Data Visualization Studio' : 'Analytics Studio'}
+					</h1>
+					{#if selectedStep && conversationResults.length > 0}
+						{@const stepData = conversationResults.find(r => (r.id || `step-${conversationResults.indexOf(r)}`) === selectedStep)}
+						{@const stepIndex = conversationResults.findIndex(r => (r.id || `step-${conversationResults.indexOf(r)}`) === selectedStep)}
 						<p class="text-sm text-muted-foreground">
-							Analyzing: {step} Data
+							Analyzing: {stepData?.title || stepData?.name || `Step ${stepIndex + 1}`} 
+							{stepData?.type ? `(${stepData.type})` : ''}
+						</p>
+					{:else if conversationResults.length > 0}
+						<p class="text-sm text-muted-foreground">
+							Select a conversation step from the sidebar to analyze
 						</p>
 					{:else}
 						<p class="text-sm text-muted-foreground">
-							Please select a data category from the sidebar
+							{isLoading ? 'Loading conversation data...' : 'Please select a data category from the sidebar'}
 						</p>
 					{/if}
 				</div>
@@ -145,11 +244,36 @@
 
 		<!-- Visualization Content Area -->
 		<div class="flex-1 min-h-0">
-			<VisualizationPanel 
-				hasData={hasVisualizationData} 
-				{selectedStep}
-				{lastUserQuery}
-			/>
+			{#if isLoading}
+				<div class="flex items-center justify-center h-full">
+					<div class="flex flex-col items-center gap-4">
+						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+						<p class="text-muted-foreground">Loading conversation data...</p>
+					</div>
+				</div>
+			{:else if error}
+				<div class="flex items-center justify-center h-full">
+					<div class="flex flex-col items-center gap-4 text-center max-w-md">
+						<Icon icon="lucide:alert-circle" class="w-12 h-12 text-destructive" />
+						<div>
+							<h3 class="text-lg font-semibold mb-2">Error Loading Data</h3>
+							<p class="text-muted-foreground">{error}</p>
+						</div>
+						<Button on:click={loadConversationData} variant="outline">
+							<Icon icon="lucide:refresh-cw" class="w-4 h-4 mr-2" />
+							Retry
+						</Button>
+					</div>
+				</div>
+			{:else}
+				<VisualizationPanel 
+					hasData={hasVisualizationData} 
+					{selectedStep}
+					{lastUserQuery}
+					{conversationResults}
+					{scripterResults}
+				/>
+			{/if}
 		</div>
 	</div>
 </div>

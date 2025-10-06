@@ -55,4 +55,31 @@ export class ApiService {
 
 		return response.json();
 	}
+
+	/**
+	 * Execute scripter request
+	 * @param {string} message - The user's message/query
+	 * @param {string} result_id - The result ID from selected step
+	 * @param {string} conversation_id - The conversation ID
+	 * @param {string} sync - Sync parameter (default "0")
+	 * @returns {Promise<any>}
+	 */
+	async executeScripter(message, result_id, conversation_id, sync = "0") {
+		const formData = new FormData();
+		formData.append('message', message);
+		formData.append('result_id', result_id);
+		formData.append('conversation_id', conversation_id);
+		formData.append('sync', sync);
+
+		return this.makeApiCall('scripter/execute', formData, 'POST', 'formdata');
+	}
+
+	/**
+	 * Check scripter status
+	 * @param {string} session_id - The session ID from execute response
+	 * @returns {Promise<any>}
+	 */
+	async getScripterStatus(session_id) {
+		return this.makeApiCall(`scripter/status/${session_id}`, {}, 'GET');
+	}
 }
