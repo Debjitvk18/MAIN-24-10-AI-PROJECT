@@ -7,6 +7,4 @@
 	<meta name="description" content="Interactive data visualization studio for geospatial analysis and insights" />
 </svelte:head>
 
-<div class="w-full h-screen bg-background">
-	<VisualizationInterface />
-</div>
+<VisualizationInterface />

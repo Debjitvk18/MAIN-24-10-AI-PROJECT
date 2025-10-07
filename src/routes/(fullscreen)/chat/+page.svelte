@@ -7,6 +7,4 @@
 	<meta name="description" content="Chat with Cyberglobes AI Assistant for geospatial data analysis and mapping insights" />
 </svelte:head>
 
-<div class="w-full h-screen bg-background">
-	<ChatInterface />
-</div>
+<ChatInterface />

@@ -9,14 +9,15 @@
 
 	export let selectedStep = 'comments';
 	export let onStepSelect: (step: string) => void;
-	export let onNewMessage: (message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date}) => void;
-	export let onScripterResults: (results: any[]) => void;
+	export let onNewMessage: (message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date}, viewType?: string) => void;
+	export let onScripterResults: (results: any[], viewType: string) => void;
 	export let messages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date}> = [];
 	export let conversationResults: Array<any> = [];
 
 	// Chat functionality
 	let inputMessage = '';
 	let isLoading = false;
+	let selectedViewType = 'datatable'; // Default view type
 	
 	// API service instance
 	const apiService = new ApiService();
@@ -171,7 +172,7 @@
 			timestamp: new Date()
 		};
 
-		onNewMessage(userMessage);
+		onNewMessage(userMessage, selectedViewType);
 
 		// Clear input and show loading
 		const currentQuery = inputMessage.trim();
@@ -234,7 +235,8 @@
 
 			// Pass results to visualization panel
 			console.log('Scripter results:', results);
-			onScripterResults(results);
+			console.log('Selected view type:', selectedViewType);
+			onScripterResults(results, selectedViewType);
 
 		} catch (error) {
 			console.error('Error processing scripter request:', error);
@@ -436,6 +438,19 @@
 		inputMessage = suggestion;
 		handleSubmit();
 	}
+
+	function getPlaceholderExample(): string {
+		switch (selectedViewType) {
+			case 'datatable':
+				return '"show me a table", "list all data", "display records"';
+			case 'chart':
+				return '"create a chart", "show trends", "visualize data"';
+			case 'map':
+				return '"show locations on map", "plot geographical data", "map pins by region"';
+			default:
+				return '"analyze this data"';
+		}
+	}
 </script>
 
 <div class="h-full flex flex-col p-4 bg-muted/20">
@@ -566,12 +581,73 @@
 					</div>
 				{/if}
 
+				<!-- View Type Selector -->
+				<div class="space-y-2">
+					<p class="text-xs text-muted-foreground">Select visualization type:</p>
+					<div class="flex gap-1">
+						<label class="relative cursor-pointer">
+							<input 
+								type="radio" 
+								bind:group={selectedViewType} 
+								value="datatable" 
+								class="sr-only"
+							/>
+							<div class={`
+								px-2 py-1 rounded-md text-xs font-medium border transition-all
+								${selectedViewType === 'datatable' 
+									? 'bg-primary text-primary-foreground border-primary' 
+									: 'bg-background text-muted-foreground border-border hover:bg-muted'
+								}
+							`}>
+								<Icon icon="lucide:table" class="w-3 h-3 inline mr-1" />
+								Table
+							</div>
+						</label>
+						<label class="relative cursor-pointer">
+							<input 
+								type="radio" 
+								bind:group={selectedViewType} 
+								value="chart" 
+								class="sr-only"
+							/>
+							<div class={`
+								px-2 py-1 rounded-md text-xs font-medium border transition-all
+								${selectedViewType === 'chart' 
+									? 'bg-primary text-primary-foreground border-primary' 
+									: 'bg-background text-muted-foreground border-border hover:bg-muted'
+								}
+							`}>
+								<Icon icon="lucide:bar-chart-3" class="w-3 h-3 inline mr-1" />
+								Chart
+							</div>
+						</label>
+						<label class="relative cursor-pointer">
+							<input 
+								type="radio" 
+								bind:group={selectedViewType} 
+								value="map" 
+								class="sr-only"
+							/>
+							<div class={`
+								px-2 py-1 rounded-md text-xs font-medium border transition-all
+								${selectedViewType === 'map' 
+									? 'bg-primary text-primary-foreground border-primary' 
+									: 'bg-background text-muted-foreground border-border hover:bg-muted'
+								}
+							`}>
+								<Icon icon="lucide:map-pin" class="w-3 h-3 inline mr-1" />
+								Map
+							</div>
+						</label>
+					</div>
+				</div>
+
 				<!-- Input Form -->
 				<form on:submit|preventDefault={handleSubmit} class="flex gap-2">
 					<Input
 						bind:value={inputMessage}
 						placeholder={selectedStep 
-							? `Query ${getSelectedStepTitle()} data... (e.g., "show me a table", "create a pie chart", "filter by location")`
+							? `Query ${getSelectedStepTitle()} data for ${selectedViewType}... (e.g., ${getPlaceholderExample()})`
 							: "Select a conversation step from the dropdown first..."
 						}
 						class="flex-1"

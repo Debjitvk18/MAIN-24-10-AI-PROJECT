@@ -20,8 +20,9 @@
 	let selectedStep = 'comments';
 	let hasVisualizationData = false;
 	let sidebarMessages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date}> = [];
-	let lastUserQuery = 'map comments by global regions';
-	let scripterResults: any[] = [];
+	let lastUserQuery = '';
+	let scripterResults: Array<any> = [];
+	let selectedViewType = 'datatable'; // Track view type from sidebar
 
 	// Check if we're on mobile screen
 	function checkMobile() {
@@ -144,21 +145,29 @@
 		});
 	}
 
-	function handleSidebarMessage(message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date}) {
+	function handleSidebarMessage(message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date}, viewType?: string) {
 		sidebarMessages = [...sidebarMessages, message];
-		// Track the last user query for chart type detection
+		// Track the last user query and set view type from sidebar selection
 		if (message.role === 'user') {
 			lastUserQuery = message.content;
+			// Use the view type passed from sidebar (user's explicit selection)
+			if (viewType) {
+				selectedViewType = viewType;
+				console.log('Set view type from sidebar selection:', selectedViewType, 'for query:', message.content);
+			}
 		}
 		// Show visualization data when there are conversation results and a step is selected
 		hasVisualizationData = conversationResults.length > 0 && selectedStep !== '';
 	}
 
-	function handleScripterResults(results: any[]) {
+	function handleScripterResults(results: any[], viewType: string) {
 		scripterResults = results;
 		// Show visualization data when we have scripter results
 		hasVisualizationData = results.length > 0;
+		// Store the selected view type directly from sidebar
+		selectedViewType = viewType;
 		console.log('Received scripter results:', results);
+		console.log('Selected view type:', viewType);
 	}
 </script>
 
@@ -272,6 +281,7 @@
 					{lastUserQuery}
 					{conversationResults}
 					{scripterResults}
+					{selectedViewType}
 				/>
 			{/if}
 		</div>

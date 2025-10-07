@@ -9,12 +9,14 @@
 	import { MAP_DEFAULT_LOCATION } from '$lib/constants/constants';
 	import { ApiService } from '$lib/services/api-service';
 	import { getDataFromURL } from '$lib/utils/generalUtils';
+	import { base } from '$app/paths';
 
 	export let hasData = false;
 	export let selectedStep = '';
 	export let lastUserQuery = '';
 	export let conversationResults: Array<any> = [];
 	export let scripterResults: Array<any> = [];
+	export let selectedViewType = 'datatable'; // View type from sidebar: 'datatable' or 'map'
 
 	let mapContainer: HTMLDivElement;
 	let map: mapboxgl.Map | null = null;
@@ -30,27 +32,7 @@
 	let tableHeaders: Array<string> = [];
 	let tableKeys: Array<string> = [];
 
-	// Chart type detection from user query
-	function detectChartType(query: string): 'table' | 'bar' | 'pie' | 'line' | 'map' {
-		const lowerQuery = query.toLowerCase();
 
-		return 'table';
-		
-		if (lowerQuery.includes('table') || lowerQuery.includes('data') || lowerQuery.includes('list')) {
-			return 'table';
-		}
-		if (lowerQuery.includes('map') || lowerQuery.includes('location') || lowerQuery.includes('geographic') || lowerQuery.includes('global') || lowerQuery.includes('region')) {
-			return 'map';
-		}
-		if (lowerQuery.includes('pie') || lowerQuery.includes('round') || lowerQuery.includes('circle') || lowerQuery.includes('donut')) {
-			return 'pie';
-		}
-		if (lowerQuery.includes('line') || lowerQuery.includes('trend') || lowerQuery.includes('over time')) {
-			return 'line';
-		}
-		// Default to table view
-		return 'table';
-	}
 
 	// Get selected step data from conversation results
 	function getSelectedStepData(): any {
@@ -359,16 +341,7 @@
 
 	// Generate data based on selected step
 	function getStepData() {
-		switch (selectedStep) {
-			case 'posts':
-				return generateInstagramPostsData();
-			case 'likes':
-				return generateInstagramLikesData();
-			case 'comments':
-				return generateInstagramCommentsData();
-			default:
-				return [];
-		}
+		return [];
 	}
 
 	// Get raw table keys for data mapping
@@ -399,21 +372,7 @@
 			}
 		}
 
-		// Priority 3: Fall back to default keys for mock data
-		const mockKeys = (() => {
-			switch (selectedStep) {
-				case 'posts':
-					return ['id', 'postType', 'timeSlot', 'likes', 'comments', 'shares', 'reach', 'engagement', 'date'];
-				case 'likes':
-					return ['id', 'demographic', 'location', 'totalLikes', 'avgLikesPerPost', 'peakHour', 'weekDay', 'growthRate', 'date'];
-				case 'comments':
-					return ['id', 'sentiment', 'language', 'commentCount', 'avgWordsPerComment', 'responseRate', 'topKeywords', 'engagement', 'date'];
-				default:
-					return [];
-			}
-		})();
-		console.log('Using mock data keys:', mockKeys);
-		return mockKeys;
+		return [];
 	}
 
 	function getStepTableHeaders() {
@@ -455,21 +414,7 @@
 			}
 		}
 
-		// Priority 3: Fall back to step-specific headers for mock data
-		const mockHeaders = (() => {
-			switch (selectedStep) {
-				case 'posts':
-					return ['ID', 'Post Type', 'Time Slot', 'Likes', 'Comments', 'Shares', 'Reach', 'Engagement %', 'Date'];
-				case 'likes':
-					return ['ID', 'Demographic', 'Location', 'Total Likes', 'Avg/Post', 'Peak Hour', 'Week Day', 'Growth %', 'Date'];
-				case 'comments':
-					return ['ID', 'Sentiment', 'Language', 'Count', 'Avg Words', 'Response %', 'Top Keywords', 'Engagement', 'Date'];
-				default:
-					return [];
-			}
-		})();
-		console.log('Using mock data headers:', mockHeaders);
-		return mockHeaders;
+		return [];
 	}
 
 	// Use scripter results first, then processed data, then mock data
@@ -508,7 +453,17 @@
 		}
 	}
 	$: chartData = (hasData && selectedStep) || scripterResults.length > 0 ? generateChartData(selectedStep) : null;
-	$: detectedChartType = lastUserQuery ? detectChartType(lastUserQuery) : 'table';
+	// Map sidebar view types to tab values
+	$: currentViewType = selectedViewType === 'map' ? 'map' : selectedViewType === 'chart' ? 'chart' : selectedViewType === 'datatable' ? 'table' : 'table';
+	
+	// Debug logging for view type
+	$: {
+		console.log('VisualizationPanel - View type:', {
+			selectedViewType,
+			currentViewType,
+			scripterResultsLength: scripterResults.length
+		});
+	}
 	
 	// Force reactive updates when scripter results change
 	$: {
@@ -546,8 +501,8 @@
 	}
 
 	// Initialize map when conditions are met
-	$: if (mapContainer && !map && hasData && detectedChartType === 'map') {
-		console.log('Conditions met for map initialization:', { mapContainer: !!mapContainer, map: !!map, hasData, detectedChartType });
+	$: if (mapContainer && !map && hasData && currentViewType === 'map') {
+		console.log('Conditions met for map initialization:', { mapContainer: !!mapContainer, map: !!map, hasData, currentViewType });
 		setTimeout(() => {
 			if (mapContainer && !map) {
 				console.log('Timeout: Initializing map');
@@ -562,58 +517,103 @@
 		setTimeout(() => {
 			const markers = document.querySelectorAll('.mapboxgl-marker');
 			markers.forEach(marker => marker.remove());
-			addRandomPinsToMap();
+			addDataPinsToMap();
 		}, 100);
 	}
 
+	// Watch for scripter results changes to refresh map pins
+	$: if (map && scripterResults && scripterResults.length > 0 && currentViewType === 'map') {
+		console.log('Scripter results updated, refreshing map pins...');
+		setTimeout(() => {
+			// Clear existing markers
+			const markers = document.querySelectorAll('.mapboxgl-marker');
+			markers.forEach(marker => marker.remove());
+			// Add new pins from updated scripter results
+			addDataPinsToMap();
+		}, 200);
+	}
+
 	// Alternative trigger - watch for tab changes
-	let currentTabValue = detectedChartType === 'table' ? 'table' : detectedChartType === 'map' ? 'map' : 'chart';
+	let currentTabValue = currentViewType;
 	$: {
-		const newTabValue = detectedChartType === 'table' ? 'table' : detectedChartType === 'map' ? 'map' : 'chart';
-		if (newTabValue !== currentTabValue) {
-			currentTabValue = newTabValue;
-			if (newTabValue === 'map' && mapContainer && !map && hasData) {
+		if (currentViewType !== currentTabValue) {
+			currentTabValue = currentViewType;
+			if (currentViewType === 'map' && mapContainer && !map && hasData) {
 				console.log('Tab changed to map, initializing...');
 				setTimeout(initializeMap, 500);
 			}
 		}
 	}
 
-	// Map functionality
-	function generateRandomPins() {
-		const pins = [];
-		const baseLocations = [
-			{ lat: 40.7128, lng: -74.0060, city: 'New York' },
-			{ lat: 34.0522, lng: -118.2437, city: 'Los Angeles' },
-			{ lat: 51.5074, lng: -0.1278, city: 'London' },
-			{ lat: 48.8566, lng: 2.3522, city: 'Paris' },
-			{ lat: 35.6762, lng: 139.6503, city: 'Tokyo' },
-			{ lat: -33.8688, lng: 151.2093, city: 'Sydney' },
-			{ lat: 52.5200, lng: 13.4050, city: 'Berlin' },
-			{ lat: 55.7558, lng: 37.6173, city: 'Moscow' },
-			{ lat: 19.4326, lng: -99.1332, city: 'Mexico City' },
-			{ lat: -23.5505, lng: -46.6333, city: 'São Paulo' }
-		];
-
-		for (let i = 0; i < 15; i++) {
-			const baseLocation = baseLocations[Math.floor(Math.random() * baseLocations.length)];
-			const randomOffset = {
-				lat: (Math.random() - 0.5) * 0.1, // Random offset within ~5km
-				lng: (Math.random() - 0.5) * 0.1
-			};
-
-			pins.push({
-				id: i + 1,
-				lat: baseLocation.lat + randomOffset.lat,
-				lng: baseLocation.lng + randomOffset.lng,
-				city: baseLocation.city,
-				likes: Math.floor(Math.random() * 1000) + 100,
-				comments: Math.floor(Math.random() * 100) + 10,
-				engagement: (Math.random() * 10).toFixed(1),
-				type: selectedStep || 'posts'
-			});
+	// Map functionality - Process scripter data for map pins
+	function processDataForMapPins(): any[] {
+		if (!scripterResults || scripterResults.length === 0) {
+			console.log('No scripter results available for map pins');
+			return [];
 		}
 
+		const pins = [];
+		console.log('Processing scripter results for map pins:', scripterResults);
+		console.log('Sample scripter result item:', scripterResults[0]);
+
+		scripterResults.forEach((item, index) => {
+			// Scripter returns data in format: { lat, lng, city, title, caption }
+			// But also handle alternative formats from real scripter data
+			let lat, lng, city, title, caption;
+
+			// Primary format: direct lat/lng fields
+			if (item.lat !== undefined && item.lng !== undefined) {
+				lat = parseFloat(item.lat);
+				lng = parseFloat(item.lng);
+				city = item.city || 'Unknown Location';
+				title = item.title || `Data Point ${index + 1}`;
+				caption = item.caption || 'Generated from data analysis';
+			}
+			// Alternative format: location field
+			else if (item.location && typeof item.location === 'object') {
+				lat = parseFloat(item.location.lat || item.location.latitude);
+				lng = parseFloat(item.location.lng || item.location.longitude);
+				city = item.location.city || item.city || 'Unknown Location';
+				title = item.title || item.name || `Data Point ${index + 1}`;
+				caption = item.caption || item.description || 'Generated from data analysis';
+			}
+			// Alternative format: coordinates array [lng, lat]
+			else if (item.coordinates && Array.isArray(item.coordinates) && item.coordinates.length >= 2) {
+				lng = parseFloat(item.coordinates[0]);
+				lat = parseFloat(item.coordinates[1]);
+				city = item.city || item.name || 'Unknown Location';
+				title = item.title || item.name || `Data Point ${index + 1}`;
+				caption = item.caption || item.description || 'Generated from data analysis';
+			}
+			// Fallback: try common field names
+			else {
+				lat = parseFloat(item.latitude || item.lat);
+				lng = parseFloat(item.longitude || item.lng || item.lon);
+				city = item.city || item.location || item.place || 'Unknown Location';
+				title = item.title || item.name || item.label || `Data Point ${index + 1}`;
+				caption = item.caption || item.description || item.text || 'Generated from data analysis';
+			}
+
+			console.log(`Item ${index} coordinates:`, { lat, lng, city, title, item });
+
+			// Validate coordinates
+			if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+				pins.push({
+					id: index + 1,
+					lat: lat,
+					lng: lng,
+					city: city,
+					title: title,
+					caption: caption,
+					data: item // Include original data for popup details
+				});
+				console.log(`✓ Valid pin created for item ${index}:`, { lat, lng, city, title });
+			} else {
+				console.warn(`✗ Invalid coordinates for item ${index}:`, { lat, lng, city, title, item });
+			}
+		});
+
+		console.log(`Generated ${pins.length} map pins from ${scripterResults.length} data items`);
 		return pins;
 	}
 
@@ -638,12 +638,10 @@
 				attributionControl: false
 			});
 
-			map.on('load', () => {
-				console.log('Map loaded successfully');
-				addRandomPinsToMap();
-			});
-
-			map.on('error', (e) => {
+		map.on('load', () => {
+			console.log('Map loaded successfully');
+			addDataPinsToMap();
+		});			map.on('error', (e) => {
 				console.error('Map error:', e);
 			});
 
@@ -651,7 +649,7 @@
 			setTimeout(() => {
 				if (map && map.loaded()) {
 					console.log('Map was already loaded, adding pins');
-					addRandomPinsToMap();
+					addDataPinsToMap();
 				}
 			}, 2000);
 
@@ -660,42 +658,68 @@
 		}
 	}
 
-	function addRandomPinsToMap() {
-		if (!map) return;
+	function addDataPinsToMap() {
+		if (!map) {
+			console.log('Map not initialized, cannot add pins');
+			return;
+		}
 
-		const pins = generateRandomPins();
+		console.log('Adding pins to map...');
+		const pins = processDataForMapPins();
 
-		pins.forEach(pin => {
-			// Create a popup
+		if (pins.length === 0) {
+			console.log('No valid coordinates found in data for map pins');
+			return;
+		}
+
+		console.log(`Adding ${pins.length} pins to map`);
+		pins.forEach((pin, index) => {
+			// Create popup using the specific scripter format: title, caption, city
 			const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-				<div class="p-2">
-					<h3 class="font-semibold text-sm">${pin.city}</h3>
-					<p class="text-xs text-muted-foreground">Instagram ${selectedStep}</p>
-					<div class="mt-2 space-y-1">
-						<div class="flex justify-between text-xs">
-							<span>Likes:</span>
-							<span class="font-medium">${pin.likes}</span>
-						</div>
-						<div class="flex justify-between text-xs">
-							<span>Comments:</span>
-							<span class="font-medium">${pin.comments}</span>
-						</div>
-						<div class="flex justify-between text-xs">
-							<span>Engagement:</span>
-							<span class="font-medium">${pin.engagement}%</span>
-						</div>
+				<div class="p-3 max-w-xs">
+					<h3 class="font-semibold text-sm mb-2">${pin.title}</h3>
+					<p class="text-xs text-muted-foreground mb-2">${pin.caption}</p>
+					<div class="flex items-center gap-1 text-xs text-blue-600 mb-2">
+						<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+							<path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+						</svg>
+						${pin.city}
+					</div>
+					<div class="text-xs text-muted-foreground border-t pt-2">
+						<p><strong>Coordinates:</strong> ${pin.lat.toFixed(4)}, ${pin.lng.toFixed(4)}</p>
 					</div>
 				</div>
 			`);
 
-			// Create marker
+			// Create marker with dynamic color based on data or step
 			const marker = new mapboxgl.Marker({
 				color: selectedStep === 'posts' ? '#8B5CF6' : selectedStep === 'likes' ? '#EF4444' : '#3B82F6'
 			})
 				.setLngLat([pin.lng, pin.lat])
 				.setPopup(popup)
 				.addTo(map);
+
+			console.log(`✓ Added marker ${index + 1} at [${pin.lng}, ${pin.lat}] for ${pin.title}`);
 		});
+
+		// Fit map to show all pins if there are multiple
+		if (pins.length > 1) {
+			const bounds = new mapboxgl.LngLatBounds();
+			pins.forEach(pin => bounds.extend([pin.lng, pin.lat]));
+			map.fitBounds(bounds, { padding: 50 });
+		} else if (pins.length === 1) {
+			// Center on single pin
+			map.setCenter([pins[0].lng, pins[0].lat]);
+			map.setZoom(10);
+		}
+
+		// Force map refresh to ensure markers are visible
+		setTimeout(() => {
+			if (map) {
+				map.resize();
+				map.triggerRepaint();
+			}
+		}, 100);
 	}
 
 	function destroyMap() {
@@ -711,7 +735,7 @@
 
 	// Auto-initialize map when container is available
 	onMount(() => {
-		if (detectedChartType === 'map' && hasData) {
+		if (currentViewType === 'map' && hasData) {
 			setTimeout(() => {
 				if (mapContainer && !map) {
 					console.log('OnMount: Initializing map');
@@ -774,7 +798,7 @@
 				</p>
 			</div>
 		{:else}
-			<Tabs value={scripterResults.length > 0 ? 'table' : (detectedChartType === 'table' ? 'table' : detectedChartType === 'map' ? 'map' : 'chart')} class="w-full h-full">
+			<Tabs value={currentViewType} class="w-full h-full">
 				<TabsList class="grid w-full grid-cols-3 mb-4">
 					<TabsTrigger value="table" class="flex items-center gap-2">
 						<Icon icon="lucide:table" class="w-4 h-4" />
@@ -782,7 +806,7 @@
 					</TabsTrigger>
 					<TabsTrigger value="chart" class="flex items-center gap-2">
 						<Icon icon="lucide:bar-chart" class="w-4 h-4" />
-						{detectedChartType === 'pie' ? 'Pie Chart' : detectedChartType === 'line' ? 'Line Chart' : 'Bar Chart'}
+						Chart View
 					</TabsTrigger>
 					<TabsTrigger value="map" class="flex items-center gap-2">
 						<Icon icon="lucide:map" class="w-4 h-4" />
@@ -797,7 +821,7 @@
 							<div class="flex items-center gap-2">
 								<Icon icon="lucide:table" class="w-4 h-4" />
 								<span class="font-medium">
-									{processedTableData.length > 0 ? 'Processed Data' : 'Step Data'}
+									{processedTableData.length > 0 ? 'Processed Data' : 'Data Table'}
 								</span>
 								{#if processedTableData.length > 0}
 									<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
@@ -948,10 +972,10 @@
 						{#if chartData}
 							<div class="h-full flex flex-col">
 								<h3 class="text-lg font-semibold mb-4 text-center capitalize">
-									Instagram {selectedStep} {detectedChartType === 'pie' ? 'Distribution' : 'Analysis'}
+									Instagram {selectedStep} {currentViewType === 'pie' ? 'Distribution' : 'Analysis'}
 								</h3>
 								
-								{#if detectedChartType === 'pie'}
+								{#if currentViewType === 'pie'}
 									<!-- Pie Chart -->
 									<div class="flex-1 flex items-center justify-center">
 										<div class="relative w-64 h-64">
@@ -980,7 +1004,7 @@
 											</svg>
 										</div>
 									</div>
-								{:else if detectedChartType === 'line'}
+								{:else if currentViewType === 'line'}
 									<!-- Line Chart -->
 									<div class="flex-1 flex items-center justify-center">
 										<div class="w-full max-w-2xl">
@@ -1048,7 +1072,7 @@
 								{/if}
 
 								<!-- Legend -->
-								{#if detectedChartType === 'pie'}
+								{#if currentViewType === 'pie'}
 									<div class="grid grid-cols-2 gap-2 mt-4">
 										{#each chartData.labels as label, i}
 											<div class="flex items-center gap-2 text-sm">
@@ -1090,7 +1114,7 @@
 
 				<TabsContent value="map" class="h-[400px]">
 					<div class="h-full border rounded-lg overflow-hidden relative">
-						<div bind:this={mapContainer} class="w-full h-full" use:autoInitMap>
+						<div bind:this={mapContainer} class="w-full h-full min-h-[400px]" style="height: 400px;" use:autoInitMap>
 							{#if mapContainer && !map}
 								<div class="flex items-center justify-center h-full bg-muted/10">
 									<div class="text-center">
@@ -1113,16 +1137,26 @@
 							<div class="space-y-1 text-xs">
 								<div class="flex justify-between gap-4">
 									<span class="text-muted-foreground">Data Points:</span>
-									<span class="font-medium">15 locations</span>
+									<span class="font-medium">{scripterResults.length || 0} locations</span>
 								</div>
 								<div class="flex justify-between gap-4">
 									<span class="text-muted-foreground">Data Type:</span>
-									<span class="font-medium capitalize">Instagram {selectedStep}</span>
+									<span class="font-medium capitalize">
+										{selectedStep ? `Instagram ${selectedStep}` : 'Map Data'}
+									</span>
 								</div>
 								<div class="flex justify-between gap-4">
 									<span class="text-muted-foreground">Coverage:</span>
-									<span class="font-medium">Global</span>
+									<span class="font-medium">
+										{scripterResults.length > 0 ? 'Dynamic' : 'No Data'}
+									</span>
 								</div>
+								{#if scripterResults.length > 0}
+									<div class="flex justify-between gap-4">
+										<span class="text-muted-foreground">Status:</span>
+										<span class="font-medium text-green-600">Live Data</span>
+									</div>
+								{/if}
 							</div>
 						</div>
 
