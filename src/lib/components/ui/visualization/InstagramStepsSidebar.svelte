@@ -443,6 +443,12 @@
 		switch (selectedViewType) {
 			case 'datatable':
 				return '"show me a table", "list all data", "display records"';
+			case 'pie':
+				return '"show pie chart", "distribution by category", "breakdown by type"';
+			case 'line':
+				return '"show trend over time", "line chart by date", "track changes"';
+			case 'bar':
+				return '"compare values", "bar chart by category", "show comparison"';
 			case 'chart':
 				return '"create a chart", "show trends", "visualize data"';
 			case 'map':
@@ -584,7 +590,7 @@
 				<!-- View Type Selector -->
 				<div class="space-y-2">
 					<p class="text-xs text-muted-foreground">Select visualization type:</p>
-					<div class="flex gap-1">
+					<div class="flex gap-1 flex-wrap">
 						<label class="relative cursor-pointer">
 							<input 
 								type="radio" 
@@ -607,24 +613,6 @@
 							<input 
 								type="radio" 
 								bind:group={selectedViewType} 
-								value="chart" 
-								class="sr-only"
-							/>
-							<div class={`
-								px-2 py-1 rounded-md text-xs font-medium border transition-all
-								${selectedViewType === 'chart' 
-									? 'bg-primary text-primary-foreground border-primary' 
-									: 'bg-background text-muted-foreground border-border hover:bg-muted'
-								}
-							`}>
-								<Icon icon="lucide:bar-chart-3" class="w-3 h-3 inline mr-1" />
-								Chart
-							</div>
-						</label>
-						<label class="relative cursor-pointer">
-							<input 
-								type="radio" 
-								bind:group={selectedViewType} 
 								value="map" 
 								class="sr-only"
 							/>
@@ -637,6 +625,60 @@
 							`}>
 								<Icon icon="lucide:map-pin" class="w-3 h-3 inline mr-1" />
 								Map
+							</div>
+						</label>
+						<label class="relative cursor-pointer">
+							<input 
+								type="radio" 
+								bind:group={selectedViewType} 
+								value="pie" 
+								class="sr-only"
+							/>
+							<div class={`
+								px-2 py-1 rounded-md text-xs font-medium border transition-all
+								${selectedViewType === 'pie' 
+									? 'bg-primary text-primary-foreground border-primary' 
+									: 'bg-background text-muted-foreground border-border hover:bg-muted'
+								}
+							`}>
+								<Icon icon="lucide:pie-chart" class="w-3 h-3 inline mr-1" />
+								Pie Chart
+							</div>
+						</label>
+						<label class="relative cursor-pointer">
+							<input 
+								type="radio" 
+								bind:group={selectedViewType} 
+								value="line" 
+								class="sr-only"
+							/>
+							<div class={`
+								px-2 py-1 rounded-md text-xs font-medium border transition-all
+								${selectedViewType === 'line' 
+									? 'bg-primary text-primary-foreground border-primary' 
+									: 'bg-background text-muted-foreground border-border hover:bg-muted'
+								}
+							`}>
+								<Icon icon="lucide:line-chart" class="w-3 h-3 inline mr-1" />
+								Line Chart
+							</div>
+						</label>
+						<label class="relative cursor-pointer">
+							<input 
+								type="radio" 
+								bind:group={selectedViewType} 
+								value="bar" 
+								class="sr-only"
+							/>
+							<div class={`
+								px-2 py-1 rounded-md text-xs font-medium border transition-all
+								${selectedViewType === 'bar' 
+									? 'bg-primary text-primary-foreground border-primary' 
+									: 'bg-background text-muted-foreground border-border hover:bg-muted'
+								}
+							`}>
+								<Icon icon="lucide:bar-chart-3" class="w-3 h-3 inline mr-1" />
+								Bar Chart
 							</div>
 						</label>
 					</div>

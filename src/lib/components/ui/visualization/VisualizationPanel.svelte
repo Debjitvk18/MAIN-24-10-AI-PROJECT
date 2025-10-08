@@ -10,6 +10,7 @@
 	import { ApiService } from '$lib/services/api-service';
 	import { getDataFromURL } from '$lib/utils/generalUtils';
 	import { base } from '$app/paths';
+	import { BarChart, LineChart, PieChart } from 'layerchart';
 
 	export let hasData = false;
 	export let selectedStep = '';
@@ -44,6 +45,203 @@
 		
 		return stepData;
 	}
+
+	// Transform data for LayerChart BarChart
+	function transformDataForBarChart(data: any[]): any[] {
+		if (!Array.isArray(data)) return [];
+		
+		return data.map((item, index) => ({
+			date: new Date(item.date) || new Date(item.created_at) || new Date(item.timestamp) || new Date(Date.now() - (data.length - index) * 24 * 60 * 60 * 1000),
+			value: typeof item.value === 'number' ? item.value : 
+				   typeof item.count === 'number' ? item.count :
+				   typeof item.likes === 'number' ? item.likes :
+				   typeof item.comments === 'number' ? item.comments :
+				   Math.floor(Math.random() * 100) + 1,
+			baseline: typeof item.baseline === 'number' ? item.baseline : Math.floor(Math.random() * 80) + 20
+		}));
+	}
+
+	// Transform data for LayerChart LineChart
+	function transformDataForLineChart(data: any[]): any[] {
+		if (!Array.isArray(data)) return [];
+		
+		return data.map((item, index) => ({
+			date: new Date(item.date) || new Date(item.created_at) || new Date(item.timestamp) || new Date(Date.now() - (data.length - index) * 24 * 60 * 60 * 1000),
+			value: typeof item.value === 'number' ? item.value : 
+				   typeof item.count === 'number' ? item.count :
+				   typeof item.likes === 'number' ? item.likes :
+				   typeof item.comments === 'number' ? item.comments :
+				   Math.floor(Math.random() * 100) + 1
+		}));
+	}
+
+	// Transform data for LayerChart PieChart
+	function transformDataForPieChart(data: any[]): any[] {
+		if (!Array.isArray(data)) return [];
+		
+		// Group data by categories
+		const grouped = data.reduce((acc, item) => {
+			const key = item.category || item.type || item.fruit || item.name || 'Unknown';
+			const value = typeof item.value === 'number' ? item.value : 
+						  typeof item.count === 'number' ? item.count :
+						  typeof item.likes === 'number' ? item.likes :
+						  typeof item.comments === 'number' ? item.comments : 1;
+			
+			if (acc[key]) {
+				acc[key] += value;
+			} else {
+				acc[key] = value;
+			}
+			return acc;
+		}, {});
+		
+		return Object.entries(grouped).map(([fruit, value]) => ({
+			year: new Date().getFullYear(),
+			basket: 1,
+			fruit,
+			value: value as number
+		}));
+	}
+
+	// Dummy data for demonstration
+	const dummyBarData = [
+		{ date: new Date('2025-09-26T18:30:00.000Z'), value: 100, baseline: 98 },
+		{ date: new Date('2025-09-27T18:30:00.000Z'), value: 50, baseline: 54 },
+		{ date: new Date('2025-09-28T18:30:00.000Z'), value: 93, baseline: 77 },
+		{ date: new Date('2025-09-29T18:30:00.000Z'), value: 57, baseline: 31 },
+		{ date: new Date('2025-09-30T18:30:00.000Z'), value: 82, baseline: 51 },
+		{ date: new Date('2025-10-01T18:30:00.000Z'), value: 100, baseline: 40 },
+		{ date: new Date('2025-10-02T18:30:00.000Z'), value: 52, baseline: 82 },
+		{ date: new Date('2025-10-03T18:30:00.000Z'), value: 40, baseline: 44 },
+		{ date: new Date('2025-10-04T18:30:00.000Z'), value: 61, baseline: 72 },
+		{ date: new Date('2025-10-05T18:30:00.000Z'), value: 90, baseline: 82 }
+	];
+
+	const dummyLineData = [
+		{ date: new Date('2025-09-06T18:30:00.000Z'), value: 59 },
+		{ date: new Date('2025-09-07T18:30:00.000Z'), value: 74 },
+		{ date: new Date('2025-09-08T18:30:00.000Z'), value: 55 },
+		{ date: new Date('2025-09-09T18:30:00.000Z'), value: 85 },
+		{ date: new Date('2025-09-10T18:30:00.000Z'), value: 82 },
+		{ date: new Date('2025-09-11T18:30:00.000Z'), value: 95 },
+		{ date: new Date('2025-09-12T18:30:00.000Z'), value: 100 },
+		{ date: new Date('2025-09-13T18:30:00.000Z'), value: 97 },
+		{ date: new Date('2025-09-14T18:30:00.000Z'), value: 69 },
+		{ date: new Date('2025-09-15T18:30:00.000Z'), value: 59 }
+	];
+
+	// Color schemes for charts using your Tailwind design system
+	const chartColors = {
+		primary: 'hsl(var(--primary))',
+		secondary: 'hsl(var(--secondary))',
+		accent: 'hsl(var(--accent))',
+		muted: 'hsl(var(--muted))',
+		destructive: 'hsl(var(--destructive))',
+		success: 'hsl(var(--primary-500))',
+		warning: 'hsl(var(--destructive-400))',
+		info: 'hsl(var(--accent-600))',
+		// Surface colors for backgrounds and subtle elements
+		surface100: 'hsl(var(--color-surface-100))',
+		surface200: 'hsl(var(--color-surface-200))',
+		surface300: 'hsl(var(--color-surface-300))',
+		surfaceContent: 'hsl(var(--color-surface-content))',
+		// Extended palette with various chart colors
+		primaryVariants: [
+			'hsl(var(--primary))',
+			'hsl(var(--primary-600))',
+			'hsl(var(--primary-700))',
+			'hsl(var(--primary-800))'
+		],
+		secondaryVariants: [
+			'hsl(var(--secondary-600))',
+			'hsl(var(--secondary-700))',
+			'hsl(var(--secondary-800))',
+			'hsl(var(--secondary-900))'
+		],
+		// Various chart color schemes
+		vibrantColors: [
+			'hsl(var(--primary))',      // Blue
+			'hsl(120 60% 50%)',         // Green
+			'hsl(45 90% 55%)',          // Orange/Yellow
+			'hsl(300 70% 60%)',         // Purple
+			'hsl(15 85% 60%)',          // Red-Orange
+			'hsl(200 80% 55%)',         // Cyan
+			'hsl(270 60% 65%)',         // Violet
+			'hsl(90 55% 50%)'           // Lime Green
+		],
+		mutedColors: [
+			'hsl(var(--muted-600))',
+			'hsl(var(--muted-700))',
+			'hsl(var(--muted-800))',
+			'hsl(var(--secondary-600))',
+			'hsl(var(--secondary-700))',
+			'hsl(var(--accent-600))',
+			'hsl(var(--accent-700))',
+			'hsl(var(--accent-800))'
+		]
+	};
+
+	// Removed dummy pie data - only show real scripter results
+
+	// Chart type selector
+	let activeChartType = 'bar';
+
+	const pieChartColors = [
+		chartColors.vibrantColors[0],  // Blue
+		chartColors.vibrantColors[1],  // Green
+		chartColors.vibrantColors[2],  // Orange/Yellow
+		chartColors.vibrantColors[3],  // Purple
+		chartColors.vibrantColors[4],  // Red-Orange
+		chartColors.vibrantColors[5],  // Cyan
+		chartColors.vibrantColors[6],  // Violet
+		chartColors.vibrantColors[7],  // Lime Green
+		chartColors.mutedColors[0],    // Muted fallbacks
+		chartColors.mutedColors[1],
+		chartColors.mutedColors[2],
+		chartColors.mutedColors[3]
+	];
+
+	// Reactive data transformations - only transform data for the selected view type
+	$: layerChartBarData = (scripterResults.length > 0 && selectedViewType === 'bar')
+		? transformDataForBarChart(scripterResults)
+		: (selectedViewType === 'bar' ? [] : dummyBarData);
+
+	$: layerChartLineData = (scripterResults.length > 0 && selectedViewType === 'line')
+		? transformDataForLineChart(scripterResults)
+		: (selectedViewType === 'line' ? [] : dummyLineData);
+
+	$: layerChartPieData = (scripterResults.length > 0 && selectedViewType === 'pie')
+		? transformDataForPieChart(scripterResults)
+		: [];
+
+	// Debug logging
+	$: {
+		console.log('Chart data status:', {
+			barDataLength: layerChartBarData.length,
+			lineDataLength: layerChartLineData.length,
+			pieDataLength: layerChartPieData.length,
+			hasScripterResults: scripterResults.length > 0,
+			activeChartType,
+			hasChartData
+		});
+	}
+
+	// Show charts even without data for demo purposes
+	$: hasChartData = true; // Always show charts with dummy data
+
+	// Sync activeChartType with selectedViewType from sidebar
+	$: if (selectedViewType === 'pie') {
+		activeChartType = 'pie';
+	} else if (selectedViewType === 'line') {
+		activeChartType = 'line';
+	} else if (selectedViewType === 'bar') {
+		activeChartType = 'bar';
+	}
+
+	// Validation for chart data - check both scripter results and selected view type
+	$: hasPieChartData = scripterResults.length > 0 && selectedViewType === 'pie' && layerChartPieData && layerChartPieData.length > 0;
+	$: hasLineChartData = scripterResults.length > 0 && selectedViewType === 'line' && layerChartLineData && layerChartLineData.length > 0;
+	$: hasBarChartData = scripterResults.length > 0 && selectedViewType === 'bar' && layerChartBarData && layerChartBarData.length > 0;
 
 	// Process step data using scripter API for table generation
 	async function processStepDataForTable(userQuery: string): Promise<any[]> {
@@ -253,58 +451,6 @@
 		return flattened;
 	}
 
-	// Instagram-specific mock data generators
-	function generateInstagramPostsData() {
-		const postTypes = ['Photo', 'Video', 'Carousel', 'Reel', 'Story'];
-		const timeSlots = ['Morning', 'Afternoon', 'Evening', 'Night'];
-		
-		return Array.from({ length: 12 }, (_, i) => ({
-			id: i + 1,
-			postType: postTypes[Math.floor(Math.random() * postTypes.length)],
-			timeSlot: timeSlots[Math.floor(Math.random() * timeSlots.length)],
-			likes: Math.floor(Math.random() * 5000) + 500,
-			comments: Math.floor(Math.random() * 200) + 10,
-			shares: Math.floor(Math.random() * 100) + 5,
-			reach: Math.floor(Math.random() * 10000) + 1000,
-			engagement: (Math.random() * 10).toFixed(2),
-			date: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toLocaleDateString()
-		}));
-	}
-
-	function generateInstagramLikesData() {
-		const demographics = ['18-24', '25-34', '35-44', '45-54', '55+'];
-		const locations = ['USA', 'UK', 'Canada', 'Australia', 'Germany', 'France'];
-		
-		return Array.from({ length: 15 }, (_, i) => ({
-			id: i + 1,
-			demographic: demographics[Math.floor(Math.random() * demographics.length)],
-			location: locations[Math.floor(Math.random() * locations.length)],
-			totalLikes: Math.floor(Math.random() * 2000) + 100,
-			avgLikesPerPost: Math.floor(Math.random() * 500) + 50,
-			peakHour: Math.floor(Math.random() * 24),
-			weekDay: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][Math.floor(Math.random() * 7)],
-			growthRate: (Math.random() * 20 - 10).toFixed(1),
-			date: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toLocaleDateString()
-		}));
-	}
-
-	function generateInstagramCommentsData() {
-		const sentiments = ['Positive', 'Neutral', 'Negative'];
-		const languages = ['English', 'Spanish', 'French', 'German', 'Italian'];
-		
-		return Array.from({ length: 10 }, (_, i) => ({
-			id: i + 1,
-			sentiment: sentiments[Math.floor(Math.random() * sentiments.length)],
-			language: languages[Math.floor(Math.random() * languages.length)],
-			commentCount: Math.floor(Math.random() * 100) + 5,
-			avgWordsPerComment: Math.floor(Math.random() * 20) + 5,
-			responseRate: (Math.random() * 100).toFixed(1),
-			topKeywords: ['amazing', 'love', 'great', 'awesome', 'beautiful'][Math.floor(Math.random() * 5)],
-			engagement: (Math.random() * 5).toFixed(2),
-			date: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toLocaleDateString()
-		}));
-	}
-
 	function generateChartData(step: string) {
 		switch (step) {
 			case 'posts':
@@ -453,8 +599,10 @@
 		}
 	}
 	$: chartData = (hasData && selectedStep) || scripterResults.length > 0 ? generateChartData(selectedStep) : null;
-	// Map sidebar view types to tab values
-	$: currentViewType = selectedViewType === 'map' ? 'map' : selectedViewType === 'chart' ? 'chart' : selectedViewType === 'datatable' ? 'table' : 'table';
+	// Map sidebar view types to tab values - handle all chart types (pie, line, bar) to show 'chart' tab
+	$: currentViewType = selectedViewType === 'map' ? 'map'
+	                   : (selectedViewType === 'pie' || selectedViewType === 'line' || selectedViewType === 'bar' || selectedViewType === 'chart') ? 'chart'
+	                   : 'table';
 	
 	// Debug logging for view type
 	$: {
@@ -776,7 +924,24 @@
 
 <Card class="h-full">
 	<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-4">
-		<CardTitle class="text-lg font-semibold">Data Visualization</CardTitle>
+		<div class="flex items-center gap-2">
+			<Button
+				variant="ghost"
+				size="sm"
+				on:click={() => {
+					const conversationId = getDataFromURL('conversation_id');
+					if (conversationId) {
+						window.location.href = `${base}/chat?conversation_id=${conversationId}`;
+					} else {
+						window.location.href = `${base}/chat`;
+					}
+				}}
+			>
+				<Icon icon="lucide:arrow-left" class="w-4 h-4 mr-2" />
+				Back to Chat
+			</Button>
+			<CardTitle class="text-lg font-semibold">Data Visualization</CardTitle>
+		</div>
 		{#if getSelectedStepData()?.json_data}
 			<div class="flex gap-2">
 				<Button variant="outline" size="sm" on:click={() => exportStepData('json')}>
@@ -814,7 +979,7 @@
 					</TabsTrigger>
 				</TabsList>
 
-				<TabsContent value="table" class="h-[400px] overflow-hidden">
+				<TabsContent value="table">
 					<div class="border rounded-lg overflow-hidden h-full flex flex-col">
 						<!-- Table Header with Processing Controls -->
 						<div class="border-b bg-muted/50 p-3 flex items-center justify-between">
@@ -894,17 +1059,18 @@
 							</div>
 						{:else}
 							<!-- Table Content -->
-							<div class="flex-1 overflow-x-auto overflow-y-auto">
-								<table class="w-full text-sm">
-									<thead class="bg-muted sticky top-0">
-										<tr>
-											{#each tableHeaders as header}
-												<th class="text-left p-3 font-medium">{header}</th>
-											{/each}
-										</tr>
-									</thead>
-									<tbody>
-										{#each tableData as row, rowIndex}
+							{#if tableData.length > 0 && tableHeaders.length > 0}
+								<div class="flex-1 overflow-x-auto overflow-y-auto">
+									<table class="w-full text-sm">
+										<thead class="bg-muted sticky top-0">
+											<tr>
+												{#each tableHeaders as header}
+													<th class="text-left p-3 font-medium">{header}</th>
+												{/each}
+											</tr>
+										</thead>
+										<tbody>
+											{#each tableData as row, rowIndex}
 											<tr class="border-t hover:bg-muted/50">
 												{#each tableKeys as key, keyIndex}
 													{@const value = row[key]}
@@ -963,158 +1129,216 @@
 									</tbody>
 								</table>
 							</div>
+							{:else}
+								<!-- Table Placeholder -->
+								<div class="flex-1 flex flex-col items-center justify-center text-center p-8">
+									<div class="mb-6">
+										<Icon icon="lucide:table" class="w-20 h-20 text-muted-foreground/40 mx-auto mb-4" />
+										<h3 class="text-xl font-semibold text-foreground mb-2">No Table Data Available</h3>
+										<p class="text-sm text-muted-foreground max-w-md">
+											Select a conversation step from the sidebar and ask for a data table visualization.
+											<br><br>
+											Example: <strong>"Show me a table"</strong> or <strong>"Display all data in a table"</strong>
+										</p>
+									</div>
+									<div class="flex flex-col gap-2 text-xs text-muted-foreground bg-muted/30 p-4 rounded-lg max-w-md">
+										<div class="flex items-start gap-2">
+											<Icon icon="lucide:info" class="w-4 h-4 mt-0.5 flex-shrink-0" />
+											<span>The scripter will generate table data from the selected conversation step when you submit a query.</span>
+										</div>
+									</div>
+								</div>
+							{/if}
 						{/if}
 					</div>
 				</TabsContent>
 
-				<TabsContent value="chart" class="h-[400px]">
-					<div class="h-full border rounded-lg p-6 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20">
-						{#if chartData}
-							<div class="h-full flex flex-col">
-								<h3 class="text-lg font-semibold mb-4 text-center capitalize">
-									Instagram {selectedStep} {currentViewType === 'pie' ? 'Distribution' : 'Analysis'}
-								</h3>
-								
-								{#if currentViewType === 'pie'}
-									<!-- Pie Chart -->
-									<div class="flex-1 flex items-center justify-center">
-										<div class="relative w-64 h-64">
-											<svg viewBox="0 0 200 200" class="w-full h-full">
-												{#each chartData.datasets[0].data as value, i}
-													{#if value !== undefined}
-														{@const total = chartData.datasets[0].data.reduce((a, b) => a + b, 0)}
-														{@const percentage = (value / total) * 100}
-														{@const angle = (value / total) * 360}
-														{@const prevAngles = chartData.datasets[0].data.slice(0, i).reduce((sum, val) => sum + (val / total) * 360, 0)}
-														{@const startAngle = prevAngles - 90}
-														{@const endAngle = startAngle + angle}
-														{@const largeArcFlag = angle > 180 ? 1 : 0}
-														{@const x1 = 100 + 80 * Math.cos(startAngle * Math.PI / 180)}
-														{@const y1 = 100 + 80 * Math.sin(startAngle * Math.PI / 180)}
-														{@const x2 = 100 + 80 * Math.cos(endAngle * Math.PI / 180)}
-														{@const y2 = 100 + 80 * Math.sin(endAngle * Math.PI / 180)}
-													
-														<path 
-															d={`M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
-															fill={chartData.datasets[0].backgroundColor[i]}
-															class="hover:opacity-80 transition-opacity"
-														/>
-													{/if}
-												{/each}
-											</svg>
-										</div>
+				<TabsContent value="chart">
+					<div class="border rounded-lg overflow-hidden">
+						{#if hasChartData}
+							<div class="flex flex-col">
+								<!-- Header with Chart Type Selection -->
+								<div class="flex items-center justify-between p-4 border-b bg-muted/20">
+									<h3 class="text-lg font-semibold capitalize">
+										Charts
+									</h3>
+									<div class="flex gap-2">
+										<button 
+											class={`px-3 py-1 rounded text-sm transition-colors ${
+												activeChartType === 'bar' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+											}`}
+											on:click={() => activeChartType = 'bar'}
+											title="Bar Chart"
+										>
+											<Icon icon="lucide:bar-chart-3" class="w-4 h-4" />
+										</button>
+										<button 
+											class={`px-3 py-1 rounded text-sm transition-colors ${
+												activeChartType === 'line' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+											}`}
+											on:click={() => activeChartType = 'line'}
+											title="Line Chart"
+										>
+											<Icon icon="lucide:line-chart" class="w-4 h-4" />
+										</button>
+										<button 
+											class={`px-3 py-1 rounded text-sm transition-colors ${
+												activeChartType === 'pie' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+											}`}
+											on:click={() => activeChartType = 'pie'}
+											title="Pie Chart"
+										>
+											<Icon icon="lucide:pie-chart" class="w-4 h-4" />
+										</button>
 									</div>
-								{:else if currentViewType === 'line'}
-									<!-- Line Chart -->
-									<div class="flex-1 flex items-center justify-center">
-										<div class="w-full max-w-2xl">
-											<svg viewBox="0 0 400 200" class="w-full h-48 border-b border-l border-muted">
-												<!-- Grid lines -->
-												{#each Array(5) as _, i}
-													<line x1="0" y1={40 * i} x2="400" y2={40 * i} stroke="currentColor" stroke-opacity="0.1" />
-												{/each}
-												
-												<!-- Line path -->
-												{#if chartData && chartData.datasets && chartData.datasets[0]}
-													{#if chartData.datasets[0].data}
-														{@const points = chartData.datasets[0].data.map((value, i) => 
-															`${(i / (chartData.datasets[0].data.length - 1)) * 380 + 10},${180 - (value / Math.max(...chartData.datasets[0].data)) * 160}`
-														).join(' ')}
-													
-														<polyline 
-															points={points}
-															fill="none" 
-															stroke="hsl(var(--primary))" 
-															stroke-width="3"
-															stroke-linecap="round"
-															stroke-linejoin="round"
-														/>
-													{/if}
-													
-													<!-- Data points -->
-													{#each chartData.datasets[0].data as value, i}
-														{#if value !== undefined}
-															{@const x = (i / (chartData.datasets[0].data.length - 1)) * 380 + 10}
-															{@const y = 180 - (value / Math.max(...chartData.datasets[0].data)) * 160}
-															<circle cx={x} cy={y} r="4" fill="hsl(var(--primary))" />
-														{/if}
-													{/each}
-												{/if}
-											</svg>											<!-- X-axis labels -->
-											<div class="flex justify-around mt-2">
-												{#each chartData.labels as label}
-													<span class="text-xs text-muted-foreground">{label}</span>
-												{/each}
+								</div>
+
+								<!-- LayerChart Content -->
+								<div class="flex-1 p-4">
+									{#if activeChartType === 'bar'}
+										<!-- LayerChart Bar Chart -->
+										{#if hasBarChartData}
+											<div class="space-y-3">
+												<div class="px-4 pt-4">
+													<h3 class="text-lg font-semibold text-foreground">Bar Chart</h3>
+													<p class="text-sm text-muted-foreground">Data comparison by category</p>
+												</div>
+												<div class="chart-container h-[350px] p-4 border rounded-sm" style="background: radial-gradient(circle at center, {chartColors.surface100} 0%, {chartColors.surface200} 70%, {chartColors.surface300} 100%);">
+													<BarChart
+														data={layerChartBarData}
+														x="date"
+														y="value"
+													/>
+												</div>
 											</div>
-										</div>
-									</div>
-								{:else}
-									<!-- Bar Chart -->
-									<div class="flex-1 flex items-center justify-center">
-										<div class="w-full max-w-2xl">
-											<div class="flex items-end justify-around h-48 border-b border-l border-muted">
-												{#each chartData.datasets[0].data as value, i}
-													<div class="flex flex-col items-center gap-2">
-														<div 
-															class="rounded-t-sm transition-all duration-1000 ease-out"
-															style={`
-																height: ${(value / Math.max(...chartData.datasets[0].data)) * 160}px; 
-																width: 32px;
-																background-color: ${chartData.datasets[0].backgroundColor ? chartData.datasets[0].backgroundColor[i] : 'hsl(var(--primary))'}
-															`}
-														></div>
-														<span class="text-xs text-muted-foreground">{chartData.labels[i]}</span>
+										{:else}
+											<!-- Bar Chart Placeholder -->
+											<div class="h-[450px] flex flex-col items-center justify-center text-center p-8">
+												<div class="mb-6">
+													<Icon icon="lucide:bar-chart-3" class="w-20 h-20 text-muted-foreground/40 mx-auto mb-4" />
+													<h3 class="text-xl font-semibold text-foreground mb-2">No Bar Chart Data Available</h3>
+													<p class="text-sm text-muted-foreground max-w-md">
+														Select a conversation step from the sidebar and ask for a bar chart visualization.
+														<br><br>
+														Example: <strong>"Show me comparison by category as a bar chart"</strong>
+													</p>
+												</div>
+												<div class="flex flex-col gap-2 text-xs text-muted-foreground bg-muted/30 p-4 rounded-lg max-w-md">
+													<div class="flex items-start gap-2">
+														<Icon icon="lucide:info" class="w-4 h-4 mt-0.5 flex-shrink-0" />
+														<span>The scripter will generate bar chart data in the required format when you submit a query.</span>
 													</div>
-												{/each}
+												</div>
 											</div>
-										</div>
-									</div>
-								{/if}
-
-								<!-- Legend -->
-								{#if currentViewType === 'pie'}
-									<div class="grid grid-cols-2 gap-2 mt-4">
-										{#each chartData.labels as label, i}
-											<div class="flex items-center gap-2 text-sm">
-												<div 
-													class="w-4 h-4 rounded" 
-													style={`background-color: ${chartData.datasets[0].backgroundColor[i]}`}
-												></div>
-												<span class="text-muted-foreground">{label}</span>
+										{/if}
+									{:else if activeChartType === 'line'}
+										<!-- LayerChart Line Chart -->
+										{#if hasLineChartData}
+											<div class="space-y-3">
+												<div class="px-4 pt-4">
+													<h3 class="text-lg font-semibold text-foreground">Line Chart</h3>
+													<p class="text-sm text-muted-foreground">Trends over time</p>
+												</div>
+												<div class="chart-container h-[350px] p-4 border rounded-sm" style="background: radial-gradient(circle at center, {chartColors.surface100} 0%, {chartColors.surface200} 70%, {chartColors.surface300} 100%);">
+													<LineChart
+														data={layerChartLineData}
+														x="date"
+														y="value"
+													/>
+												</div>
 											</div>
-										{/each}
-									</div>
-								{/if}
+										{:else}
+											<!-- Line Chart Placeholder -->
+											<div class="h-[450px] flex flex-col items-center justify-center text-center p-8">
+												<div class="mb-6">
+													<Icon icon="lucide:line-chart" class="w-20 h-20 text-muted-foreground/40 mx-auto mb-4" />
+													<h3 class="text-xl font-semibold text-foreground mb-2">No Line Chart Data Available</h3>
+													<p class="text-sm text-muted-foreground max-w-md">
+														Select a conversation step from the sidebar and ask for a line chart visualization.
+														<br><br>
+														Example: <strong>"Show me trend over time as a line chart"</strong>
+													</p>
+												</div>
+												<div class="flex flex-col gap-2 text-xs text-muted-foreground bg-muted/30 p-4 rounded-lg max-w-md">
+													<div class="flex items-start gap-2">
+														<Icon icon="lucide:info" class="w-4 h-4 mt-0.5 flex-shrink-0" />
+														<span>The scripter will generate line chart data in the required format when you submit a query.</span>
+													</div>
+												</div>
+											</div>
+										{/if}
+									{:else if activeChartType === 'pie'}
+										<!-- LayerChart Pie Chart -->
+										{#if hasPieChartData}
+											<div class="space-y-4">
+												<div class="px-4 pt-4">
+													<h3 class="text-lg font-semibold text-foreground">Pie Chart</h3>
+													<p class="text-sm text-muted-foreground">Breakdown by category</p>
+												</div>
+												<div class="chart-container h-[350px] p-4 border rounded-sm" style="background: radial-gradient(circle at center, {chartColors.surface100} 0%, {chartColors.surface200} 70%, {chartColors.surface300} 100%);">
+													<PieChart
+														data={layerChartPieData}
+														key="fruit"
+														value="value"
+													/>
+												</div>
 
-								<!-- Stats -->
-								<div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
-									<div class="text-center">
-										<div class="text-xl font-bold text-primary">
-											{Math.max(...chartData.datasets[0].data)}
-										</div>
-										<div class="text-xs text-muted-foreground">Max Value</div>
-									</div>
-									<div class="text-center">
-										<div class="text-xl font-bold text-primary">
-											{Math.round(chartData.datasets[0].data.reduce((a, b) => a + b, 0) / chartData.datasets[0].data.length)}
-										</div>
-										<div class="text-xs text-muted-foreground">Average</div>
-									</div>
-									<div class="text-center">
-										<div class="text-xl font-bold text-primary">
-											{chartData.datasets[0].data.length}
-										</div>
-										<div class="text-xs text-muted-foreground">Data Points</div>
-									</div>
+												<!-- Pie Chart Legend -->
+												<div class="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-lg border" style="background: linear-gradient(135deg, {chartColors.surface100} 0%, {chartColors.surface200} 100%);">
+													{#each layerChartPieData as item, index}
+														<div class="flex items-center gap-3 text-sm p-2 rounded-md hover:shadow-sm transition-all bg-surface-300">
+															<div
+																class="w-5 h-5 rounded-full flex-shrink-0 shadow-sm border"
+																style="background-color: {pieChartColors[index % pieChartColors.length]}; border-color: hsl(var(--border));"
+															></div>
+															<div class="flex-1 min-w-0">
+																<div class="font-semibold truncate" style="color: {chartColors.surfaceContent};">{item.fruit}</div>
+																<div class="text-xs font-medium" style="color: hsl(var(--muted-foreground));">{item.value.toLocaleString()}</div>
+															</div>
+														</div>
+													{/each}
+												</div>
+											</div>
+										{:else}
+											<!-- Pie Chart Placeholder -->
+											<div class="h-[450px] flex flex-col items-center justify-center text-center p-8">
+												<div class="mb-6">
+													<Icon icon="lucide:pie-chart" class="w-20 h-20 text-muted-foreground/40 mx-auto mb-4" />
+													<h3 class="text-xl font-semibold text-foreground mb-2">No Pie Chart Data Available</h3>
+													<p class="text-sm text-muted-foreground max-w-md">
+														Select a conversation step from the sidebar and ask for a pie chart visualization.
+														<br><br>
+														Example: <strong>"Show me distribution by category as a pie chart"</strong>
+													</p>
+												</div>
+												<div class="flex flex-col gap-2 text-xs text-muted-foreground bg-muted/30 p-4 rounded-lg max-w-md">
+													<div class="flex items-start gap-2">
+														<Icon icon="lucide:info" class="w-4 h-4 mt-0.5 flex-shrink-0" />
+														<span>The scripter will generate pie chart data in the required format when you submit a query.</span>
+													</div>
+												</div>
+											</div>
+										{/if}
+									{/if}
+								</div>
+							</div>
+						{:else}
+							<div class="h-full flex items-center justify-center">
+								<div class="text-center text-muted-foreground">
+									<Icon icon="lucide:alert-circle" class="w-16 h-16 mx-auto mb-4 opacity-50" />
+									<h3 class="text-xl font-semibold mb-2">Chart Loading Error</h3>
+									<p class="text-sm">
+										Unable to load chart data. Please try refreshing the page.
+									</p>
 								</div>
 							</div>
 						{/if}
 					</div>
 				</TabsContent>
 
-				<TabsContent value="map" class="h-[400px]">
+				<TabsContent value="map">
 					<div class="h-full border rounded-lg overflow-hidden relative">
-						<div bind:this={mapContainer} class="w-full h-full min-h-[400px]" style="height: 400px;" use:autoInitMap>
+						<div bind:this={mapContainer} class="w-full h-full min-h-[600px]" use:autoInitMap>
 							{#if mapContainer && !map}
 								<div class="flex items-center justify-center h-full bg-muted/10">
 									<div class="text-center">
@@ -1205,3 +1429,198 @@
 <svelte:head>
 	<link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
 </svelte:head>
+
+<style>
+	/* LayerChart Custom Styling */
+	:global(.layerchart) {
+		font-family: inherit;
+	}
+
+	/* Fix transparent fill issues */
+	:global(.fill-transparent) {
+		fill: transparent !important;
+	}
+
+	:global(.fill-none) {
+		fill: none !important;
+	}
+
+	/* Bar Chart Styling */
+	:global(.layerchart .tooltip-rects rect) {
+		transition: all 0.2s ease;
+		fill: hsl(var(--primary)) !important;
+	}
+
+	:global(.layerchart .tooltip-rects rect:hover) {
+		fill: hsl(var(--primary) / 0.9) !important;
+		stroke: hsl(var(--primary-foreground)) !important;
+		stroke-width: 1px !important;
+		transform: translateY(-2px);
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1)) !important;
+	}
+
+	/* Override any default black fills */
+	:global(.layerchart rect) {
+		fill: hsl(var(--primary)) !important;
+	}
+
+	:global(.layerchart rect:hover) {
+		fill: hsl(var(--primary) / 0.8) !important;
+	}
+
+	/* Line Chart Styling */
+	:global(.layerchart .line) {
+		transition: all 0.2s ease;
+		fill: none !important;
+		stroke: hsl(var(--secondary)) !important;
+		stroke-width: 2px;
+	}
+
+	:global(.layerchart .line:hover) {
+		filter: drop-shadow(0 0 4px currentColor);
+	}
+
+	:global(.layerchart .dots circle) {
+		transition: all 0.2s ease;
+		fill: hsl(var(--secondary)) !important;
+		stroke: hsl(var(--background)) !important;
+		stroke-width: 2px;
+	}
+
+	:global(.layerchart .dots circle:hover) {
+		transform: scale(1.2);
+		filter: brightness(1.2);
+	}
+
+	/* Pie Chart Styling */
+	:global(.layerchart .arcs path) {
+		transition: all 0.2s ease;
+		cursor: pointer;
+		stroke: hsl(var(--background)) !important;
+		stroke-width: 2px;
+	}
+
+	:global(.layerchart .arcs path:hover) {
+		transform: scale(1.02);
+		filter: brightness(1.1) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+	}
+
+	/* Axis Styling */
+	:global(.layerchart .axis) {
+		font-size: 12px;
+	}
+
+	:global(.layerchart .axis .tick line) {
+		stroke: hsl(var(--border));
+		stroke-opacity: 0.5;
+	}
+
+	:global(.layerchart .axis .tick text) {
+		fill: hsl(var(--muted-foreground));
+		font-size: 11px;
+	}
+
+	:global(.layerchart .axis .domain) {
+		stroke: hsl(var(--border));
+	}
+
+	/* Grid Lines */
+	:global(.layerchart .grid line) {
+		stroke: hsl(var(--border));
+		stroke-opacity: 0.3;
+	}
+
+	/* Tooltip Styling */
+	:global(.layerchart .tooltip) {
+		background: hsl(var(--background));
+		border: 1px solid hsl(var(--border));
+		border-radius: 6px;
+		padding: 8px 12px;
+		box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+		font-size: 13px;
+		color: hsl(var(--foreground));
+		pointer-events: none;
+		z-index: 1000;
+	}
+
+	/* Chart Container Styling */
+	:global(.chart-container) {
+		position: relative;
+	}
+
+	:global(.chart-container::before) {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: linear-gradient(135deg, transparent 0%, hsl(var(--primary) / 0.02) 50%, transparent 100%);
+		pointer-events: none;
+		border-radius: inherit;
+	}
+
+	/* LayerChart Tooltip Styling Fix */
+	:global(.bg-surface-100\/90) {
+		background-color: hsl(var(--color-surface-100) / 0.9) !important;
+	}
+
+	:global(.dark .bg-surface-300\/90) {
+		background-color: hsl(var(--color-surface-300) / 0.9) !important;
+	}
+
+	:global(.text-surface-content) {
+		color: hsl(var(--color-surface-content)) !important;
+	}
+
+	:global(.text-surface-content\/75) {
+		color: hsl(var(--color-surface-content) / 0.75) !important;
+	}
+
+	/* LayerChart specific tooltip overrides */
+	:global(div[style*="top:"][style*="left:"] .bg-surface-100\/90) {
+		background-color: hsl(var(--color-surface-100) / 0.9) !important;
+		backdrop-filter: blur(2px) !important;
+	}
+
+	:global(.dark div[style*="top:"][style*="left:"] .bg-surface-300\/90) {
+		background-color: hsl(var(--color-surface-300) / 0.9) !important;
+		backdrop-filter: blur(2px) !important;
+	}
+
+	/* Fix for LayerChart color indicators in tooltips */
+	:global(.color[style*="--color"]) {
+		background-color: var(--color) !important;
+	}
+
+	:global(div[style*="--color: hsl(var(--color-primary))"]) {
+		--color: hsl(var(--primary)) !important;
+	}
+
+	/* Animation for chart loading */
+	:global(.layerchart) {
+		animation: fadeIn 0.5s ease-in-out;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	/* Responsive adjustments */
+	@media (max-width: 768px) {
+		:global(.layerchart .axis .tick text) {
+			font-size: 10px;
+		}
+		
+		:global(.chart-container) {
+			height: 250px !important;
+		}
+	}
+</style>

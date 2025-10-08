@@ -4,7 +4,24 @@ import type { Config } from 'tailwindcss';
 const config: Config = {
 	darkMode: ['class'],
 	content: ['./src/**/*.{html,js,svelte,ts}'],
-	safelist: ['dark'],
+	safelist: [
+		'dark',
+		// LayerChart tooltip classes
+		'bg-surface-100/90',
+		'dark:bg-surface-300/90',
+		'text-surface-content',
+		'bg-surface-100',
+		'bg-surface-200', 
+		'bg-surface-300',
+		'text-surface-content/75',
+		// Surface color variants with opacity
+		{
+			pattern: /bg-surface-(100|200|300)\/(10|20|30|40|50|60|70|80|90|95)/
+		},
+		{
+			pattern: /text-surface-content\/(25|50|75)/
+		}
+	],
 	theme: {
 		container: {
 			center: true,
@@ -15,7 +32,7 @@ const config: Config = {
 		},
 		extend: {
 			zIndex: {
-				100: 100
+				100: '100'
 			},
 			colors: {
 				border: 'hsl(var(--border) / <alpha-value>)',
@@ -127,7 +144,97 @@ const config: Config = {
 					800: 'hsl(var(--card-800) / <alpha-value>)',
 					900: 'hsl(var(--card-900) / <alpha-value>)',
 					950: 'hsl(var(--card-950) / <alpha-value>)'
-				}
+				},
+				'surface-100': 'hsl(var(--color-surface-100) / <alpha-value>)',
+				'surface-200': 'hsl(var(--color-surface-200) / <alpha-value>)',
+				'surface-300': 'hsl(var(--color-surface-300) / <alpha-value>)',
+				'surface-content': 'hsl(var(--color-surface-content) / <alpha-value>)',
+				'color-primary': 'hsl(var(--color-primary) / <alpha-value>)',
+				'color-secondary': 'hsl(var(--color-secondary) / <alpha-value>)',
+				'color-success': 'hsl(var(--color-success) / <alpha-value>)',
+				'color-danger': 'hsl(var(--color-danger) / <alpha-value>)',
+				'color-warning': 'hsl(var(--color-warning) / <alpha-value>)',
+				'color-info': 'hsl(var(--color-info) / <alpha-value>)',
+				transparent: 'transparent',
+				// Additional transparent variations
+				'transparent-50': 'rgba(255, 255, 255, 0.05)',
+				'transparent-100': 'rgba(255, 255, 255, 0.1)',
+				'transparent-200': 'rgba(255, 255, 255, 0.2)',
+				'transparent-300': 'rgba(255, 255, 255, 0.3)',
+				'transparent-white-50': 'rgba(255, 255, 255, 0.05)',
+				'transparent-white-100': 'rgba(255, 255, 255, 0.1)',
+				'transparent-white-200': 'rgba(255, 255, 255, 0.2)',
+				'transparent-white-300': 'rgba(255, 255, 255, 0.3)',
+				success: {
+					DEFAULT: 'hsl(var(--color-success) / <alpha-value>)',
+					50: 'hsl(142 69% 95%)',
+					100: 'hsl(142 69% 90%)',
+					200: 'hsl(142 69% 80%)',
+					300: 'hsl(142 69% 70%)',
+					400: 'hsl(142 69% 65%)',
+					500: 'hsl(var(--color-success) / <alpha-value>)',
+					600: 'hsl(142 69% 50%)',
+					700: 'hsl(142 69% 42%)',
+					800: 'hsl(142 69% 35%)',
+					900: 'hsl(142 69% 28%)',
+					950: 'hsl(142 69% 20%)'
+				},
+				danger: {
+					DEFAULT: 'hsl(var(--color-danger) / <alpha-value>)',
+					50: 'hsl(0 84% 97%)',
+					100: 'hsl(0 84% 94%)',
+					200: 'hsl(0 84% 87%)',
+					300: 'hsl(0 84% 78%)',
+					400: 'hsl(0 84% 69%)',
+					500: 'hsl(var(--color-danger) / <alpha-value>)',
+					600: 'hsl(0 84% 51%)',
+					700: 'hsl(0 84% 42%)',
+					800: 'hsl(0 84% 35%)',
+					900: 'hsl(0 84% 28%)',
+					950: 'hsl(0 84% 18%)'
+				},
+				warning: {
+					DEFAULT: 'hsl(var(--color-warning) / <alpha-value>)',
+					50: 'hsl(43 96% 97%)',
+					100: 'hsl(43 96% 93%)',
+					200: 'hsl(43 96% 86%)',
+					300: 'hsl(43 96% 78%)',
+					400: 'hsl(43 96% 67%)',
+					500: 'hsl(var(--color-warning) / <alpha-value>)',
+					600: 'hsl(43 96% 45%)',
+					700: 'hsl(43 96% 36%)',
+					800: 'hsl(43 96% 29%)',
+					900: 'hsl(43 96% 24%)',
+					950: 'hsl(43 96% 13%)'
+				},
+				info: {
+					DEFAULT: 'hsl(var(--color-info) / <alpha-value>)',
+					50: 'hsl(212 100% 97%)',
+					100: 'hsl(212 100% 94%)',
+					200: 'hsl(212 100% 87%)',
+					300: 'hsl(212 100% 78%)',
+					400: 'hsl(212 100% 74%)',
+					500: 'hsl(var(--color-info) / <alpha-value>)',
+					600: 'hsl(212 100% 63%)',
+					700: 'hsl(212 100% 56%)',
+					800: 'hsl(212 100% 46%)',
+					900: 'hsl(212 100% 39%)',
+					950: 'hsl(212 100% 24%)'
+				},
+				indigo: {
+					DEFAULT: 'hsl(var(--color-secondary) / <alpha-value>)',
+					50: 'hsl(238 75% 97%)',
+					100: 'hsl(238 75% 94%)',
+					200: 'hsl(238 75% 87%)',
+					300: 'hsl(238 75% 78%)',
+					400: 'hsl(238 75% 71%)',
+					500: 'hsl(var(--color-secondary) / <alpha-value>)',
+					600: 'hsl(238 75% 58%)',
+					700: 'hsl(238 75% 52%)',
+					800: 'hsl(238 75% 43%)',
+					900: 'hsl(238 75% 36%)',
+					950: 'hsl(238 75% 23%)'
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
