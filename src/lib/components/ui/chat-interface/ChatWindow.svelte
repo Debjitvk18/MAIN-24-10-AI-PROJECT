@@ -19,6 +19,7 @@
 	export let onNewMessage: (message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}) => void;
 	export let conversationResults: Array<any> = [];
 	export let selectedChatId: string = '';
+	export let onConversationInitiated: ((conversationId: string) => void) | undefined = undefined;
 
 	// Service instances
 	const mapService = new MapService();
@@ -108,28 +109,136 @@
 		
 		// Listen for updates on this conversation channel
 		echoInstance.private(`App.Models.Conversation.${id}`)
-			.listen('.App\\Events\\LocationReceived', (event) => {
-				console.log('LocationReceived event:', event);
-				// Handle location updates if needed
+			.listen('.App\\Events\\TodoReceived', (event) => {
+				console.log('TodoReceived event:', event);
+				// Handle todo list received
+				if (event && event.todos) {
+					// Map the received todos to the expected format
+					conversationResults = event.todos.map((todo: any) => ({
+						id: todo.id,
+						step_name: todo.id,
+						step_title: todo.title,
+						step_type: todo.type,
+						status: todo.status,
+						created_at: todo.created_at,
+						updated_at: todo.updated_at
+					}));
+					console.log('Updated conversation results with todos:', conversationResults);
+
+					// Process steps will be automatically regenerated via reactive statement
+					// This will show the list of todos that need to be executed
+				}
 			})
-			.listen('.App\\Events\\PointReceived', (event) => {
-				console.log('PointReceived event:', event);
-				// Handle received points from the PointReceived event
+			.listen('.App\\Events\\TodoStarted', (event) => {
+				console.log('TodoStarted event:', event);
+				// Handle todo started
+				if (event && event.todo) {
+					// Find and update the specific todo in conversationResults
+					const todoIndex = conversationResults.findIndex((result: any) => result.id === event.todo.id);
+					if (todoIndex !== -1) {
+						conversationResults[todoIndex] = {
+							...conversationResults[todoIndex],
+							status: 'inprogress',
+							updated_at: event.todo.updated_at || new Date().toISOString()
+						};
+						// Trigger reactivity
+						conversationResults = [...conversationResults];
+						console.log(`Todo ${event.todo.id} marked as in progress`);
+					}
+				}
+			})
+			.listen('.App\\Events\\TodoFinished', (event) => {
+				console.log('TodoFinished event:', event);
+				// Handle todo finished
+				if (event && event.todo) {
+					// Find and update the specific todo in conversationResults
+					const todoIndex = conversationResults.findIndex((result: any) => result.id === event.todo.id);
+					if (todoIndex !== -1) {
+						conversationResults[todoIndex] = {
+							...conversationResults[todoIndex],
+							status: event.todo.status || 'completed',
+							error_details: event.todo.error_details,
+							json_data: event.todo.json_data,
+							updated_at: event.todo.updated_at || new Date().toISOString()
+						};
+						// Trigger reactivity
+						conversationResults = [...conversationResults];
+						console.log(`Todo ${event.todo.id} finished with status: ${event.todo.status || 'completed'}`);
+					}
+				}
+			})
+			.listen('.App\\Events\\FinalizingConversation', (event) => {
+				console.log('FinalizingConversation event:', event);
+				// Handle finalization step
+				if (event && event.result) {
+					// Add the finalization step to conversationResults
+					const finalizationStep = {
+						id: event.result.id,
+						step_name: event.result.id,
+						step_title: event.result.title,
+						step_type: event.result.type,
+						status: event.result.status,
+						error_details: event.result.error_details,
+						json_data: event.result.json_data,
+						created_at: event.result.created_at,
+						updated_at: event.result.updated_at || new Date().toISOString()
+					};
+
+					// Add to conversationResults
+					conversationResults = [...conversationResults, finalizationStep];
+					console.log('Added finalization step to conversation results');
+				}
 			})
 			.listen('.App\\Events\\MessageReceived', (event) => {
 				console.log('MessageReceived event:', event);
 				// Handle completed message/response
 				if (event && event.message) {
+					// Update the final_response step if result data is provided
+					if (event.result) {
+						// Find and update the final_response step in conversationResults
+						const resultIndex = conversationResults.findIndex((result: any) => result.id === event.result.id);
+						if (resultIndex !== -1) {
+							conversationResults[resultIndex] = {
+								...conversationResults[resultIndex],
+								step_name: event.result.id,
+								step_title: event.result.title,
+								step_type: event.result.type,
+								status: event.result.status || 'completed',
+								error_details: event.result.error_details,
+								json_data: event.result.json_data,
+								updated_at: event.result.updated_at || new Date().toISOString()
+							};
+							// Trigger reactivity
+							conversationResults = [...conversationResults];
+							console.log(`Updated final_response step ${event.result.id} with status: ${event.result.status || 'completed'}`);
+						} else {
+							// If step doesn't exist, add it as a new step
+							const finalResponseStep = {
+								id: event.result.id,
+								step_name: event.result.id,
+								step_title: event.result.title,
+								step_type: event.result.type,
+								status: event.result.status || 'completed',
+								error_details: event.result.error_details,
+								json_data: event.result.json_data,
+								created_at: event.result.created_at,
+								updated_at: event.result.updated_at || new Date().toISOString()
+							};
+							conversationResults = [...conversationResults, finalResponseStep];
+							console.log('Added final_response step to conversation results');
+						}
+					}
+
 					// Stop processing state
 					isProcessing = false;
-					
+
 					let messageContent = event.message.content || event.message;
-					
+
 					// Check if we have step data and append visualization link
 					if (conversationId && (hasStepData(conversationResults) || event.has_step_data)) {
 						messageContent = appendVisualizationLink(messageContent, conversationId);
 					}
-					
+
 					// Add the assistant's response
 					const assistantMessage = {
 						id: `assistant-${Date.now()}`,
@@ -139,7 +248,7 @@
 						isVoiceInput: false
 					};
 					onNewMessage(assistantMessage);
-					
+
 					// Clear processing step
 					currentProcessingStep = '';
 				}
@@ -267,29 +376,31 @@
 		if (shouldAddVisualizationLink) {
 			// Try to get conversation ID from multiple sources
 			let convId = conversationId || selectedChatId;
-			
+
 			// If still no ID, try to extract from conversationResults
-			if (!convId || convId.startsWith('new-')) {
+			if (!convId || String(convId).startsWith('new-')) {
 				// Try to get conversation_id from the first result that has it
 				const resultWithId = conversationResults.find(result => result.conversation_id);
 				if (resultWithId) {
 					convId = resultWithId.conversation_id.toString();
 				}
 			}
-			
+
 			// Extract conversation ID from URL as fallback
-			if (!convId || convId.startsWith('new-')) {
+			if (!convId || String(convId).startsWith('new-')) {
 				const urlParams = new URLSearchParams(window.location.search);
 				const urlConvId = urlParams.get('conversation_id');
 				if (urlConvId) {
 					convId = urlConvId;
 				}
 			}
-			
+
 			console.log('Conversation ID for visualization link:', convId);
-			
-			if (convId && !convId.startsWith('new-')) {
-				const visualizationLink = generateVisualizationLink(convId);
+
+			// Convert to string and check if valid
+			const convIdStr = String(convId);
+			if (convId && !convIdStr.startsWith('new-')) {
+				const visualizationLink = generateVisualizationLink(convIdStr);
 				console.log('Adding visualization link:', visualizationLink);
 				currentProcessingStep += `\n\n---\n\n🗺️ **[View Visualization](${visualizationLink})** - Interactive map view of your results`;
 			} else {
@@ -389,13 +500,18 @@
 			
 			if (response && response.success && response.conversation_id) {
 				conversationId = response.conversation_id;
-				
+
 				// Update URL with the real conversation ID
 				putDataInURL('conversation_id', conversationId);
-				
+
 				// Set up real-time listener for this conversation
 				setupEchoListener(conversationId);
-				
+
+				// Notify parent component that conversation was initiated
+				if (onConversationInitiated) {
+					onConversationInitiated(conversationId);
+				}
+
 				console.log('Conversation initiated successfully:', conversationId);
 			} else {
 				console.error('Failed to initiate conversation:', response);
@@ -475,15 +591,6 @@
 					<h1 class="font-semibold text-xl">Cyberglobes AI Assistant</h1>
 					<p class="text-sm text-muted-foreground">Ask me anything about geospatial data and mapping</p>
 				</div>
-			</div>
-			
-			<div class="ml-auto flex items-center gap-2">
-				<Button variant="ghost" size="sm" class="p-2" title="Clear conversation">
-					<Icon icon="lucide:trash-2" class="w-4 h-4" />
-				</Button>
-				<Button variant="ghost" size="sm" class="p-2" title="More options">
-					<Icon icon="lucide:more-horizontal" class="w-4 h-4" />
-				</Button>
 			</div>
 		</div>
 	</div>

@@ -9,6 +9,7 @@
 	let selectedChatId = '';
 	let currentMessages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}> = [];
 	let conversationResults: Array<any> = [];
+	let chatSidebarRef: any;
 
 	// Mock conversation data
 	const mockConversations: {[key: string]: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}>} = {
@@ -90,9 +91,11 @@
 	}
 
 	function handleChatSelect(chatId: string) {
+		console.log('handleChatSelect called with:', chatId);
 		selectedChatId = chatId;
+		console.log('selectedChatId updated to:', selectedChatId);
 		currentMessages = mockConversations[chatId] || [];
-		
+
 		// Close sidebar on mobile after selection
 		if (isMobile) {
 			sidebarVisible = false;
@@ -176,7 +179,7 @@
 	function handleNewMessage(message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}) {
 		// Check if message with same ID exists (for replacing processing messages)
 		const existingIndex = currentMessages.findIndex(m => m.id === message.id);
-		
+
 		if (existingIndex !== -1) {
 			// Replace existing message
 			currentMessages[existingIndex] = message;
@@ -185,10 +188,23 @@
 			// Add new message
 			currentMessages = [...currentMessages, message];
 		}
-		
+
 		// If no chat is selected, create a new one
 		if (!selectedChatId) {
 			selectedChatId = `new-${Date.now()}`;
+		}
+	}
+
+	async function handleConversationInitiated(conversationId: string) {
+		console.log('Conversation initiated, refreshing sidebar:', conversationId);
+		// Update selected chat ID - convert to string to ensure consistency
+		selectedChatId = String(conversationId);
+		console.log('Updated selectedChatId to:', selectedChatId);
+		// Refresh the conversation list in the sidebar
+		if (chatSidebarRef?.refreshConversations) {
+			// Wait a bit to allow backend to persist the conversation
+			await new Promise(resolve => setTimeout(resolve, 500));
+			chatSidebarRef.refreshConversations();
 		}
 	}
 </script>
@@ -207,28 +223,34 @@
 
 	<!-- Sidebar -->
 	<div class={`
-		${isMobile ? 'fixed' : 'relative'} 
-		${sidebarVisible ? 'translate-x-0' : '-translate-x-full'} 
+		${isMobile ? 'fixed' : 'relative'}
+		${sidebarVisible ? 'translate-x-0' : '-translate-x-full'}
 		${isMobile ? 'z-50' : 'z-10'}
 		transition-all duration-300 ease-in-out
 		${sidebarVisible ? 'w-80' : 'w-0'}
 		h-full bg-muted/30 border-r overflow-hidden
 	`}>
 		{#if sidebarVisible}
-			<ChatSidebar {selectedChatId} onChatSelect={handleChatSelect} onConversationLoaded={handleConversationLoaded} />
+			<ChatSidebar
+				bind:this={chatSidebarRef}
+				{selectedChatId}
+				onChatSelect={handleChatSelect}
+				onConversationLoaded={handleConversationLoaded}
+			/>
 		{/if}
 	</div>
 
 	<!-- Main Chat Area -->
 	<div class={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarVisible ? '' : 'ml-0'}`}>
-		<ChatWindow 
-			{toggleSidebar} 
-			{sidebarVisible} 
-			{isMobile} 
+		<ChatWindow
+			{toggleSidebar}
+			{sidebarVisible}
+			{isMobile}
 			messages={currentMessages}
 			onNewMessage={handleNewMessage}
 			{conversationResults}
 			{selectedChatId}
+			onConversationInitiated={handleConversationInitiated}
 		/>
 	</div>
 </div>

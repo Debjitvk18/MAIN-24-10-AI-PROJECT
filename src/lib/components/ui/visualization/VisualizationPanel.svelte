@@ -922,7 +922,7 @@
 	}
 </script>
 
-<Card class="h-full">
+<Card class="h-full overflow-y-auto">
 	<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-4">
 		<div class="flex items-center gap-2">
 			<Button

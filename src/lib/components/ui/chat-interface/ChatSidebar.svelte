@@ -13,6 +13,12 @@
 	export let onChatSelect: (chatId: string) => void;
 	export let onConversationLoaded: ((data: any) => void) | undefined = undefined;
 
+	// Expose refresh function to parent component
+	export function refreshConversations() {
+		console.log('Refreshing conversations, current selectedChatId:', selectedChatId);
+		loadConversations(1, false);
+	}
+
 	let conversations: any[] = [];
 	let loading = true;
 	let error = '';
@@ -71,16 +77,21 @@
 	}
 
 	function transformConversations(apiConversations: any[]) {
-		return apiConversations.map((conv: any, index: number) => ({
+		const transformed = apiConversations.map((conv: any, index: number) => ({
 			id: conv.id ? conv.id.toString() : `temp-${Date.now()}-${index}`,
 			title: conv.title || 'Untitled Conversation'
 		}));
+		console.log('Transformed conversations:', transformed);
+		console.log('Selected chat ID for comparison:', selectedChatId);
+		return transformed;
 	}
 
 	function selectChat(chatId: string) {
-		selectedChatId = chatId;
+		console.log('Selecting chat:', chatId);
+		// Don't update local selectedChatId - let parent handle it
 		// Update URL with conversation ID
 		putDataInURL('conversation_id', chatId);
+		// Notify parent to update its state
 		onChatSelect(chatId);
 		// Load conversation data
 		loadConversationData(chatId);

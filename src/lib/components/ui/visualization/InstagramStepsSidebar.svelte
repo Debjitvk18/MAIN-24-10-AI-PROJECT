@@ -72,7 +72,7 @@
 
 	function getResultDescription(result: any): string {
 		// Handle final response step
-		if (result.step_name === 'final_response') {
+		if (result.step_name === 'finalizing') {
 			return 'Final conversation results and processed data ready for visualization';
 		}
 		
@@ -102,7 +102,7 @@
 
 	function getResultIcon(result: any): string {
 		// Handle final response step
-		if (result.step_name === 'final_response') {
+		if (result.step_name === 'finalizing') {
 			return 'lucide:check-circle';
 		}
 		
@@ -416,8 +416,8 @@
 					'Filter profile data'
 				];
 			default:
-				// Handle final_response and other types
-				if (stepData?.step_name === 'final_response') {
+				// Handle finalizing and other types
+				if (stepData?.step_name === 'finalizing') {
 					return [
 						'Show final results table',
 						'Display all data on map',
