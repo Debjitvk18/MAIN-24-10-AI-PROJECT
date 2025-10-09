@@ -57,7 +57,7 @@
 				{#if message.isVoiceInput}
 					<Icon icon="lucide:mic" class="w-4 h-4 text-primary-foreground/70 flex-shrink-0 mt-1" />
 				{/if}
-				<div class="text-sm leading-relaxed">
+				<div class="text-sm leading-relaxed whitespace-pre-wrap">
 					{message.content}
 				</div>
 			</div>

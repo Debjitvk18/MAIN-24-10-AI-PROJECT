@@ -153,12 +153,12 @@
 				<div class={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
 					<div class={`
 						max-w-[80%] p-3 rounded-lg
-						${message.role === 'user' 
-							? 'bg-primary text-primary-foreground' 
+						${message.role === 'user'
+							? 'bg-primary text-primary-foreground'
 							: 'bg-muted text-muted-foreground'
 						}
 					`}>
-						<p class="text-sm">{message.content}</p>
+						<p class="text-sm whitespace-pre-wrap">{message.content}</p>
 						<p class="text-xs opacity-70 mt-1">{formatTime(message.timestamp)}</p>
 					</div>
 				</div>

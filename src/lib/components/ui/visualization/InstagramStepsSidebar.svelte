@@ -536,13 +536,13 @@
 					{#each messages as message (message.id)}
 						<div class={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
 							<div class={`
-								max-w-[80%] p-3 rounded-lg
-								${message.role === 'user' 
-									? 'bg-primary text-primary-foreground' 
+								max-w-[90%] p-3 rounded-lg
+								${message.role === 'user'
+									? 'bg-primary text-primary-foreground'
 									: 'bg-muted text-muted-foreground'
 								}
 							`}>
-								<p class="text-sm">{message.content}</p>
+								<p class="text-sm whitespace-pre-wrap">{message.content}</p>
 								<p class="text-xs opacity-70 mt-1">{formatTime(message.timestamp)}</p>
 							</div>
 						</div>
@@ -685,21 +685,23 @@
 				</div>
 
 				<!-- Input Form -->
-				<form on:submit|preventDefault={handleSubmit} class="flex gap-2">
-					<Input
+				<form on:submit|preventDefault={handleSubmit} class="relative">
+					<textarea
 						bind:value={inputMessage}
-						placeholder={selectedStep 
+						placeholder={selectedStep
 							? `Query ${getSelectedStepTitle()} data for ${selectedViewType}... (e.g., ${getPlaceholderExample()})`
 							: "Select a conversation step from the dropdown first..."
 						}
-						class="flex-1"
+						class="w-full min-h-[80px] max-h-[200px] px-3 py-2 pr-12 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
 						disabled={isLoading || !selectedStep}
+						rows="4"
 						on:keydown={handleKeyDown}
-					/>
-					<Button 
-						type="submit" 
+					></textarea>
+					<Button
+						type="submit"
 						disabled={!inputMessage.trim() || isLoading || !selectedStep}
 						size="icon"
+						class="absolute bottom-2 right-0"
 					>
 						<Icon icon="lucide:send" class="w-4 h-4" />
 					</Button>
