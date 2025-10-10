@@ -82,4 +82,18 @@ export class ApiService {
 	async getScripterStatus(session_id) {
 		return this.makeApiCall(`scripter/status/${session_id}`, {}, 'GET');
 	}
+
+	/**
+	 * Analyze step data for visualization recommendations
+	 * @param {string} conversation_id - The conversation ID
+	 * @param {string} result_id - The result ID to analyze
+	 * @returns {Promise<any>}
+	 */
+	async analyzeStepForVisualizations(conversation_id, result_id) {
+		const formData = new FormData();
+		formData.append('conversation_id', conversation_id);
+		formData.append('result_id', result_id);
+
+		return this.makeApiCall('scripter/analyze-step', formData, 'POST', 'formdata');
+	}
 }

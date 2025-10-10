@@ -1,11 +1,16 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { getDataFromURL } from '$lib/utils/generalUtils';
 	import { ConversationService } from '$lib/services/conversation-service';
 	import InstagramStepsSidebar from './InstagramStepsSidebar.svelte';
 	import VisualizationPanel from './VisualizationPanel.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import Icon from '@iconify/svelte';
+	import Echo from 'laravel-echo';
+	import Pusher from 'pusher-js';
+	import { AUTH_TOKEN } from '$lib/constants/constants.js';
+	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_API_URL } from '$env/static/public';
+	import { browser } from '$app/environment';
 
 	// API data
 	let conversationService = new ConversationService();
@@ -19,10 +24,16 @@
 	let isMobile = false;
 	let selectedStep = 'comments';
 	let hasVisualizationData = false;
-	let sidebarMessages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date}> = [];
 	let lastUserQuery = '';
 	let scripterResults: Array<any> = [];
 	let selectedViewType = 'datatable'; // Track view type from sidebar
+
+	// Pusher state
+	let echoInstance: Echo | null = null;
+	let conversationId: string | null = null;
+
+	// Sidebar ref for passing visualizations
+	let sidebarRef: any;
 
 	// Check if we're on mobile screen
 	function checkMobile() {
@@ -36,16 +47,83 @@
 		}
 	}
 
+	// Setup Echo listener for VisualizationsDetected event
+	function setupEchoListener(id: string) {
+		if (!browser) {
+			return;
+		}
+
+		// Clean up any existing listener
+		cleanupEchoListener();
+
+		// Initialize new Echo instance if needed
+		if (!echoInstance) {
+			let authToken = localStorage.getItem(AUTH_TOKEN) || false;
+			window.Pusher = Pusher;
+			echoInstance = new Echo({
+				broadcaster: PUBLIC_ECHO_BROADCASTER,
+				key: PUBLIC_VITE_PUSHER_APP_KEY,
+				cluster: PUBLIC_VITE_PUSHER_APP_CLUSTER,
+				auth: {
+					headers: {
+						Authorization: `Bearer ${authToken}`,
+						'Accept': 'application/json'
+					},
+					withCredentials: true
+				},
+				authEndpoint: PUBLIC_API_URL+'/broadcasting/auth',
+				encrypted: PUBLIC_ECHO_PUSHER_ENCRYPTED === 'true',
+				disableStats: true,
+				wsHost: PUBLIC_ECHO_PUSHER_HOST,
+				wsPort: PUBLIC_ECHO_PUSHER_PORT,
+				wssPort: PUBLIC_ECHO_PUSHER_PORT,
+				forceTLS: PUBLIC_ECHO_PUSHER_SCHEME === 'https',
+				enabledTransports: ['ws', 'wss']
+			});
+		}
+
+		// Listen for VisualizationsDetected event
+		echoInstance.private(`App.Models.Conversation.${id}`)
+			.listen('.App\\Events\\VisualizationsDetected', (event) => {
+				if (event && event.visualizations) {
+					// Pass auto-generated visualizations to sidebar
+					if (sidebarRef && sidebarRef.handleAutoVisualizations) {
+						sidebarRef.handleAutoVisualizations(event.visualizations, event.session_id);
+					}
+				}
+			});
+	}
+
+	// Cleanup function for Echo
+	function cleanupEchoListener() {
+		if (echoInstance && conversationId) {
+			echoInstance.leave(`App.Models.Conversation.${conversationId}`);
+		}
+	}
+
 	onMount(async () => {
 		checkMobile();
 		await loadConversationData();
-		
+
+		// Setup Echo listener if we have a conversation ID
+		conversationId = getDataFromURL('conversation_id');
+		if (conversationId) {
+			setupEchoListener(conversationId);
+		}
+
 		const handleResize = () => {
 			checkMobile();
 		};
 
 		window.addEventListener('resize', handleResize);
-		return () => window.removeEventListener('resize', handleResize);
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			cleanupEchoListener();
+		};
+	});
+
+	onDestroy(() => {
+		cleanupEchoListener();
 	});
 
 	async function loadConversationData() {
@@ -67,10 +145,7 @@
 				conversationData = response.data;
 				// Fix: Get results from conversationData.results, not response.results
 				conversationResults = conversationData?.results || response.results || [];
-				
-				// Keep sidebar messages empty - visualization page will handle new queries separately
-				sidebarMessages = [];
-				
+
 				hasVisualizationData = conversationResults.length > 0;
 				
 				// Set user query from conversation if available
@@ -86,8 +161,7 @@
 				console.log('Conversation loaded:', {
 					data: conversationData,
 					results: conversationResults.length,
-					selectedStep: selectedStep,
-					note: 'Messages kept empty for visualization queries'
+					selectedStep: selectedStep
 				});
 			} else {
 				error = 'Failed to load conversation data';
@@ -107,7 +181,6 @@
 		// Don't initialize any default data - wait for conversation data
 		hasVisualizationData = false;
 		selectedStep = '';
-		sidebarMessages = [];
 	}
 
 	function toggleSidebar() {
@@ -118,13 +191,10 @@
 		selectedStep = stepId;
 		
 		// Find the selected step data
-		const selectedStepData = conversationResults.find(result => 
+		const selectedStepData = conversationResults.find(result =>
 			(result.id || `step-${conversationResults.indexOf(result)}`) === stepId
 		);
-		
-		// Clear previous messages when switching steps
-		sidebarMessages = [];
-		
+
 		// Set visualization data availability based on step data
 		hasVisualizationData = !!selectedStepData;
 		
@@ -145,28 +215,14 @@
 		});
 	}
 
-	function handleSidebarMessage(message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date}, viewType?: string) {
-		sidebarMessages = [...sidebarMessages, message];
-		// Track the last user query and set view type from sidebar selection
-		if (message.role === 'user') {
-			lastUserQuery = message.content;
-			// Use the view type passed from sidebar (user's explicit selection)
-			if (viewType) {
-				selectedViewType = viewType;
-				console.log('Set view type from sidebar selection:', selectedViewType, 'for query:', message.content);
-			}
-		}
-		// Show visualization data when there are conversation results and a step is selected
-		hasVisualizationData = conversationResults.length > 0 && selectedStep !== '';
-	}
-
-	function handleScripterResults(results: any[], viewType: string) {
+	function handleScripterResults(results: any[], viewType: string, cardId: string) {
 		scripterResults = results;
 		// Show visualization data when we have scripter results
 		hasVisualizationData = results.length > 0;
 		// Store the selected view type directly from sidebar
 		selectedViewType = viewType;
-		console.log('Received scripter results:', results);
+		console.log('Received scripter results from card:', cardId);
+		console.log('Results:', results);
 		console.log('Selected view type:', viewType);
 	}
 </script>
@@ -193,12 +249,11 @@
 		h-full bg-muted/30 border-r overflow-hidden
 	`}>
 		{#if sidebarVisible}
-			<InstagramStepsSidebar 
-				selectedStep={selectedStep} 
+			<InstagramStepsSidebar
+				bind:this={sidebarRef}
+				selectedStep={selectedStep}
 				onStepSelect={handleStepSelect}
-				onNewMessage={handleSidebarMessage}
 				onScripterResults={handleScripterResults}
-				messages={sidebarMessages}
 				{conversationResults}
 			/>
 		{/if}
