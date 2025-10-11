@@ -237,6 +237,9 @@
 				status: 'completed',
 				results: results
 			});
+
+			// Automatically view the visualization when completed
+			autoViewVisualization(cardId);
 		} catch (error: any) {
 			console.error('Error executing prompt:', error);
 			updatePromptCard(cardId, {
@@ -294,6 +297,19 @@
 		if (!card || !card.results) return;
 
 		// Pass results to visualization panel
+		onScripterResults(card.results, card.type, cardId);
+	}
+
+	// Automatically view visualization when card completes
+	async function autoViewVisualization(cardId: string) {
+		// Small delay to ensure the card state is updated
+		await tick();
+
+		const card = promptCards.find((c) => c.id === cardId);
+		if (!card || !card.results || card.results.length === 0) return;
+
+		// Automatically pass results to visualization panel
+		console.log('Auto-viewing visualization for card:', cardId, 'type:', card.type, 'results count:', card.results.length);
 		onScripterResults(card.results, card.type, cardId);
 	}
 
