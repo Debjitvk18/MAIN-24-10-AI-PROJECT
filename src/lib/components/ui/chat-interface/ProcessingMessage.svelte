@@ -16,9 +16,9 @@ onMount(() => {
 });
 
 function getStepClasses(step: any) {
-	let titleClass = 'font-semibold mb-1 flex items-center gap-2';
+	let titleClass = 'font-semibold mb-1 flex items-start gap-2';
 	let borderClass = 'border-l-2';
-	let iconClass = 'w-4 h-4';
+	let iconClass = 'w-full max-w-[16px] mt-1';
 	let statusIcon = step.icon || 'lucide:circle';
 	
 	switch (step.status) {
@@ -49,7 +49,7 @@ function getStepClasses(step: any) {
 			if (!step.icon) statusIcon = 'lucide:circle';
 			break;
 	}
-	
+
 	return { titleClass, borderClass, iconClass, statusIcon };
 }
 
@@ -84,7 +84,7 @@ function formatContent(text: string): string {
 						{@const classes = getStepClasses(step)}
 						<div class="mb-4">
 							<div class={classes.titleClass}>
-								<Icon icon={classes.statusIcon} class={classes.iconClass} />
+								<Icon icon={classes.statusIcon} class={classes.iconClass} width={16} height={16} />
 								<span>{step.title}</span>
 							</div>
 							{#if step.description}

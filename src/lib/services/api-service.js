@@ -84,6 +84,15 @@ export class ApiService {
 	}
 
 	/**
+	 * Get scripter results (after completion)
+	 * @param {string} session_id - The session ID from execute response
+	 * @returns {Promise<any>}
+	 */
+	async getScripterResults(session_id) {
+		return this.makeApiCall(`scripter/results/${session_id}`, {}, 'GET');
+	}
+
+	/**
 	 * Analyze step data for visualization recommendations
 	 * @param {string} conversation_id - The conversation ID
 	 * @param {string} result_id - The result ID to analyze

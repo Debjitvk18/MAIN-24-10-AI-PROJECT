@@ -5,7 +5,12 @@
 	import { ApiService } from '$lib/services/api-service';
 	import { getDataFromURL } from '$lib/utils/generalUtils';
 	import VisualizationPromptCard from './VisualizationPromptCard.svelte';
-	import { tick } from 'svelte';
+	import { tick, onDestroy } from 'svelte';
+	import Echo from 'laravel-echo';
+	import Pusher from 'pusher-js';
+	import { AUTH_TOKEN } from '$lib/constants/constants.js';
+	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_API_URL } from '$env/static/public';
+	import { browser } from '$app/environment';
 
 	export let selectedStep = '';
 	export let onStepSelect: (step: string) => void;
@@ -14,6 +19,10 @@
 
 	// API service instance
 	const apiService = new ApiService();
+
+	// Pusher/Echo instance for scripter events
+	let echoInstance: Echo | null = null;
+	let activeScripterSessions: Map<string, string> = new Map(); // Map cardId -> session_id
 
 	// Mode state (auto or manual)
 	let visualizationMode: 'auto' | 'manual' = 'auto';
@@ -145,6 +154,164 @@
 		return colors[index % colors.length];
 	}
 
+	// Setup Echo instance for Pusher
+	function setupEchoInstance() {
+		if (!browser || echoInstance) return;
+
+		let authToken = localStorage.getItem(AUTH_TOKEN) || false;
+		if (!authToken) {
+			console.warn('No auth token available for Pusher connection');
+			return;
+		}
+
+		window.Pusher = Pusher;
+		echoInstance = new Echo({
+			broadcaster: PUBLIC_ECHO_BROADCASTER,
+			key: PUBLIC_VITE_PUSHER_APP_KEY,
+			cluster: PUBLIC_VITE_PUSHER_APP_CLUSTER,
+			auth: {
+				headers: {
+					Authorization: `Bearer ${authToken}`,
+					'Accept': 'application/json'
+				},
+				withCredentials: true
+			},
+			authEndpoint: PUBLIC_API_URL + '/broadcasting/auth',
+			encrypted: PUBLIC_ECHO_PUSHER_ENCRYPTED === 'true',
+			disableStats: true,
+			wsHost: PUBLIC_ECHO_PUSHER_HOST,
+			wsPort: PUBLIC_ECHO_PUSHER_PORT,
+			wssPort: PUBLIC_ECHO_PUSHER_PORT,
+			forceTLS: PUBLIC_ECHO_PUSHER_SCHEME === 'https',
+			enabledTransports: ['ws', 'wss']
+		});
+
+		console.log('Echo instance initialized for scripter events');
+	}
+
+	// Subscribe to scripter session channel
+	function subscribeToScripterSession(sessionId: string, cardId: string) {
+		if (!browser) return;
+
+		setupEchoInstance();
+
+		if (!echoInstance) {
+			console.error('Echo instance not available');
+			return;
+		}
+
+		console.log(`Subscribing to scripter session: ${sessionId} for card: ${cardId}`);
+
+		echoInstance.private(`scripter-session.${sessionId}`)
+			.listen('.scripter.job.status.changed', (event: any) => {
+				console.log('Scripter status changed:', event);
+				// Pass the sessionId from the subscription, not the event
+				handleScripterStatusChange(event, cardId, sessionId);
+			});
+
+		// Store active session
+		activeScripterSessions.set(cardId, sessionId);
+	}
+
+	// Handle scripter status change events
+	async function handleScripterStatusChange(event: any, cardId: string, sessionId: string) {
+		const { status, success, job_id, message, progress_percentage } = event;
+
+		console.log(`Card ${cardId} - Job: ${job_id}, Status: ${status}, Success: ${success}`);
+
+		// Update card with status and progress
+		updatePromptCard(cardId, {
+			status: status === 'completed' ? 'completed' : status === 'failed' ? 'failed' : 'processing',
+			error: status === 'failed' ? message : null
+		});
+
+		// If completed successfully, fetch results using session_id
+		if (status === 'completed' && success) {
+			try {
+				console.log(`Fetching results for session: ${sessionId}`);
+				const resultsResponse = await apiService.getScripterResults(sessionId);
+
+				if (resultsResponse.success) {
+					// Navigate the nested structure: data.response.result.result.results
+					let results = [];
+
+					if (resultsResponse.data?.response?.result?.result?.results) {
+						results = resultsResponse.data.response.result.result.results;
+					} else if (resultsResponse.data?.response?.result?.results) {
+						results = resultsResponse.data.response.result.results;
+					} else if (resultsResponse.data?.response?.results) {
+						results = resultsResponse.data.response.results;
+					} else if (resultsResponse.data?.results) {
+						results = resultsResponse.data.results;
+					}
+
+					console.log('Extracted results:', results);
+
+					// Ensure results is an array
+					const resultsArray = Array.isArray(results) ? results : (results ? [results] : []);
+
+					if (resultsArray.length === 0) {
+						console.warn('No results found in response. Full response:', resultsResponse);
+					}
+
+					updatePromptCard(cardId, {
+						status: 'completed',
+						results: resultsArray
+					});
+
+					// Automatically view the visualization
+					autoViewVisualization(cardId);
+
+					// Cleanup: unsubscribe from channel
+					unsubscribeFromScripterSession(sessionId);
+				} else {
+					throw new Error(resultsResponse.message || 'Failed to fetch results');
+				}
+			} catch (error: any) {
+				console.error('Error fetching scripter results:', error);
+				updatePromptCard(cardId, {
+					status: 'failed',
+					error: error.message || 'Failed to fetch results'
+				});
+			}
+		} else if (status === 'failed') {
+			// Cleanup on failure
+			unsubscribeFromScripterSession(sessionId);
+		}
+	}
+
+	// Unsubscribe from scripter session
+	function unsubscribeFromScripterSession(sessionId: string) {
+		if (echoInstance) {
+			echoInstance.leave(`scripter-session.${sessionId}`);
+			console.log(`Unsubscribed from scripter session: ${sessionId}`);
+		}
+
+		// Remove from active sessions
+		for (const [cardId, sid] of activeScripterSessions.entries()) {
+			if (sid === sessionId) {
+				activeScripterSessions.delete(cardId);
+				break;
+			}
+		}
+	}
+
+	// Cleanup all subscriptions
+	function cleanupAllSubscriptions() {
+		if (echoInstance) {
+			for (const sessionId of activeScripterSessions.values()) {
+				echoInstance.leave(`scripter-session.${sessionId}`);
+			}
+			activeScripterSessions.clear();
+			console.log('Cleaned up all scripter subscriptions');
+		}
+	}
+
+	// Cleanup on component destroy
+	onDestroy(() => {
+		cleanupAllSubscriptions();
+	});
+
 	function selectStep(stepId: string) {
 		onStepSelect(stepId);
 	}
@@ -230,16 +397,10 @@
 
 			updatePromptCard(cardId, { sessionId });
 
-			// Poll for results
-			const results = await pollScripterStatus(sessionId);
+			// Subscribe to Pusher events for this session
+			subscribeToScripterSession(sessionId, cardId);
 
-			updatePromptCard(cardId, {
-				status: 'completed',
-				results: results
-			});
-
-			// Automatically view the visualization when completed
-			autoViewVisualization(cardId);
+			console.log(`Scripter job submitted. Session ID: ${sessionId}. Listening for status updates...`);
 		} catch (error: any) {
 			console.error('Error executing prompt:', error);
 			updatePromptCard(cardId, {
@@ -440,55 +601,6 @@
 		}
 	}
 
-	// Poll scripter status until completion
-	async function pollScripterStatus(sessionId: string): Promise<any[]> {
-		const maxAttempts = 30; // 5 minutes with 10-second intervals
-		let attempts = 0;
-
-		while (attempts < maxAttempts) {
-			try {
-				const statusResponse = await apiService.getScripterStatus(sessionId);
-
-				if (statusResponse.success) {
-					const status = statusResponse.data?.status;
-
-					if (status === 'completed') {
-						// Extract results from the response structure
-						const responseData = statusResponse.data?.response;
-						const results = responseData?.result?.results || responseData?.results || [];
-
-						// Ensure we return an array
-						if (Array.isArray(results)) {
-							return results;
-						} else if (results && typeof results === 'object') {
-							return [results];
-						} else {
-							return [];
-						}
-					} else if (status === 'failed') {
-						throw new Error(statusResponse.data?.error || 'Scripter processing failed');
-					} else {
-						// Still processing, wait and retry
-						await new Promise((resolve) => setTimeout(resolve, 10000)); // 10 second delay
-						attempts++;
-						continue;
-					}
-				} else {
-					throw new Error(statusResponse.message || 'Failed to get scripter status');
-				}
-			} catch (error) {
-				console.error('Error polling scripter status:', error);
-				attempts++;
-				if (attempts < maxAttempts) {
-					await new Promise((resolve) => setTimeout(resolve, 10000));
-				} else {
-					throw error;
-				}
-			}
-		}
-
-		throw new Error('Scripter processing timeout - maximum polling attempts reached');
-	}
 </script>
 
 <div class="h-full flex flex-col p-4 bg-muted/20">
