@@ -237,8 +237,13 @@
 
 					// Try multiple paths based on different response formats
 
-					// Format 1: data.response.result.result.steps[].processed_data (new format with steps)
-					if (resultsResponse.data?.response?.result?.result?.steps) {
+					// Format 1: data.response.processed_data (primary format from scripter/results endpoint)
+					if (resultsResponse.data?.response?.processed_data) {
+						results = resultsResponse.data.response.processed_data;
+						console.log('Extracted from data.response.processed_data');
+					}
+					// Format 2: data.response.result.result.steps[].processed_data (format with steps)
+					else if (resultsResponse.data?.response?.result?.result?.steps) {
 						const steps = resultsResponse.data.response.result.result.steps;
 						// Get processed_data from the first step (or merge all steps if needed)
 						if (Array.isArray(steps) && steps.length > 0 && steps[0].processed_data) {
@@ -246,22 +251,22 @@
 							console.log('Extracted from steps[0].processed_data');
 						}
 					}
-					// Format 2: data.response.result.result.results (previous format)
+					// Format 3: data.response.result.result.results (previous format)
 					else if (resultsResponse.data?.response?.result?.result?.results) {
 						results = resultsResponse.data.response.result.result.results;
 						console.log('Extracted from result.result.results');
 					}
-					// Format 3: data.response.result.results
+					// Format 4: data.response.result.results
 					else if (resultsResponse.data?.response?.result?.results) {
 						results = resultsResponse.data.response.result.results;
 						console.log('Extracted from result.results');
 					}
-					// Format 4: data.response.results
+					// Format 5: data.response.results
 					else if (resultsResponse.data?.response?.results) {
 						results = resultsResponse.data.response.results;
 						console.log('Extracted from response.results');
 					}
-					// Format 5: data.results
+					// Format 6: data.results
 					else if (resultsResponse.data?.results) {
 						results = resultsResponse.data.results;
 						console.log('Extracted from data.results');
