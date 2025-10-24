@@ -39,7 +39,7 @@
 		function onMouseMove(e: MouseEvent) {
 			if (!isDragging) return;
 			const delta = e.clientY - startY;
-			const newHeight = Math.min(Math.max(30, startHeight - delta / 5), 70);
+			const newHeight = Math.min(Math.max(30, startHeight + delta / 5), 70);
 			chatWindowHeight = newHeight;
 		}
 
@@ -296,7 +296,7 @@
 	<div
 		class={`${
 			isMobile ? 'fixed left-0' : ''
-		} ${!isMobile && !leftSidebarVisible ? 'w-0' : 'w-[400px]'} ${
+		} ${!isMobile && !leftSidebarVisible ? 'w-200' : 'w-[400px]'} ${
 			isMobile ? 'z-50' : 'z-30'
 		} transition-all duration-300 ease-in-out flex-shrink-0 h-full bg-background border-r shadow-lg overflow-hidden`}
 	>
@@ -309,7 +309,7 @@
 				<div class="h-full flex flex-col">
 					<!-- Header -->
 					<div
-						class="flex items-center gap-3 p-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+						class="flex items-center gap-3 p-1 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
 					>
 						<div
 							class="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center"
@@ -370,11 +370,11 @@
 					class="p-2"
 					title={leftSidebarVisible ? 'Hide chat' : 'Show chat'}
 				>
-					<Icon icon={leftSidebarVisible ? 'lucide:chevrons-left' : 'lucide:menu'} class="w-4 h-4" />
+					<Icon icon={leftSidebarVisible ? 'lucide:chevrons-left' : 'lucide:menu'} class="w-7 h-7" />
 				</Button>
 			</div>
 
-			<div class="font-medium">Data Visualization</div>
+			<div class="text-lg font-semibold">Data Visualization</div>
 
 			<div>
 				<Button
@@ -384,7 +384,7 @@
 					class="p-2"
 					title={rightSidebarVisible ? 'Hide steps' : 'Show steps'}
 				>
-					<Icon icon={rightSidebarVisible ? 'lucide:x' : 'lucide:align-right'} class="w-4 h-4" />
+					<Icon icon={rightSidebarVisible ? 'lucide:x' : 'lucide:align-right'} class="w-7 h-7" />
 				</Button>
 			</div>
 		</div>
