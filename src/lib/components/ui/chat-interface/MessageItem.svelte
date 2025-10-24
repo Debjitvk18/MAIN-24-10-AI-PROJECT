@@ -33,7 +33,7 @@
 
 <div class={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
 	<div class={`
-		max-w-[80%] rounded-2xl p-4 relative
+		rounded-2xl p-4 relative
 		${message.role === 'user' 
 			? 'bg-primary text-primary-foreground ml-auto' 
 			: 'bg-muted text-foreground'

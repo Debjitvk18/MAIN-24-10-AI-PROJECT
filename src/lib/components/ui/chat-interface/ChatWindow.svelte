@@ -65,12 +65,6 @@
 		return `/visualization?conversation_id=${convId}`;
 	}
 
-	// Helper function to append visualization link to content
-	function appendVisualizationLink(content: string, convId: string): string {
-		const visualizationLink = generateVisualizationLink(convId);
-		return `${content}\n\n---\n\n🗺️ **[View Visualization](${visualizationLink})** - Interactive map view of your results`;
-	}
-
 	// Setup Echo listener for real-time updates
 	function setupEchoListener(id: string) {
 		// Only run in browser environment
@@ -234,11 +228,6 @@
 
 					let messageContent = event.message.content || event.message;
 
-					// Check if we have step data and append visualization link
-					if (conversationId && (hasStepData(conversationResults) || event.has_step_data)) {
-						messageContent = appendVisualizationLink(messageContent, conversationId);
-					}
-
 					// Add the assistant's response
 					const assistantMessage = {
 						id: `assistant-${Date.now()}`,
@@ -399,13 +388,6 @@
 
 			// Convert to string and check if valid
 			const convIdStr = String(convId);
-			if (convId && !convIdStr.startsWith('new-')) {
-				const visualizationLink = generateVisualizationLink(convIdStr);
-				console.log('Adding visualization link:', visualizationLink);
-				currentProcessingStep += `\n\n---\n\n🗺️ **[View Visualization](${visualizationLink})** - Interactive map view of your results`;
-			} else {
-				console.log('No valid conversation ID found for visualization link');
-			}
 		}
 		
 		isProcessing = false; // Set to false since these are already completed results
@@ -570,31 +552,6 @@
 </script>
 
 <div class="h-full flex flex-col">
-	<!-- Chat Header -->
-	<div class="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4">
-		<div class="flex items-center gap-3">
-			<Button
-				variant={sidebarVisible ? "ghost" : "default"}
-				size="sm"
-				on:click={toggleSidebar}
-				class={`p-2 lg:flex ${!sidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
-				title={sidebarVisible ? 'Hide chat history' : 'Show chat history'}
-			>
-				<Icon icon={sidebarVisible ? 'lucide:sidebar-close' : 'lucide:sidebar-open'} class="w-4 h-4" />
-			</Button>
-			
-			<div class="flex items-center gap-3">
-				<div class="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center">
-					<Icon icon="lucide:bot" class="w-5 h-5 text-primary-foreground" />
-				</div>
-				<div>
-					<h1 class="font-semibold text-xl">Cyberglobes AI Assistant</h1>
-					<p class="text-sm text-muted-foreground">Ask me anything about geospatial data and mapping</p>
-				</div>
-			</div>
-		</div>
-	</div>
-
 	<!-- Messages Container -->
 	<div 
 		bind:this={messagesContainer}
@@ -645,7 +602,7 @@
 	</div>
 
 	<!-- Input Area -->
-	<div class="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-6">
+	<div class="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-2">
 		<!-- File Upload Preview -->
 		{#if uploadedFile}
 			<div class="mb-4 p-3 bg-muted/50 rounded-lg border border-border/50 flex items-center justify-between">
@@ -676,7 +633,7 @@
 				class="hidden"
 			/>
 			
-			<div class="flex items-end gap-3 bg-muted/30 rounded-2xl p-4 border border-border/50 focus-within:border-primary/50 transition-colors">
+			<div class="flex items-end gap-3 bg-muted/30 rounded-2xl p-2 border border-border/50 focus-within:border-primary/50 transition-colors">
 				<div class="flex-1 relative">
 					<textarea
 						bind:this={textareaEl}
@@ -718,7 +675,7 @@
 			</div>
 		</form>
 		
-		<div class="text-xs text-muted-foreground text-center mt-3">
+		<div class="text-xs text-muted-foreground text-center mt-0">
 			Cyberglobes AI can make mistakes. Please verify important information.
 		</div>
 	</div>

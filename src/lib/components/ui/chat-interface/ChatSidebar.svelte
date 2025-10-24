@@ -244,15 +244,4 @@
 			{/if}
 		{/if}
 	</div>
-
-	<!-- Sidebar Footer -->
-	<div class="mt-6 pt-6 border-t border-border/50">
-		<div class="text-xs text-muted-foreground text-center space-y-1">
-			<div class="flex items-center justify-center gap-1">
-				<Icon icon="lucide:sparkles" class="w-3 h-3" />
-				<span>Powered by Cyberglobes AI</span>
-			</div>
-			<div>Advanced geospatial intelligence</div>
-		</div>
-	</div>
 </div>

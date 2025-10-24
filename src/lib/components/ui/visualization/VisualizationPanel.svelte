@@ -818,21 +818,6 @@
 <Card class="h-full overflow-y-auto">
 	<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-4">
 		<div class="flex items-center gap-2">
-			<Button
-				variant="ghost"
-				size="sm"
-				on:click={() => {
-					const conversationId = getDataFromURL('conversation_id');
-					if (conversationId) {
-						window.location.href = `${base}/chat?conversation_id=${conversationId}`;
-					} else {
-						window.location.href = `${base}/chat`;
-					}
-				}}
-			>
-				<Icon icon="lucide:arrow-left" class="w-4 h-4 mr-2" />
-				Back to Chat
-			</Button>
 			<CardTitle class="text-lg font-semibold">Data Visualization</CardTitle>
 		</div>
 		{#if getSelectedStepData()?.json_data}

@@ -1,8 +1,19 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import ChatSidebar from './ChatSidebar.svelte';
 	import ChatWindow from './ChatWindow.svelte';
 	import { chatStore } from '$lib/stores/chatStore';
+	import Icon from '@iconify/svelte';
+	import { Button } from '$lib/components/ui/button';
+	import VisualizationPanel from '../visualization/VisualizationPanel.svelte';
+	import InstagramStepsSidebar from '../visualization/InstagramStepsSidebar.svelte';
+	import { getDataFromURL } from '$lib/utils/generalUtils';
+	import { ConversationService } from '$lib/services/conversation-service';
+	import Echo from 'laravel-echo';
+	import Pusher from 'pusher-js';
+	import { AUTH_TOKEN } from '$lib/constants/constants.js';
+	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_API_URL } from '$env/static/public';
+	import { browser } from '$app/environment';
 
 	let sidebarVisible = true;
 	let isMobile = false;
@@ -10,6 +21,153 @@
 	let currentMessages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}> = [];
 	let conversationResults: Array<any> = [];
 	let chatSidebarRef: any;
+
+	// Drag separator variables
+	let isDragging = false;
+	let chatWindowHeight = 65; // Initial height percentage for chat window (65% top, 35% bottom)
+	let separatorRef: HTMLElement;
+	let sidebarRef: HTMLElement;
+
+	// Visualization state
+	let rightSidebarVisible = true;
+	let conversationService = new ConversationService();
+	let selectedStep = '';
+	let hasVisualizationData = false;
+	let lastUserQuery = '';
+	let scripterResults: Array<any> = [];
+	let selectedViewType = 'datatable';
+	let visualizationSidebarRef: any;
+
+	// Echo/Pusher state for real-time events
+	let echoInstance: Echo | null = null;
+	let conversationId: string | null = null;
+	let isAnalyzing = false;
+	let analyzeSessionId: string | null = null;
+	let lastAnalyzedStep: string | null = null;
+
+	// Visualization functions
+	function toggleRightSidebar() {
+		rightSidebarVisible = !rightSidebarVisible;
+	}
+
+	// Setup Echo listener for visualization events
+	function setupVisualizationEchoListener(id: string) {
+		if (!browser) {
+			return;
+		}
+
+		// Clean up any existing listener
+		cleanupVisualizationEchoListener();
+
+		// Initialize new Echo instance if needed
+		if (!echoInstance) {
+			let authToken = localStorage.getItem(AUTH_TOKEN) || false;
+			window.Pusher = Pusher;
+			echoInstance = new Echo({
+				broadcaster: PUBLIC_ECHO_BROADCASTER,
+				key: PUBLIC_VITE_PUSHER_APP_KEY,
+				cluster: PUBLIC_VITE_PUSHER_APP_CLUSTER,
+				auth: {
+					headers: {
+						Authorization: `Bearer ${authToken}`,
+						'Accept': 'application/json'
+					},
+					withCredentials: true
+				},
+				authEndpoint: PUBLIC_API_URL+'/broadcasting/auth',
+				encrypted: PUBLIC_ECHO_PUSHER_ENCRYPTED === 'true',
+				disableStats: true,
+				wsHost: PUBLIC_ECHO_PUSHER_HOST,
+				wsPort: PUBLIC_ECHO_PUSHER_PORT,
+				wssPort: PUBLIC_ECHO_PUSHER_PORT,
+				forceTLS: PUBLIC_ECHO_PUSHER_SCHEME === 'https',
+				enabledTransports: ['ws', 'wss']
+			});
+		}
+
+		// Listen for VisualizationsDetected event
+		echoInstance.private(`App.Models.Conversation.${id}`)
+			.listen('.App\\Events\\VisualizationsDetected', (event) => {
+				console.log('VisualizationsDetected event received:', event);
+				if (event && event.visualizations) {
+					// Pass auto-generated visualizations to visualization sidebar
+					if (visualizationSidebarRef && visualizationSidebarRef.handleAutoVisualizations) {
+						visualizationSidebarRef.handleAutoVisualizations(event.visualizations, event.session_id);
+					}
+				}
+			});
+	}
+
+	// Cleanup function for visualization Echo
+	function cleanupVisualizationEchoListener() {
+		if (echoInstance && conversationId) {
+			echoInstance.leave(`App.Models.Conversation.${conversationId}`);
+		}
+	}
+
+	function handleStepSelect(stepId: string) {
+		selectedStep = stepId;
+		
+		// Find the selected step data
+		const selectedStepData = conversationResults.find(result =>
+			(result.id || `step-${conversationResults.indexOf(result)}`) === stepId
+		);
+
+		// Set visualization data availability based on step data
+		hasVisualizationData = !!selectedStepData;
+		
+		// Update last user query based on step data
+		if (selectedStepData) {
+			lastUserQuery = selectedStepData.query || selectedStepData.message || selectedStepData.content || lastUserQuery;
+		}
+		
+		console.log('Step selected:', {
+			stepId,
+			stepData: selectedStepData,
+			hasData: hasVisualizationData
+		});
+	}
+
+	function handleScripterResults(results: any[], viewType: string, cardId: string) {
+		scripterResults = results;
+		// Show visualization data when we have scripter results
+		hasVisualizationData = results.length > 0;
+		// Store the selected view type directly from sidebar
+		selectedViewType = viewType;
+		console.log('Received scripter results from card:', cardId);
+		console.log('Results:', results);
+		console.log('Selected view type:', viewType);
+	}
+
+	async function loadVisualizationData(conversationId: string) {
+		try {
+			console.log('Loading visualization data for ID:', conversationId);
+			const response = await conversationService.retrieveConversation(conversationId);
+			
+			if (response && response.success) {
+				const data = response.data;
+				conversationResults = data?.results || response.results || [];
+				hasVisualizationData = conversationResults.length > 0;
+				
+				// Set user query from conversation if available
+				if (data && data.user_query) {
+					lastUserQuery = data.user_query;
+				}
+				
+				// Auto-select first step if available and no step is currently selected
+				if (conversationResults.length > 0 && !selectedStep) {
+					selectedStep = conversationResults[0].id || 'step-0';
+				}
+				
+				console.log('Visualization data loaded:', {
+					results: conversationResults.length,
+					selectedStep: selectedStep
+				});
+			}
+		} catch (err) {
+			console.error('Error loading visualization data:', err);
+		}
+	}
 
 	// Mock conversation data
 	const mockConversations: {[key: string]: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}>} = {
@@ -78,12 +236,27 @@
 	onMount(() => {
 		checkMobile();
 		
+		// Check if there's a conversation_id in the URL for visualization
+		const urlConversationId = getDataFromURL('conversation_id');
+		if (urlConversationId && typeof urlConversationId === 'string') {
+			conversationId = urlConversationId;
+			loadVisualizationData(urlConversationId);
+			setupVisualizationEchoListener(urlConversationId);
+		}
+		
 		const handleResize = () => {
 			checkMobile();
 		};
 
 		window.addEventListener('resize', handleResize);
-		return () => window.removeEventListener('resize', handleResize);
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			cleanupVisualizationEchoListener();
+		};
+	});
+
+	onDestroy(() => {
+		cleanupVisualizationEchoListener();
 	});
 
 	function toggleSidebar() {
@@ -112,12 +285,6 @@
 			result.step_type ||
 			(result.status && result.status !== 'pending')
 		);
-	}
-
-	// Helper function to append visualization link to content
-	function appendVisualizationLink(content: string, convId: string): string {
-		const visualizationLink = `/visualization?conversation_id=${convId}`;
-		return `${content}\n\n---\n\n🗺️ **[View Visualization](${visualizationLink})** - Interactive map view of your results`;
 	}
 
 	function handleConversationLoaded(conversationData: any) {
@@ -156,11 +323,6 @@
 						}
 						
 						console.log('Final conversation ID for visualization:', convId);
-						
-						if (convId) {
-							content = appendVisualizationLink(content, convId.toString());
-							console.log('Added visualization link to final message');
-						}
 					}
 					
 					return {
@@ -173,6 +335,14 @@
 				});
 				console.log('Messages set:', currentMessages);
 			}
+		}
+
+		// Load visualization data for the right sidebar
+		if (conversationData && conversationData.data && conversationData.data.conversation_id) {
+			conversationId = conversationData.data.conversation_id;
+			loadVisualizationData(conversationData.data.conversation_id);
+			// Setup Echo listener for visualization events
+			setupVisualizationEchoListener(conversationId);
 		}
 	}
 
@@ -195,11 +365,16 @@
 		}
 	}
 
-	async function handleConversationInitiated(conversationId: string) {
-		console.log('Conversation initiated, refreshing sidebar:', conversationId);
+	async function handleConversationInitiated(conversationIdParam: string) {
+		console.log('Conversation initiated, refreshing sidebar:', conversationIdParam);
 		// Update selected chat ID - convert to string to ensure consistency
-		selectedChatId = String(conversationId);
+		selectedChatId = String(conversationIdParam);
 		console.log('Updated selectedChatId to:', selectedChatId);
+		
+		// Setup visualization listeners for new conversation
+		conversationId = conversationIdParam;
+		setupVisualizationEchoListener(conversationIdParam);
+		
 		// Refresh the conversation list in the sidebar
 		if (chatSidebarRef?.refreshConversations) {
 			// Wait a bit to allow backend to persist the conversation
@@ -207,10 +382,63 @@
 			chatSidebarRef.refreshConversations();
 		}
 	}
+
+	// Drag separator functions
+	function handleSeparatorMouseDown(event: MouseEvent) {
+		if (isMobile) return; // Disable dragging on mobile
+		
+		isDragging = true;
+		document.addEventListener('mousemove', handleMouseMove);
+		document.addEventListener('mouseup', handleMouseUp);
+		event.preventDefault();
+	}
+
+	function handleMouseMove(event: MouseEvent) {
+		if (!isDragging || !sidebarRef) return;
+
+		const sidebarRect = sidebarRef.getBoundingClientRect();
+		const relativeY = event.clientY - sidebarRect.top;
+		const newHeightPercentage = (relativeY / sidebarRect.height) * 100;
+
+		// Constrain between 20% and 80% to prevent sections from becoming too small
+		chatWindowHeight = Math.max(20, Math.min(80, newHeightPercentage));
+	}
+
+	function handleMouseUp() {
+		isDragging = false;
+		document.removeEventListener('mousemove', handleMouseMove);
+		document.removeEventListener('mouseup', handleMouseUp);
+	}
+
+	// Touch events for mobile
+	function handleSeparatorTouchStart(event: TouchEvent) {
+		isDragging = true;
+		document.addEventListener('touchmove', handleTouchMove);
+		document.addEventListener('touchend', handleTouchEnd);
+		event.preventDefault();
+	}
+
+	function handleTouchMove(event: TouchEvent) {
+		if (!isDragging || !sidebarRef) return;
+
+		const touch = event.touches[0];
+		const sidebarRect = sidebarRef.getBoundingClientRect();
+		const relativeY = touch.clientY - sidebarRect.top;
+		const newHeightPercentage = (relativeY / sidebarRect.height) * 100;
+
+		// Constrain between 20% and 80%
+		chatWindowHeight = Math.max(20, Math.min(80, newHeightPercentage));
+	}
+
+	function handleTouchEnd() {
+		isDragging = false;
+		document.removeEventListener('touchmove', handleTouchMove);
+		document.removeEventListener('touchend', handleTouchEnd);
+	}
 </script>
 
 <div class="h-full flex bg-background max-h-full overflow-hidden">
-	<!-- Mobile backdrop -->
+	<!-- Mobile backdrop for left sidebar -->
 	{#if isMobile && sidebarVisible}
 		<div 
 			class="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -221,36 +449,150 @@
 		></div>
 	{/if}
 
-	<!-- Sidebar -->
-	<div class={`
+	<!-- Mobile backdrop for right sidebar -->
+	{#if isMobile && rightSidebarVisible}
+		<div 
+			class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+			on:click={toggleRightSidebar}
+			role="button"
+			tabindex="0"
+			on:keydown={(e) => e.key === 'Escape' && toggleRightSidebar()}
+		></div>
+	{/if}
+
+	<!-- Sidebar with Chat Window on top and Communications list on bottom -->
+	<div 
+		bind:this={sidebarRef}
+		class={`
 		${isMobile ? 'fixed' : 'relative'}
 		${sidebarVisible ? 'translate-x-0' : '-translate-x-full'}
 		${isMobile ? 'z-50' : 'z-10'}
 		transition-all duration-300 ease-in-out
-		${sidebarVisible ? 'w-80' : 'w-0'}
-		h-full bg-muted/30 border-r overflow-hidden
+		${sidebarVisible ? 'w-96' : 'w-0'}
+		h-full bg-muted/30 border-r overflow-hidden flex flex-col
 	`}>
 		{#if sidebarVisible}
-			<ChatSidebar
-				bind:this={chatSidebarRef}
-				{selectedChatId}
-				onChatSelect={handleChatSelect}
-				onConversationLoaded={handleConversationLoaded}
-			/>
+			<!-- Chat Window Section - Dynamic height -->
+			<div class="flex flex-col min-h-0 border-b bg-background" style="height: {chatWindowHeight}%;">
+				<ChatWindow
+					{toggleSidebar}
+					{sidebarVisible}
+					{isMobile}
+					messages={currentMessages}
+					onNewMessage={handleNewMessage}
+					{conversationResults}
+					{selectedChatId}
+					onConversationInitiated={handleConversationInitiated}
+				/>
+			</div>
+
+			<!-- Draggable Separator Bar -->
+			<div 
+				bind:this={separatorRef}
+				class={`h-2 bg-border hover:bg-border/80 cursor-row-resize transition-colors duration-200 flex items-center justify-center group ${isDragging ? 'bg-primary' : ''}`}
+				on:mousedown={handleSeparatorMouseDown}
+				on:touchstart={handleSeparatorTouchStart}
+				role="separator"
+				tabindex="0"
+				aria-label="Resize sections"
+			>
+				<!-- Visual indicator for drag handle -->
+				<div class="w-8 h-1 bg-muted-foreground/40 rounded-full group-hover:bg-muted-foreground/60 transition-colors"></div>
+			</div>
+
+			<!-- Communications List Section - Dynamic height -->
+			<div class="flex flex-col min-h-0 bg-muted/20" style="height: {100 - chatWindowHeight}%;">
+				<ChatSidebar
+					bind:this={chatSidebarRef}
+					{selectedChatId}
+					onChatSelect={handleChatSelect}
+					onConversationLoaded={handleConversationLoaded}
+				/>
+			</div>
 		{/if}
 	</div>
 
-	<!-- Main Chat Area -->
-	<div class={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarVisible ? '' : 'ml-0'}`}>
-		<ChatWindow
-			{toggleSidebar}
-			{sidebarVisible}
-			{isMobile}
-			messages={currentMessages}
-			onNewMessage={handleNewMessage}
-			{conversationResults}
-			{selectedChatId}
-			onConversationInitiated={handleConversationInitiated}
-		/>
+	<!-- Main Body Area - Now with Chat Header and Visualization Panel -->
+	<div class={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarVisible ? '' : 'ml-0'} bg-background`}>
+		<!-- Chat Header moved from ChatWindow -->
+		<div class="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center gap-3">
+					<Button
+						variant={sidebarVisible ? "ghost" : "default"}
+						size="sm"
+						on:click={toggleSidebar}
+						class={`p-2 lg:flex ${!sidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
+						title={sidebarVisible ? 'Hide chat history' : 'Show chat history'}
+					>
+						<Icon icon={sidebarVisible ? 'lucide:sidebar-close' : 'lucide:sidebar-open'} class="w-4 h-4" />
+					</Button>
+					
+					<div class="flex items-center gap-3">
+						<div class="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center">
+							<Icon icon="lucide:bot" class="w-5 h-5 text-primary-foreground" />
+						</div>
+						<div>
+							<h1 class="font-semibold text-xl">Cyberglobes AI Assistant</h1>
+							<p class="text-sm text-muted-foreground">Ask me anything about geospatial data and mapping</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Right sidebar toggle -->
+				<Button
+					variant={rightSidebarVisible ? "ghost" : "default"}
+					size="sm"
+					on:click={toggleRightSidebar}
+					class={`p-2 ${!rightSidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
+					title={rightSidebarVisible ? 'Hide visualization sidebar' : 'Show visualization sidebar'}
+				>
+					<Icon icon={rightSidebarVisible ? 'lucide:panel-right-close' : 'lucide:panel-right-open'} class="w-4 h-4" />
+				</Button>
+			</div>
+		</div>
+
+		<!-- Visualization Panel Area -->
+		<div class="flex-1 min-h-0">
+			<VisualizationPanel 
+				hasData={hasVisualizationData} 
+				{selectedStep}
+				{lastUserQuery}
+				{conversationResults}
+				{scripterResults}
+				{selectedViewType}
+			/>
+		</div>
+
+		<!-- Footer moved from ChatSidebar -->
+		<div class="pt-6 border-t border-border/50 p-4">
+			<div class="text-xs text-muted-foreground text-center space-y-1">
+				<div class="flex items-center justify-center gap-1">
+					<Icon icon="lucide:sparkles" class="w-3 h-3" />
+					<span>Powered by Cyberglobes AI</span>
+				</div>
+				<div>Advanced geospatial intelligence</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Right Sidebar - Visualization Steps -->
+	<div class={`
+		${isMobile ? 'fixed' : 'relative'}
+		${rightSidebarVisible ? 'translate-x-0' : 'translate-x-full'}
+		${isMobile ? 'z-50' : 'z-10'}
+		transition-all duration-300 ease-in-out
+		${rightSidebarVisible ? 'w-80' : 'w-0'}
+		h-full bg-muted/30 border-l overflow-hidden
+	`}>
+		{#if rightSidebarVisible}
+			<InstagramStepsSidebar
+				bind:this={visualizationSidebarRef}
+				selectedStep={selectedStep}
+				onStepSelect={handleStepSelect}
+				onScripterResults={handleScripterResults}
+				{conversationResults}
+			/>
+		{/if}
 	</div>
 </div>
