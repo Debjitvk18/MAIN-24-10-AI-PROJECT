@@ -1,16 +1,25 @@
 <script lang="ts">
-import { onMount, onDestroy, tick } from 'svelte';
-import { Button } from '$lib/components/ui/button';
-import ChatSidebar from '$lib/components/ui/chat-interface/ChatSidebar.svelte';
-import ChatWindow from '$lib/components/ui/chat-interface/ChatWindow.svelte';
-import InstagramStepsSidebar from '$lib/components/ui/visualization/InstagramStepsSidebar.svelte';
-import VisualizationPanel from '$lib/components/ui/visualization/VisualizationPanel.svelte';
-import Icon from '@iconify/svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
+	import { Button } from '$lib/components/ui/button';
+	import ChatSidebar from '$lib/components/ui/chat-interface/ChatSidebar.svelte';
+	import ChatWindow from '$lib/components/ui/chat-interface/ChatWindow.svelte';
+	import InstagramStepsSidebar from '$lib/components/ui/visualization/InstagramStepsSidebar.svelte';
+	import VisualizationPanel from '$lib/components/ui/visualization/VisualizationPanel.svelte';
+	import Icon from '@iconify/svelte';
 	import { getDataFromURL } from '$lib/utils/generalUtils';
 	import Echo from 'laravel-echo';
 	import Pusher from 'pusher-js';
 	import { AUTH_TOKEN } from '$lib/constants/constants.js';
-	import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_API_URL } from '$env/static/public';
+	import {
+		PUBLIC_VITE_PUSHER_APP_KEY,
+		PUBLIC_VITE_PUSHER_APP_CLUSTER,
+		PUBLIC_ECHO_BROADCASTER,
+		PUBLIC_ECHO_PUSHER_HOST,
+		PUBLIC_ECHO_PUSHER_PORT,
+		PUBLIC_ECHO_PUSHER_SCHEME,
+		PUBLIC_ECHO_PUSHER_ENCRYPTED,
+		PUBLIC_API_URL
+	} from '$env/static/public';
 	import { browser } from '$app/environment';
 
 	// UI state
@@ -20,7 +29,13 @@ import Icon from '@iconify/svelte';
 
 	// Chat state
 	let selectedChatId = '';
-	let currentMessages: Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}> = [];
+	let currentMessages: Array<{
+		id: string;
+		role: 'user' | 'assistant';
+		content: string;
+		timestamp: Date;
+		isVoiceInput: boolean;
+	}> = [];
 	let conversationResults: Array<any> = [];
 	let chatSidebarRef: any;
 
@@ -68,14 +83,14 @@ import Icon from '@iconify/svelte';
 				broadcaster: PUBLIC_ECHO_BROADCASTER as any,
 				key: PUBLIC_VITE_PUSHER_APP_KEY,
 				cluster: PUBLIC_VITE_PUSHER_APP_CLUSTER,
-				auth: ({
+				auth: {
 					headers: {
 						Authorization: `Bearer ${authToken}`,
-						'Accept': 'application/json'
+						Accept: 'application/json'
 					},
 					withCredentials: true
-				} as any),
-				authEndpoint: PUBLIC_API_URL+'/broadcasting/auth',
+				} as any,
+				authEndpoint: PUBLIC_API_URL + '/broadcasting/auth',
 				encrypted: PUBLIC_ECHO_PUSHER_ENCRYPTED === 'true',
 				disableStats: true,
 				wsHost: PUBLIC_ECHO_PUSHER_HOST,
@@ -87,7 +102,8 @@ import Icon from '@iconify/svelte';
 		}
 
 		// Listen for VisualizationsDetected event
-		echoInstance.private(`App.Models.Conversation.${id}`)
+		echoInstance
+			.private(`App.Models.Conversation.${id}`)
 			.listen('.App\\Events\\VisualizationsDetected', async (event: any) => {
 				if (event && event.visualizations) {
 					// Open the visualization sidebar so the user can see chart features
@@ -98,7 +114,10 @@ import Icon from '@iconify/svelte';
 
 					// Pass auto-generated visualizations to visualization sidebar (if present)
 					if (visualizationSidebarRef && visualizationSidebarRef.handleAutoVisualizations) {
-						visualizationSidebarRef.handleAutoVisualizations(event.visualizations, event.session_id);
+						visualizationSidebarRef.handleAutoVisualizations(
+							event.visualizations,
+							event.session_id
+						);
 					}
 				}
 			});
@@ -116,7 +135,9 @@ import Icon from '@iconify/svelte';
 
 		// Setup Echo listener if we have a conversation ID
 		const convFromUrl = getDataFromURL('conversation_id');
-		conversationId = Array.isArray(convFromUrl) ? String(convFromUrl[0]) : (convFromUrl as string | null);
+		conversationId = Array.isArray(convFromUrl)
+			? String(convFromUrl[0])
+			: (convFromUrl as string | null);
 		if (conversationId) {
 			setupEchoListener(conversationId);
 		}
@@ -162,12 +183,13 @@ import Icon from '@iconify/svelte';
 	// Helper function to check if step data is available in conversation results
 	function hasStepData(results: Array<any> = []): boolean {
 		if (!results || results.length === 0) return false;
-		return results.some(result => 
-			result.json_data || 
-			result.step_name || 
-			result.step_title ||
-			result.step_type ||
-			(result.status && result.status !== 'pending')
+		return results.some(
+			(result) =>
+				result.json_data ||
+				result.step_name ||
+				result.step_title ||
+				result.step_type ||
+				(result.status && result.status !== 'pending')
 		);
 	}
 
@@ -192,10 +214,10 @@ import Icon from '@iconify/svelte';
 			// Transform the API messages to match our component structure
 			if (conversationData.data.messages) {
 				console.log('Processing messages:', conversationData.data.messages);
-				
+
 				currentMessages = conversationData.data.messages.map((msg: any, index: number) => {
 					let content = msg.content || '';
-					
+
 					return {
 						id: msg.id || `msg-${index}`,
 						role: msg.role || 'user',
@@ -209,9 +231,15 @@ import Icon from '@iconify/svelte';
 		}
 	}
 
-	function handleNewMessage(message: {id: string, role: 'user' | 'assistant', content: string, timestamp: Date, isVoiceInput: boolean}) {
+	function handleNewMessage(message: {
+		id: string;
+		role: 'user' | 'assistant';
+		content: string;
+		timestamp: Date;
+		isVoiceInput: boolean;
+	}) {
 		// Check if message with same ID exists (for replacing processing messages)
-		const existingIndex = currentMessages.findIndex(m => m.id === message.id);
+		const existingIndex = currentMessages.findIndex((m) => m.id === message.id);
 
 		if (existingIndex !== -1) {
 			// Replace existing message
@@ -233,34 +261,34 @@ import Icon from '@iconify/svelte';
 		// Update selected chat ID - convert to string to ensure consistency
 		selectedChatId = String(conversationId);
 		console.log('Updated selectedChatId to:', selectedChatId);
-		
+
 		// Setup Echo listener for new conversation
 		setupEchoListener(conversationId);
-		
+
 		// Refresh the conversation list in the sidebar
 		if (chatSidebarRef?.refreshConversations) {
 			// Wait a bit to allow backend to persist the conversation
-			await new Promise(resolve => setTimeout(resolve, 500));
+			await new Promise((resolve) => setTimeout(resolve, 500));
 			chatSidebarRef.refreshConversations();
 		}
 	}
 
 	function handleStepSelect(stepId: string) {
 		selectedStep = stepId;
-		
+
 		// Find the selected step data
-		const selectedStepData = conversationResults.find(result =>
-			(result.id || `step-${conversationResults.indexOf(result)}`) === stepId
+		const selectedStepData = conversationResults.find(
+			(result) => (result.id || `step-${conversationResults.indexOf(result)}`) === stepId
 		);
 
 		// Set visualization data availability based on step data
 		hasVisualizationData = !!selectedStepData;
-		
+
 		// Close right sidebar on mobile after selection
 		if (isMobile) {
 			rightSidebarVisible = false;
 		}
-		
+
 		console.log('Step selected:', {
 			stepId,
 			stepData: selectedStepData,
@@ -283,7 +311,7 @@ import Icon from '@iconify/svelte';
 <div class="h-full flex bg-background max-h-full overflow-hidden">
 	<!-- Mobile backdrop for left sidebar -->
 	{#if isMobile && leftSidebarVisible}
-		<div 
+		<div
 			class="fixed inset-0 bg-black/50 z-40 lg:hidden"
 			on:click={toggleLeftSidebar}
 			role="button"
@@ -294,7 +322,7 @@ import Icon from '@iconify/svelte';
 
 	<!-- Mobile backdrop for right sidebar -->
 	{#if isMobile && rightSidebarVisible}
-		<div 
+		<div
 			class="fixed inset-0 bg-black/50 z-40 lg:hidden"
 			on:click={toggleRightSidebar}
 			role="button"
@@ -304,19 +332,23 @@ import Icon from '@iconify/svelte';
 	{/if}
 
 	<!-- Left Sidebar - Chat History -->
-	<div class={`
+	<div
+		class={`
 		${isMobile ? 'fixed' : 'relative'}
 		${leftSidebarVisible ? 'translate-x-0' : '-translate-x-full'}
 		${isMobile ? 'z-50' : 'z-10'}
 		transition-all duration-300 ease-in-out
 		${leftSidebarVisible ? 'w-80' : 'w-0'}
 		flex-shrink-0 min-h-0 h-full bg-muted/30 border-r overflow-hidden
-	`}>
+	`}
+	>
 		{#if leftSidebarVisible}
 			<div class="h-full flex flex-col">
 				<!-- Sidebar header with assistant title -->
 				<div class="flex items-center gap-3 p-4 border-b">
-					<div class="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center">
+					<div
+						class="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center"
+					>
 						<Icon icon="lucide:bot" class="w-5 h-5 text-primary-foreground" />
 					</div>
 					<div>
@@ -353,34 +385,69 @@ import Icon from '@iconify/svelte';
 	<!-- Main Content Area - Chat + Visualization -->
 	<div class="flex-1 flex flex-col min-w-0">
 		<!-- Only sidebar toggles in header -->
-		<div class="flex items-center justify-between p-2 border-b bg-background">
-			<Button
-				variant={leftSidebarVisible ? "ghost" : "default"}
-				size="sm"
-				on:click={toggleLeftSidebar}
-				class={`p-2 ${!leftSidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
-				title={leftSidebarVisible ? 'Hide chat history' : 'Show chat history'}
-			>
-				<Icon icon={leftSidebarVisible ? 'lucide:sidebar-close' : 'lucide:sidebar-open'} class="w-4 h-4" />
-			</Button>
+		<div
+			class="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+		>
+			<div class="flex items-center justify-between px-4 py-3">
+				<!-- Left Section: Sidebar Toggle + Title -->
+				<div class="flex items-center gap-3">
+					<Button
+						variant={leftSidebarVisible ? 'ghost' : 'default'}
+						size="sm"
+						on:click={toggleLeftSidebar}
+						class={`p-2 ${!leftSidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
+						title={leftSidebarVisible ? 'Hide chat history' : 'Show chat history'}
+					>
+						<Icon
+							icon={leftSidebarVisible ? 'lucide:sidebar-close' : 'lucide:sidebar-open'}
+							class="w-4 h-4"
+						/>
+					</Button>
 
-			<Button
-				variant={rightSidebarVisible ? "ghost" : "default"}
-				size="sm"
-				on:click={toggleRightSidebar}
-				class={`p-2 ${!rightSidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
-				title={rightSidebarVisible ? 'Hide visualization panel' : 'Show visualization panel'}
-			>
-				<Icon icon={rightSidebarVisible ? 'lucide:panel-right-close' : 'lucide:panel-right-open'} class="w-4 h-4" />
-			</Button>
+					<div class="border-l h-6 hidden sm:block"></div>
+
+					<h1 class="text-lg sm:text-xl font-semibold truncate">
+						{conversationResults.length > 0 ? 'Data Visualization Studio' : 'Analytics Studio'}
+					</h1>
+				</div>
+
+				<!-- Right Section: Actions + Sidebar Toggle -->
+				<div class="flex items-center gap-2">
+					<div class="hidden lg:flex items-center gap-2">
+						<Button variant="ghost" size="sm" class="gap-2">
+							<Icon icon="lucide:help-circle" class="w-4 h-4" />
+							<span class="hidden xl:inline">Help</span>
+						</Button>
+						<Button variant="ghost" size="sm" class="gap-2">
+							<Icon icon="lucide:settings" class="w-4 h-4" />
+							<span class="hidden xl:inline">Settings</span>
+						</Button>
+					</div>
+
+					<div class="border-l h-6 hidden lg:block"></div>
+
+					<Button
+						variant={rightSidebarVisible ? 'ghost' : 'default'}
+						size="sm"
+						on:click={toggleRightSidebar}
+						class={`p-2 ${!rightSidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
+						title={rightSidebarVisible ? 'Hide visualization panel' : 'Show visualization panel'}
+					>
+						<Icon
+							icon={rightSidebarVisible ? 'lucide:panel-right-close' : 'lucide:panel-right-open'}
+							class="w-4 h-4"
+						/>
+					</Button>
+				</div>
+			</div>
 		</div>
 
 		<!-- Main Content Area -->
 		<div class="flex-1 flex min-h-0">
 			<!-- Visualization Panel (Center) -->
 			<div class="flex-1 flex flex-col min-w-0 relative">
-				<VisualizationPanel 
-					hasData={hasVisualizationData} 
+				<VisualizationPanel
+					hasData={hasVisualizationData}
 					{selectedStep}
 					lastUserQuery=""
 					{conversationResults}
@@ -394,14 +461,16 @@ import Icon from '@iconify/svelte';
 	</div>
 
 	<!-- Right Sidebar - Visualization Steps -->
-	<div class={`
+	<div
+		class={`
 		${isMobile ? 'fixed' : 'relative'} 
 		${rightSidebarVisible ? 'translate-x-0' : 'translate-x-full'} 
 		${isMobile ? 'z-50' : 'z-10'}
 		transition-all duration-300 ease-in-out
 		${rightSidebarVisible ? 'w-80' : 'w-0'}
 		h-full bg-muted/30 border-l overflow-hidden
-	`}>
+	`}
+	>
 		{#if rightSidebarVisible}
 			<InstagramStepsSidebar
 				bind:this={visualizationSidebarRef}
