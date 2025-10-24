@@ -187,6 +187,10 @@ $: if (selectedChatId && typeof selectedChatId === 'string' && !selectedChatId.s
     </Button> -->
  
     <!-- Chat List -->
+
+    <div class="mb-4">
+		<h2 class="text-lg font-semibold">Chat History</h2>
+	</div>
     <div
     bind:this={chatListElement}
     class="flex-1 overflow-y-auto space-y-0 hide-scrollbar"
