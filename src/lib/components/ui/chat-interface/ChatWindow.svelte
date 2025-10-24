@@ -9,7 +9,7 @@
     import Pusher from 'pusher-js';
     import { AUTH_TOKEN, USER_LAT, USER_LNG, MAP_DEFAULT_LOCATION } from '$lib/constants/constants.js';
     import { PUBLIC_VITE_PUSHER_APP_KEY, PUBLIC_VITE_PUSHER_APP_CLUSTER, PUBLIC_ECHO_BROADCASTER, PUBLIC_ECHO_PUSHER_HOST, PUBLIC_ECHO_PUSHER_PORT, PUBLIC_ECHO_PUSHER_SCHEME, PUBLIC_ECHO_PUSHER_ENCRYPTED, PUBLIC_API_URL } from '$env/static/public';
-    import { putDataInURL } from '$lib/utils/generalUtils';
+    import { putDataInURL, removeDataFromURL } from '$lib/utils/generalUtils';
     import { browser } from '$app/environment';
     import { nonpassive } from 'svelte/legacy';
  
@@ -568,6 +568,16 @@
             cleanupEchoListener();
         };
     });
+    async function createNewChat() {
+    removeDataFromURL('conversation_id');
+
+    const newChatId = `new-${Date.now()}`;
+    selectedChatId = newChatId;
+    onChatSelect(newChatId);
+
+    console.log('New chat session started, ready for first message');
+}
+
 </script>
  
 <div class="h-full flex flex-col">
@@ -669,6 +679,14 @@
       {/if}
  
       <div class="flex items-center gap-2 bg-muted/20 rounded-2xl p-3 border border-border/50 focus-within:border-primary/50 transition-colors">
+        <button
+    type="button"
+    class="p-2 rounded-xl bg-transparent text-black hover:text-primarywhite hover:bg-primary/90"
+    on:click={createNewChat}
+    title="Start new chat"
+>
+    <Icon icon="lucide:plus" class="w-5 h-5" />
+     </button> 
         <textarea
           bind:this={textareaEl}
           bind:value={messageInput}
@@ -679,6 +697,7 @@
           rows="1"
           disabled={isProcessing}
         ></textarea>
+        
  
         <button type="button" on:click={() => fileInputEl.click()} class="p-2 rounded-xl text-muted-foreground hover:text-foreground" title="Attach file">
           <Icon icon="lucide:paperclip" class="w-5 h-5" />

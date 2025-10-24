@@ -296,7 +296,7 @@
 	<div
 		class={`${
 			isMobile ? 'fixed left-0' : ''
-		} ${!isMobile && !leftSidebarVisible ? 'w-0' : 'w-[400px]'} ${
+		} ${!isMobile && !leftSidebarVisible ? 'w-200' : 'w-[400px]'} ${
 			isMobile ? 'z-50' : 'z-30'
 		} transition-all duration-300 ease-in-out flex-shrink-0 h-full bg-background border-r shadow-lg overflow-hidden`}
 	>
