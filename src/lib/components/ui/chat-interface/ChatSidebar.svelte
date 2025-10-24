@@ -189,7 +189,7 @@ $: if (selectedChatId && typeof selectedChatId === 'string' && !selectedChatId.s
     <!-- Chat List -->
     <div
     bind:this={chatListElement}
-    class="flex-1 overflow-y-auto space-y-1 hide-scrollbar"
+    class="flex-1 overflow-y-auto space-y-0 hide-scrollbar"
     on:scroll={handleScroll}
 >
     {#if loading && conversations.length === 0}
@@ -219,7 +219,7 @@ $: if (selectedChatId && typeof selectedChatId === 'string' && !selectedChatId.s
     {:else}
         {#each conversations as chat (chat.id)}
             <div
-                class={`p-3 cursor-pointer transition-all rounded-lg border
+                class={`p-1 cursor-pointer transition-all rounded-lg border
                     ${selectedChatId === chat.id
                         ? 'bg-primary/10 border-primary/20 text-primary'
                         : 'hover:bg-accent/50 border-transparent text-foreground'
@@ -230,7 +230,7 @@ $: if (selectedChatId && typeof selectedChatId === 'string' && !selectedChatId.s
                 on:keydown={(e) => e.key === 'Enter' && selectChat(chat.id)}
             >
                 <div class="flex items-center justify-between">
-                    <h3 class="font-medium text-sm truncate flex-1">{chat.title}</h3>
+                    <h3 class="font-medium text-xs truncate flex-1">{chat.title}</h3>
                     {#if selectedChatId === chat.id}
                         <div class="w-2 h-2 bg-primary rounded-full ml-2 flex-shrink-0"></div>
                     {/if}
@@ -252,13 +252,12 @@ $: if (selectedChatId && typeof selectedChatId === 'string' && !selectedChatId.s
  
  
     <!-- Sidebar Footer -->
-    <div class="mt-6 pt-6 border-t border-border/50">
+    <div class="mt-2 pt-2 border-t border-border/50">
         <div class="text-xs text-muted-foreground text-center space-y-1">
             <div class="flex items-center justify-center gap-1">
                 <Icon icon="lucide:sparkles" class="w-3 h-3" />
                 <span>Powered by Cyberglobes AI</span>
             </div>
-            <div>Advanced geospatial intelligence</div>
         </div>
     </div>
 </div>
