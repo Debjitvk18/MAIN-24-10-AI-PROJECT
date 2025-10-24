@@ -36,9 +36,6 @@
 {#if $page.data.layout !== false && !hasError}
 	<div class="app-container">
 		
-		
-	
-			
 			<div id="pagecontent" class="serviceapp-content px-1.5 sm:px-5 py-6 sm:py-8 dark:bg-gray-900">
 				{@render children()}
 			</div>

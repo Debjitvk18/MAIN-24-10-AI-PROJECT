@@ -160,6 +160,13 @@
 			loadConversationData(conversationIdFromUrl);
 		}
 	});
+
+// Watch for changes to selectedChatId prop from parent and load conversation
+$: if (selectedChatId && typeof selectedChatId === 'string' && !selectedChatId.startsWith('new-')) {
+    // Attempt to load conversation data when parent updates selectedChatId
+    console.log('ChatSidebar detected selectedChatId change:', selectedChatId);
+    loadConversationData(selectedChatId).catch(err => console.error('Error loading conversation from prop change:', err));
+}
 </script>
 
 <div class="h-full flex flex-col p-4 bg-muted/20">

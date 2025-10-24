@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import { Button } from '$lib/components/ui/button';
-	import ChatSidebar from '$lib/components/ui/chat-interface/ChatSidebar.svelte';
-	import ChatWindow from '$lib/components/ui/chat-interface/ChatWindow.svelte';
-	import InstagramStepsSidebar from '$lib/components/ui/visualization/InstagramStepsSidebar.svelte';
-	import VisualizationPanel from '$lib/components/ui/visualization/VisualizationPanel.svelte';
-	import Icon from '@iconify/svelte';
+import { onMount, onDestroy, tick } from 'svelte';
+import { Button } from '$lib/components/ui/button';
+import ChatSidebar from '$lib/components/ui/chat-interface/ChatSidebar.svelte';
+import ChatWindow from '$lib/components/ui/chat-interface/ChatWindow.svelte';
+import InstagramStepsSidebar from '$lib/components/ui/visualization/InstagramStepsSidebar.svelte';
+import VisualizationPanel from '$lib/components/ui/visualization/VisualizationPanel.svelte';
+import Icon from '@iconify/svelte';
 	import { getDataFromURL } from '$lib/utils/generalUtils';
 	import Echo from 'laravel-echo';
 	import Pusher from 'pusher-js';
@@ -15,7 +15,7 @@
 
 	// UI state
 	let leftSidebarVisible = true;
-	let rightSidebarVisible = true;
+	let rightSidebarVisible = false; // start collapsed by default per user request
 	let isMobile = false;
 
 	// Chat state
@@ -32,7 +32,7 @@
 	let visualizationSidebarRef: any;
 
 	// Pusher state
-	let echoInstance: Echo | null = null;
+	let echoInstance: any = null;
 	let conversationId: string | null = null;
 
 	// Check if we're on mobile screen
@@ -44,7 +44,8 @@
 				rightSidebarVisible = false;
 			} else {
 				leftSidebarVisible = true;
-				rightSidebarVisible = true;
+				// keep right sidebar collapsed by default on desktop (user requested)
+				rightSidebarVisible = false;
 			}
 		}
 	}
@@ -61,18 +62,19 @@
 		// Initialize new Echo instance if needed
 		if (!echoInstance) {
 			let authToken = localStorage.getItem(AUTH_TOKEN) || false;
-			window.Pusher = Pusher;
-			echoInstance = new Echo({
-				broadcaster: PUBLIC_ECHO_BROADCASTER,
+			(window as any).Pusher = Pusher;
+			// Cast the config to any to avoid strict typing issues with the Echo generic
+			echoInstance = new (Echo as any)({
+				broadcaster: PUBLIC_ECHO_BROADCASTER as any,
 				key: PUBLIC_VITE_PUSHER_APP_KEY,
 				cluster: PUBLIC_VITE_PUSHER_APP_CLUSTER,
-				auth: {
+				auth: ({
 					headers: {
 						Authorization: `Bearer ${authToken}`,
 						'Accept': 'application/json'
 					},
 					withCredentials: true
-				},
+				} as any),
 				authEndpoint: PUBLIC_API_URL+'/broadcasting/auth',
 				encrypted: PUBLIC_ECHO_PUSHER_ENCRYPTED === 'true',
 				disableStats: true,
@@ -81,14 +83,20 @@
 				wssPort: PUBLIC_ECHO_PUSHER_PORT,
 				forceTLS: PUBLIC_ECHO_PUSHER_SCHEME === 'https',
 				enabledTransports: ['ws', 'wss']
-			});
+			} as any);
 		}
 
 		// Listen for VisualizationsDetected event
 		echoInstance.private(`App.Models.Conversation.${id}`)
-			.listen('.App\\Events\\VisualizationsDetected', (event) => {
+			.listen('.App\\Events\\VisualizationsDetected', async (event: any) => {
 				if (event && event.visualizations) {
-					// Pass auto-generated visualizations to visualization sidebar
+					// Open the visualization sidebar so the user can see chart features
+					rightSidebarVisible = true;
+
+					// Wait for DOM update so the sidebar component is mounted and the ref exists
+					await tick();
+
+					// Pass auto-generated visualizations to visualization sidebar (if present)
 					if (visualizationSidebarRef && visualizationSidebarRef.handleAutoVisualizations) {
 						visualizationSidebarRef.handleAutoVisualizations(event.visualizations, event.session_id);
 					}
@@ -107,7 +115,8 @@
 		checkMobile();
 
 		// Setup Echo listener if we have a conversation ID
-		conversationId = getDataFromURL('conversation_id');
+		const convFromUrl = getDataFromURL('conversation_id');
+		conversationId = Array.isArray(convFromUrl) ? String(convFromUrl[0]) : (convFromUrl as string | null);
 		if (conversationId) {
 			setupEchoListener(conversationId);
 		}
@@ -141,6 +150,9 @@
 		console.log('selectedChatId updated to:', selectedChatId);
 		currentMessages = [];
 
+		// Ensure the left sidebar is visible when a chat is selected (helps desktop + mobile UX)
+		leftSidebarVisible = true;
+
 		// Close left sidebar on mobile after selection
 		if (isMobile) {
 			leftSidebarVisible = false;
@@ -167,6 +179,9 @@
 				conversationResults = conversationData.data.results;
 				console.log('Conversation results set:', conversationResults);
 				hasVisualizationData = conversationResults.length > 0;
+
+				// Ensure left sidebar is visible so users see the loaded conversation history
+				leftSidebarVisible = true;
 
 				// Auto-select first step if available
 				if (conversationResults.length > 0 && !selectedStep) {
@@ -295,46 +310,60 @@
 		${isMobile ? 'z-50' : 'z-10'}
 		transition-all duration-300 ease-in-out
 		${leftSidebarVisible ? 'w-80' : 'w-0'}
-		h-full bg-muted/30 border-r overflow-hidden
+		flex-shrink-0 min-h-0 h-full bg-muted/30 border-r overflow-hidden
 	`}>
 		{#if leftSidebarVisible}
-			<ChatSidebar
-				bind:this={chatSidebarRef}
-				{selectedChatId}
-				onChatSelect={handleChatSelect}
-				onConversationLoaded={handleConversationLoaded}
-			/>
+			<div class="h-full flex flex-col">
+				<!-- Sidebar header with assistant title -->
+				<div class="flex items-center gap-3 p-4 border-b">
+					<div class="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center">
+						<Icon icon="lucide:bot" class="w-5 h-5 text-primary-foreground" />
+					</div>
+					<div>
+						<h2 class="font-semibold">Cyberglobes AI Assistant</h2>
+						<p class="text-xs text-muted-foreground">Chat and visualize geospatial data</p>
+					</div>
+				</div>
+				<!-- Chat list -->
+				<div class="flex-1 overflow-auto">
+					<ChatSidebar
+						bind:this={chatSidebarRef}
+						{selectedChatId}
+						onChatSelect={handleChatSelect}
+						onConversationLoaded={handleConversationLoaded}
+					/>
+				</div>
+				<!-- Chat window at bottom of sidebar -->
+				<div class="border-t">
+					<ChatWindow
+						toggleSidebar={toggleLeftSidebar}
+						sidebarVisible={leftSidebarVisible}
+						{isMobile}
+						messages={currentMessages}
+						onNewMessage={handleNewMessage}
+						{conversationResults}
+						{selectedChatId}
+						onConversationInitiated={handleConversationInitiated}
+					/>
+				</div>
+			</div>
 		{/if}
 	</div>
 
 	<!-- Main Content Area - Chat + Visualization -->
 	<div class="flex-1 flex flex-col min-w-0">
-		<!-- Header -->
-		<div class="flex items-center justify-between p-4 border-b bg-background">
-			<div class="flex items-center gap-3">
-				<!-- Left sidebar toggle -->
-				<Button
-					variant={leftSidebarVisible ? "ghost" : "default"}
-					size="sm"
-					on:click={toggleLeftSidebar}
-					class={`p-2 ${!leftSidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
-					title={leftSidebarVisible ? 'Hide chat history' : 'Show chat history'}
-				>
-					<Icon icon={leftSidebarVisible ? 'lucide:sidebar-close' : 'lucide:sidebar-open'} class="w-4 h-4" />
-				</Button>
-				
-				<div class="flex items-center gap-3">
-					<div class="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center">
-						<Icon icon="lucide:bot" class="w-5 h-5 text-primary-foreground" />
-					</div>
-					<div>
-						<h1 class="font-semibold text-xl">Cyberglobes AI Assistant</h1>
-						<p class="text-sm text-muted-foreground">Chat and visualize geospatial data in real-time</p>
-					</div>
-				</div>
-			</div>
+		<!-- Only sidebar toggles in header -->
+		<div class="flex items-center justify-between p-2 border-b bg-background">
+			<Button
+				variant={leftSidebarVisible ? "ghost" : "default"}
+				size="sm"
+				on:click={toggleLeftSidebar}
+				class={`p-2 ${!leftSidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
+				title={leftSidebarVisible ? 'Hide chat history' : 'Show chat history'}
+			>
+				<Icon icon={leftSidebarVisible ? 'lucide:sidebar-close' : 'lucide:sidebar-open'} class="w-4 h-4" />
+			</Button>
 
-			<!-- Right sidebar toggle -->
 			<Button
 				variant={rightSidebarVisible ? "ghost" : "default"}
 				size="sm"
@@ -346,24 +375,10 @@
 			</Button>
 		</div>
 
-		<!-- Split View: Chat + Visualization -->
+		<!-- Main Content Area -->
 		<div class="flex-1 flex min-h-0">
-			<!-- Chat Panel (Left/Center) -->
-			<div class="flex-1 flex flex-col border-r min-w-0">
-				<ChatWindow
-					toggleSidebar={toggleLeftSidebar}
-					sidebarVisible={leftSidebarVisible}
-					{isMobile}
-					messages={currentMessages}
-					onNewMessage={handleNewMessage}
-					{conversationResults}
-					{selectedChatId}
-					onConversationInitiated={handleConversationInitiated}
-				/>
-			</div>
-
-			<!-- Visualization Panel (Right/Center) -->
-			<div class="flex-1 flex flex-col min-w-0">
+			<!-- Visualization Panel (Center) -->
+			<div class="flex-1 flex flex-col min-w-0 relative">
 				<VisualizationPanel 
 					hasData={hasVisualizationData} 
 					{selectedStep}
@@ -372,6 +387,8 @@
 					{scripterResults}
 					{selectedViewType}
 				/>
+
+				<!-- Center only contains VisualizationPanel (chat moved to left sidebar) -->
 			</div>
 		</div>
 	</div>

@@ -570,7 +570,8 @@
 </script>
 
 <div class="h-full flex flex-col">
-	<!-- Chat Header -->
+	<!-- Chat Header: only show when sidebar is hidden (floating/chat center) -->
+	{#if !sidebarVisible}
 	<div class="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4">
 		<div class="flex items-center gap-3">
 			<Button
@@ -582,7 +583,7 @@
 			>
 				<Icon icon={sidebarVisible ? 'lucide:sidebar-close' : 'lucide:sidebar-open'} class="w-4 h-4" />
 			</Button>
-			
+            
 			<div class="flex items-center gap-3">
 				<div class="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center">
 					<Icon icon="lucide:bot" class="w-5 h-5 text-primary-foreground" />
@@ -594,6 +595,7 @@
 			</div>
 		</div>
 	</div>
+	{/if}
 
 	<!-- Messages Container -->
 	<div 
