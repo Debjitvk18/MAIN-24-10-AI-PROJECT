@@ -35,13 +35,18 @@
 
 {#if $page.data.layout !== false && !hasError}
 	<div class="app-container">
-		
+		<ModeWatcher />
+		<Sidebar />
+		<div
+			class="xl:ps-72 [&>.serviceapp-header]:xl:start-72 [&>.serviceapp-header]:xl:w-[calc(100%-theme(spacing.72))] peer-[&.is-compact:not(.has-hover)]:xl:ps-[74px] peer-[&.is-compact:not(.has-hover)]:[&>.serviceapp-header]:xl:start-[74px] peer-[&.is-compact:not(.has-hover)]:[&>.serviceapp-header]:xl:w-[calc(100%-74px)] flex flex-col min-h-screen transition-all duration-300"
+		>
+			<Header />
 			<div id="pagecontent" class="serviceapp-content px-1.5 sm:px-5 py-6 sm:py-8 dark:bg-gray-900">
 				{@render children()}
 			</div>
 			<!-- content -->
 			<Footer />
-		
+		</div>
 	</div>
 {:else}
 	{@render children()}
