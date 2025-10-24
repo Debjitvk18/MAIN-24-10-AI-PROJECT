@@ -90,8 +90,8 @@ import Icon from '@iconify/svelte';
 		echoInstance.private(`App.Models.Conversation.${id}`)
 			.listen('.App\\Events\\VisualizationsDetected', async (event: any) => {
 				if (event && event.visualizations) {
-					// Open the visualization sidebar so the user can see chart features
-					rightSidebarVisible = true;
+					// Keep sidebar closed while processing, will be opened after steps are ready
+					rightSidebarVisible = false;
 
 					// Wait for DOM update so the sidebar component is mounted and the ref exists
 					await tick();
@@ -153,6 +153,9 @@ import Icon from '@iconify/svelte';
 		// Ensure the left sidebar is visible when a chat is selected (helps desktop + mobile UX)
 		leftSidebarVisible = true;
 
+		// Ensure visualization steps remain closed while user is interacting with chat
+		rightSidebarVisible = false;
+
 		// Close left sidebar on mobile after selection
 		if (isMobile) {
 			leftSidebarVisible = false;
@@ -182,6 +185,9 @@ import Icon from '@iconify/svelte';
 
 				// Ensure left sidebar is visible so users see the loaded conversation history
 				leftSidebarVisible = true;
+
+				// Keep visualization steps closed until a VisualizationsDetected event arrives
+				rightSidebarVisible = false;
 
 				// Auto-select first step if available
 				if (conversationResults.length > 0 && !selectedStep) {
@@ -226,6 +232,9 @@ import Icon from '@iconify/svelte';
 		if (!selectedChatId) {
 			selectedChatId = `new-${Date.now()}`;
 		}
+
+		// When user sends a new message, keep visualization steps closed until processing completes
+		rightSidebarVisible = false;
 	}
 
 	async function handleConversationInitiated(conversationId: string) {
@@ -243,6 +252,15 @@ import Icon from '@iconify/svelte';
 			await new Promise(resolve => setTimeout(resolve, 500));
 			chatSidebarRef.refreshConversations();
 		}
+
+		// Ensure visualization steps are closed while the conversation is being initiated/processed
+		rightSidebarVisible = false;
+	}
+
+	// Auto-open right sidebar when conversation steps are ready
+	$: if (conversationResults.length > 0 && hasVisualizationData) {
+		// Only open if we have actual visualization data
+		rightSidebarVisible = true;
 	}
 
 	function handleStepSelect(stepId: string) {
@@ -352,26 +370,28 @@ import Icon from '@iconify/svelte';
 
 	<!-- Main Content Area - Chat + Visualization -->
 	<div class="flex-1 flex flex-col min-w-0">
-		<!-- Only sidebar toggles in header -->
-		<div class="flex items-center justify-between p-2 border-b bg-background">
+		<!-- Sidebar toggle buttons overlaid on content -->
+		<div class="absolute top-2 left-2 z-10">
 			<Button
-				variant={leftSidebarVisible ? "ghost" : "default"}
+				variant="ghost"
 				size="sm"
 				on:click={toggleLeftSidebar}
-				class={`p-2 ${!leftSidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
+				class={`p-2 ${!leftSidebarVisible ? 'bg-background/80 hover:bg-background' : ''}`}
 				title={leftSidebarVisible ? 'Hide chat history' : 'Show chat history'}
 			>
-				<Icon icon={leftSidebarVisible ? 'lucide:sidebar-close' : 'lucide:sidebar-open'} class="w-4 h-4" />
+				<Icon icon={leftSidebarVisible ? 'lucide:chevrons-left' : 'lucide:chevrons-right'} class="w-4 h-4" />
 			</Button>
+		</div>
 
+		<div class="absolute top-2 right-2 z-10">
 			<Button
-				variant={rightSidebarVisible ? "ghost" : "default"}
+				variant="ghost"
 				size="sm"
 				on:click={toggleRightSidebar}
-				class={`p-2 ${!rightSidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
-				title={rightSidebarVisible ? 'Hide visualization panel' : 'Show visualization panel'}
+				class={`p-2 ${!rightSidebarVisible ? 'bg-background/80 hover:bg-background' : ''}`}
+				title={rightSidebarVisible ? 'Hide steps panel' : 'Show steps panel'}
 			>
-				<Icon icon={rightSidebarVisible ? 'lucide:panel-right-close' : 'lucide:panel-right-open'} class="w-4 h-4" />
+				<Icon icon={rightSidebarVisible ? 'lucide:x' : 'lucide:menu'} class="w-4 h-4" />
 			</Button>
 		</div>
 

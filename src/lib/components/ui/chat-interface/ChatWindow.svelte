@@ -570,53 +570,51 @@
 </script>
 
 <div class="h-full flex flex-col">
-	<!-- Chat Header: only show when sidebar is hidden (floating/chat center) -->
-	{#if !sidebarVisible}
-	<div class="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4">
+	<!-- Chat Header -->
+	<header class="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3">
 		<div class="flex items-center gap-3">
-			<Button
-				variant={sidebarVisible ? "ghost" : "default"}
-				size="sm"
-				on:click={toggleSidebar}
-				class={`p-2 lg:flex ${!sidebarVisible ? 'ring-2 ring-primary/20' : ''}`}
-				title={sidebarVisible ? 'Hide chat history' : 'Show chat history'}
-			>
-				<Icon icon={sidebarVisible ? 'lucide:sidebar-close' : 'lucide:sidebar-open'} class="w-4 h-4" />
-			</Button>
-            
-			<div class="flex items-center gap-3">
-				<div class="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center">
-					<Icon icon="lucide:bot" class="w-5 h-5 text-primary-foreground" />
+			{#if isMobile}
+				<Button
+					variant="ghost"
+					size="sm"
+					on:click={toggleSidebar}
+					class="p-2"
+				>
+					<Icon icon="lucide:menu" class="w-4 h-4" />
+				</Button>
+			{/if}
+			<div class="flex items-center gap-2">
+				<div class="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center">
+					<Icon icon="lucide:bot" class="w-4 h-4 text-primary-foreground" />
 				</div>
 				<div>
-					<h1 class="font-semibold text-xl">Cyberglobes AI Assistant</h1>
-					<p class="text-sm text-muted-foreground">Ask me anything about geospatial data and mapping</p>
+					<h1 class="font-medium">Cyberglobes AI Assistant</h1>
+					<p class="text-xs text-muted-foreground">Ask me anything about locations and mapping</p>
 				</div>
 			</div>
 		</div>
-	</div>
-	{/if}
+	</header>
 
 	<!-- Messages Container -->
 	<div 
 		bind:this={messagesContainer}
-		class="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth"
+		class="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth"
 	>
 		{#if messages.length === 0}
 			<!-- Welcome/Empty State -->
 			<div class="flex items-center justify-center h-full">
-				<div class="text-center max-w-md">
-					<div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-						<Icon icon="lucide:bot" class="w-8 h-8 text-primary" />
+				<div class="text-center max-w-sm">
+					<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+						<Icon icon="lucide:bot" class="w-6 h-6 text-primary" />
 					</div>
-					<h2 class="text-xl font-semibold text-foreground mb-2">Cyberglobes AI Assistant</h2>
-					<p class="text-muted-foreground mb-6">Ask me anything about geospatial data, mapping, and location-based insights. I'm here to help!</p>
+					<h2 class="text-lg font-medium text-foreground mb-2">Cyberglobes AI Assistant</h2>
+					<p class="text-sm text-muted-foreground mb-4">Ask me anything about geospatial data and mapping. I'm here to help!</p>
 					<div class="text-sm text-muted-foreground">
 						<p>Try asking about:</p>
 						<ul class="mt-2 space-y-1">
-							<li>• Location analysis and mapping</li>
-							<li>• Geographic data visualization</li>
-							<li>• Spatial patterns and trends</li>
+							<li>• Location analysis</li>
+							<li>• Data visualization</li>
+							<li>• Spatial patterns</li>
 						</ul>
 					</div>
 				</div>
@@ -647,13 +645,13 @@
 	</div>
 
 	<!-- Input Area -->
-	<div class="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-6">
+	<div class="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3">
 		<!-- File Upload Preview -->
 		{#if uploadedFile}
-			<div class="mb-4 p-3 bg-muted/50 rounded-lg border border-border/50 flex items-center justify-between">
+			<div class="mb-3 p-2 bg-muted/50 rounded-lg border border-border/50 flex items-center justify-between">
 				<div class="flex items-center gap-2">
 					<Icon icon="lucide:paperclip" class="w-4 h-4 text-muted-foreground" />
-					<span class="text-sm font-medium">{uploadedFile.name}</span>
+					<span class="text-xs font-medium">{uploadedFile.name}</span>
 					<span class="text-xs text-muted-foreground">({Math.round(uploadedFile.size / 1024)} KB)</span>
 				</div>
 				<Button
@@ -668,7 +666,7 @@
 			</div>
 		{/if}
 		
-		<form on:submit|preventDefault={sendMessage} class="relative">
+		<form on:submit|preventDefault={sendMessage}>
 			<!-- Hidden file input -->
 			<input
 				bind:this={fileInputEl}
@@ -678,8 +676,8 @@
 				class="hidden"
 			/>
 			
-			<div class="flex items-end gap-3 bg-muted/30 rounded-2xl p-4 border border-border/50 focus-within:border-primary/50 transition-colors">
-				<div class="flex-1 relative">
+			<div class="flex items-end gap-2 bg-muted/30 rounded-lg p-3 border border-border/50 focus-within:border-primary/50 transition-colors">
+				<div class="flex-1">
 					<textarea
 						bind:this={textareaEl}
 						bind:value={messageInput}
@@ -687,8 +685,8 @@
 						on:keydown={handleKeydown}
 						placeholder={uploadedFile 
 								? "Ask questions about the uploaded file..."
-								: "Ask about locations, maps, or geospatial data analysis..."}
-						class="w-full bg-transparent border-0 outline-none resize-none max-h-[120px] placeholder:text-muted-foreground text-sm leading-6 py-1"
+								: "Ask about locations, maps, or data analysis..."}
+						class="w-full bg-transparent border-0 outline-none resize-none max-h-[120px] placeholder:text-muted-foreground text-sm"
 						rows="1"
 						disabled={isProcessing}
 					></textarea>
@@ -701,7 +699,7 @@
 						type="button"
 						on:click={handleFileUpload}
 						disabled={isProcessing}
-						class="p-2 text-muted-foreground hover:text-foreground rounded-xl"
+						class="p-2 text-muted-foreground hover:text-foreground"
 						title="Upload file"
 					>
 						<Icon icon="lucide:paperclip" class="w-4 h-4" />
@@ -712,7 +710,7 @@
 						size="sm"
 						type="submit"
 						disabled={(!messageInput.trim() && !uploadedFile) || isProcessing}
-						class="p-2 rounded-xl min-w-[36px] min-h-[36px]"
+						class="p-2 min-w-[32px] min-h-[32px]"
 					>
 						<Icon icon={isProcessing ? "lucide:loader-2" : "lucide:send"} class={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
 					</Button>
@@ -720,8 +718,8 @@
 			</div>
 		</form>
 		
-		<div class="text-xs text-muted-foreground text-center mt-3">
-			Cyberglobes AI can make mistakes. Please verify important information.
+		<div class="text-[10px] text-muted-foreground text-center mt-2">
+			Cyberglobes AI can make mistakes. Verify important information.
 		</div>
 	</div>
 </div>
