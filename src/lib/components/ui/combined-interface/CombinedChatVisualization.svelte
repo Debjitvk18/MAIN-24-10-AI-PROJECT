@@ -370,13 +370,31 @@
 					class="p-2"
 					title={leftSidebarVisible ? 'Hide chat' : 'Show chat'}
 				>
-					<Icon icon={leftSidebarVisible ? 'lucide:chevrons-left' : 'lucide:menu'} class="w-4 h-4" />
+					<Icon
+						icon={leftSidebarVisible ? 'lucide:chevrons-left' : 'lucide:menu'}
+						class="w-4 h-4"
+					/>
 				</Button>
 			</div>
 
-			<div class="font-medium">Data Visualization</div>
+			<div class="font-medium">
+				<h1 class="text-lg sm:text-xl font-semibold truncate">
+					{conversationResults.length > 0 ? 'Data Visualization Studio' : 'Analytics Studio'}
+				</h1>
+			</div>
 
-			<div>
+			<div class="flex items-center gap-2">
+				<div class="hidden lg:flex items-center gap-2">
+					<Button variant="ghost" size="sm" class="gap-2">
+						<Icon icon="lucide:help-circle" class="w-4 h-4" />
+						<span class="hidden xl:inline">Help</span>
+					</Button>
+					<Button variant="ghost" size="sm" class="gap-2">
+						<Icon icon="lucide:settings" class="w-4 h-4" />
+						<span class="hidden xl:inline">Settings</span>
+					</Button>
+				</div>
+
 				<Button
 					variant="ghost"
 					size="sm"
