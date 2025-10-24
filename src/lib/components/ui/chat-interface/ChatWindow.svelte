@@ -604,7 +604,7 @@
     <!-- Scrollable messages area -->
     <div
     bind:this={messagesContainer}
-    class="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth hide-scrollbar"
+    class="flex-1 overflow-y-auto p-6 space-y-1 scroll-smooth hide-scrollbar"
 >
     {#if messages.length === 0}
         <div class="flex items-center justify-center h-full">
