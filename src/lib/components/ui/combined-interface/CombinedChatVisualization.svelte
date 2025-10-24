@@ -39,7 +39,7 @@
 		function onMouseMove(e: MouseEvent) {
 			if (!isDragging) return;
 			const delta = e.clientY - startY;
-			const newHeight = Math.min(Math.max(30, startHeight - delta / 5), 70);
+			const newHeight = Math.min(Math.max(30, startHeight + delta / 5), 70);
 			chatWindowHeight = newHeight;
 		}
 
