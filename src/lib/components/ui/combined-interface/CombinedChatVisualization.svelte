@@ -423,18 +423,16 @@
 	>
 		<div
 			class={`${
-				!rightSidebarVisible ? 'translate-x-full' : 'translate-x-0'
+				!rightSidebarVisible ? 'translate-x-full pointer-events-none opacity-0' : 'translate-x-0 opacity-100'
 			} transition-transform duration-300 w-[360px] h-full`}
 		>
-			{#if rightSidebarVisible}
-				<InstagramStepsSidebar
-					bind:this={visualizationSidebarRef}
-					{selectedStep}
-					onStepSelect={handleStepSelect}
-					onScripterResults={handleScripterResults}
-					{conversationResults}
-				/>
-			{/if}
+			<InstagramStepsSidebar
+				bind:this={visualizationSidebarRef}
+				{selectedStep}
+				onStepSelect={handleStepSelect}
+				onScripterResults={handleScripterResults}
+				{conversationResults}
+			/>
 		</div>
 	</div>
 </div>
