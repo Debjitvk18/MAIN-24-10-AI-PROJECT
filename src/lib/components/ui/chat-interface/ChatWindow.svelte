@@ -633,23 +633,21 @@
 				class="hidden"
 			/>
 			
-			<div class="flex items-end gap-3 bg-muted/30 rounded-2xl p-2 border border-border/50 focus-within:border-primary/50 transition-colors">
-				<div class="flex-1 relative">
+			<div class="flex items-end gap-3 bg-muted/30 rounded-md p-2 border border-border/50 focus-within:border-primary/50 transition-colors">
+				<div class="flex-1 pt-1">
 					<textarea
 						bind:this={textareaEl}
 						bind:value={messageInput}
 						on:input={autoResize}
 						on:keydown={handleKeydown}
-						placeholder={uploadedFile 
-								? "Ask questions about the uploaded file..."
-								: "Ask about locations, maps, or geospatial data analysis..."}
-						class="w-full bg-transparent border-0 outline-none resize-none max-h-[120px] placeholder:text-muted-foreground text-sm leading-6 py-1"
-						rows="1"
+						placeholder="Ask me about locations, maps, demographics, or data analysis... e.g., 'Show me restaurants in New York' or 'Analyze population trends'"
+						class="w-full bg-transparent border-0 outline-none resize-none h-full max-h-[300px] placeholder:text-muted-foreground text-sm leading-6"
+						rows="3"
 						disabled={isProcessing}
 					></textarea>
 				</div>
 				
-				<div class="flex items-center gap-2">
+				<div class="flex flex-col items-center gap-2">
 					<Button
 						variant="ghost"
 						size="sm"
@@ -674,9 +672,5 @@
 				</div>
 			</div>
 		</form>
-		
-		<div class="text-xs text-muted-foreground text-center mt-0">
-			Cyberglobes AI can make mistakes. Please verify important information.
-		</div>
 	</div>
 </div>
