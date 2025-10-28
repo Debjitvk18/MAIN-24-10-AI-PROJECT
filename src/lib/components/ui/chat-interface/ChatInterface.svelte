@@ -37,6 +37,7 @@
 	let scripterResults: Array<any> = [];
 	let selectedViewType = 'datatable';
 	let visualizationSidebarRef: any;
+	let hasSavedVisualizationsCount = 0; // Track count of saved visualizations from DB
 
 	// Echo/Pusher state for real-time events
 	let echoInstance: Echo | null = null;
@@ -87,12 +88,42 @@
 
 		// Listen for VisualizationsDetected event
 		echoInstance.private(`App.Models.Conversation.${id}`)
-			.listen('.App\\Events\\VisualizationsDetected', (event) => {
+			.listen('.App\\Events\\VisualizationsDetected', async (event) => {
 				console.log('VisualizationsDetected event received:', event);
+			console.log('Event structure:', {
+				hasVisualizations: !!event.visualizations,
+				visualizationsCount: event.visualizations?.length,
+				hasVisualizationIds: !!(event.visualization_ids || event.metadata?.visualization_ids),
+				visualizationIds: event.visualization_ids || event.metadata?.visualization_ids,
+				sessionId: event.session_id
+			});
 				if (event && event.visualizations) {
+					// Check both event.visualization_ids and event.metadata.visualization_ids
+					let visualizationIds = event.visualization_ids || event.metadata?.visualization_ids;
+					if (!visualizationIds && event.conversation_id) {
+						try {
+							console.log('⚠️ Backend did not send visualization_ids, fetching from database...');
+							const response = await conversationService.retrieveConversation(event.conversation_id.toString());
+							if (response?.success && response.data?.visualizations) {
+								// Get the IDs of visualizations that match the types from the event
+								const eventTypes = event.visualizations.filter((v: any) => v.applicable).map((v: any) => v.type);
+								visualizationIds = response.data.visualizations
+									.filter((v: any) => eventTypes.includes(v.type))
+									.map((v: any) => v.id);
+								console.log('✅ Fetched visualization IDs from database:', visualizationIds);
+							}
+						} catch (error) {
+							console.error('❌ Failed to fetch visualization IDs from database:', error);
+						}
+					}
+
 					// Pass auto-generated visualizations to visualization sidebar
 					if (visualizationSidebarRef && visualizationSidebarRef.handleAutoVisualizations) {
-						visualizationSidebarRef.handleAutoVisualizations(event.visualizations, event.session_id);
+						visualizationSidebarRef.handleAutoVisualizations(
+							event.visualizations,
+							event.session_id,
+							visualizationIds // Pass visualization IDs (from event or fetched from DB)
+						);
 					}
 				}
 			});
@@ -143,30 +174,88 @@
 		try {
 			console.log('Loading visualization data for ID:', conversationId);
 			const response = await conversationService.retrieveConversation(conversationId);
-			
+
 			if (response && response.success) {
 				const data = response.data;
+
+				// CRITICAL: Set the count BEFORE setting conversationResults
+				// This ensures the prop is available when reactive statements fire
+				if (data?.visualizations && data.visualizations.length > 0) {
+					hasSavedVisualizationsCount = data.visualizations.length;
+					console.log('🔐 Set hasSavedVisualizationsCount to:', hasSavedVisualizationsCount);
+
+					// Also set the flag for backward compatibility
+					if (visualizationSidebarRef?.setSavedVisualizationsFlag) {
+						visualizationSidebarRef.setSavedVisualizationsFlag(true);
+					}
+				} else {
+					hasSavedVisualizationsCount = 0;
+				}
+
 				conversationResults = data?.results || response.results || [];
 				hasVisualizationData = conversationResults.length > 0;
-				
+
 				// Set user query from conversation if available
 				if (data && data.user_query) {
 					lastUserQuery = data.user_query;
 				}
-				
-				// Auto-select first step if available and no step is currently selected
+
+				// Load saved visualizations from database BEFORE setting selectedStep
+				// This ensures handleAutoVisualizations() is called before reactive statement triggers
+				if (data?.visualizations && data.visualizations.length > 0) {
+					loadSavedVisualizations(data.visualizations);
+				}
+
+				// Auto-select first step AFTER loading visualizations
+				// This prevents reactive statement from triggering analyze-step when we have saved visualizations
 				if (conversationResults.length > 0 && !selectedStep) {
 					selectedStep = conversationResults[0].id || 'step-0';
 				}
-				
+
 				console.log('Visualization data loaded:', {
 					results: conversationResults.length,
-					selectedStep: selectedStep
+					selectedStep: selectedStep,
+					savedVisualizations: data?.visualizations?.length || 0
 				});
 			}
 		} catch (err) {
 			console.error('Error loading visualization data:', err);
 		}
+	}
+
+	// Helper function to load saved visualizations into sidebar
+	function loadSavedVisualizations(visualizations: any[]) {
+		if (!visualizationSidebarRef || !visualizations.length) return;
+
+		// Pass full visualization objects from DB (including status, results, etc.)
+		// Filter out failed visualizations but keep all other statuses (completed, processing, pending)
+		const applicableVisualizations = visualizations
+			.filter(viz => viz.status !== 'failed')
+			.map(viz => ({
+				// Keep all original fields from DB
+				...viz,
+				// Ensure required fields for card rendering
+				applicable: true,
+				priority: viz.priority || 0
+			}));
+
+		// Load saved visualizations into sidebar (no need for separate visualizationIds array)
+		if (applicableVisualizations.length > 0 && visualizationSidebarRef.handleAutoVisualizations) {
+			visualizationSidebarRef.handleAutoVisualizations(
+				applicableVisualizations,
+				'saved-from-db' // Special session ID to indicate these are loaded from DB
+				// No visualizationIds parameter needed - IDs are in the viz objects themselves
+			);
+		}
+
+		console.log(`Loaded ${applicableVisualizations.length} saved visualizations from database`, {
+			vizStatusCompleted: applicableVisualizations.filter(v => v.status === 'completed').length,
+			vizStatusProcessing: applicableVisualizations.filter(v => v.status === 'processing').length,
+			vizStatusPending: applicableVisualizations.filter(v => v.status === 'pending').length,
+			scripterJobCompleted: applicableVisualizations.filter(v => v.scripter_job?.status === 'completed').length,
+			hasResults: applicableVisualizations.filter(v => v.results?.processed_data).length,
+			fullyCompleted: applicableVisualizations.filter(v => v.scripter_job?.status === 'completed' && v.results?.processed_data).length
+		});
 	}
 
 	// Mock conversation data
@@ -592,6 +681,7 @@
 				onStepSelect={handleStepSelect}
 				onScripterResults={handleScripterResults}
 				{conversationResults}
+				{hasSavedVisualizationsCount}
 			/>
 		{/if}
 	</div>

@@ -16,6 +16,7 @@
 	export let onStepSelect: (step: string) => void;
 	export let onScripterResults: (results: any[], viewType: string, cardId: string) => void;
 	export let conversationResults: Array<any> = [];
+	export let hasSavedVisualizationsCount = 0; // Number of saved visualizations from DB
 
 	// API service instance
 	const apiService = new ApiService();
@@ -29,6 +30,7 @@
 	let isAnalyzing = false;
 	let analyzeSessionId: string | null = null;
 	let lastAnalyzedStep: string | null = null; // Track which step was last analyzed
+	let hasSavedVisualizations = false; // Flag to prevent auto-analysis when loading saved visualizations
 
 	// Prompt cards state
 	let promptCards: Array<{
@@ -43,6 +45,7 @@
 		createdAt: number;
 		isAuto?: boolean; // Flag for auto-generated cards
 		priority?: number; // For sorting auto-generated cards
+		visualizationId?: number; // Database visualization ID for linking to scripter job
 	}> = [];
 
 	let cardIdCounter = 0;
@@ -61,7 +64,8 @@
 	}));
 
 	// Set first conversation step as default selected when available
-	$: if (conversationResults.length > 0 && dynamicSteps.length > 0 && !selectedStep) {
+	// BUT ONLY if we don't have saved visualizations (to avoid triggering auto-analysis prematurely)
+	$: if (conversationResults.length > 0 && dynamicSteps.length > 0 && !selectedStep && !hasSavedVisualizations && hasSavedVisualizationsCount === 0) {
 		selectedStep = dynamicSteps[0].id;
 	}
 
@@ -424,6 +428,22 @@
 
 			updatePromptCard(cardId, { sessionId });
 
+		// If this card has a visualizationId (from DB), link it to scripter job
+		if (card.visualizationId) {
+			try {
+				console.log(`Attempting to link visualization ${card.visualizationId} with session ${sessionId}`);
+				await apiService.updateVisualizationStatus(
+					card.visualizationId,
+					sessionId,
+					'processing'
+				);
+				console.log(`Successfully linked visualization ${card.visualizationId} to scripter session ${sessionId}`);
+			} catch (error) {
+				console.error('Failed to link visualization to scripter job:', error);
+				// Don't fail the whole operation if linking fails
+			}
+		}
+
 			// Subscribe to Pusher events for this session
 			subscribeToScripterSession(sessionId, cardId);
 
@@ -511,9 +531,12 @@
 
 		// If switching to auto mode and we have a selected step, trigger analysis
 		if (mode === 'auto' && selectedStep) {
-			// Reset last analyzed step to allow re-analysis when switching modes
-			lastAnalyzedStep = null;
-			triggerAutoAnalysis();
+			// Only trigger analysis if we don't have saved visualizations
+			// or if user explicitly wants to re-analyze
+			if (!hasSavedVisualizations) {
+				lastAnalyzedStep = null;
+				triggerAutoAnalysis();
+			}
 		}
 
 		// If switching to manual mode, clear auto-generated cards
@@ -567,48 +590,122 @@
 		}
 	}
 
+	// Public function to set the flag BEFORE any reactive statements trigger
+	export function setSavedVisualizationsFlag(value: boolean) {
+		console.log('🔐 Setting hasSavedVisualizations flag to:', value);
+		hasSavedVisualizations = value;
+	}
+
 	// Public function called from parent when VisualizationsDetected event is received
-	export async function handleAutoVisualizations(visualizations: any[], sessionId: string) {
-		// Verify this is for our current analysis session
-		if (sessionId !== analyzeSessionId) {
+	// For saved visualizations (sessionId='saved-from-db'), visualizations array should contain full DB records with results
+	export async function handleAutoVisualizations(visualizations: any[], sessionId: string, visualizationIds?: number[]) {
+		// Verify this is for our current analysis session (or allow 'saved-from-db' for loaded visualizations)
+		if (sessionId !== analyzeSessionId && sessionId !== 'saved-from-db') {
 			console.warn('Session ID mismatch - ignoring visualizations');
 			return;
 		}
+
+		const isLoadingFromDb = sessionId === 'saved-from-db';
+
+		// Set flag to prevent reactive auto-analysis from triggering
+		if (isLoadingFromDb && visualizations.length > 0) {
+			hasSavedVisualizations = true;
+			// Mark the current step as already analyzed to prevent re-analysis
+			lastAnalyzedStep = selectedStep;
+			console.log('🔒 hasSavedVisualizations flag set to TRUE', {
+				selectedStep,
+				lastAnalyzedStep,
+				visualizationsCount: visualizations.length
+			});
+		}
+
+		console.log('handleAutoVisualizations called:', {
+			isLoadingFromDb,
+			visualizationsCount: visualizations.length,
+			visualizations: visualizations.map(v => ({
+				id: v.id,
+				type: v.type,
+				name: v.name,
+				status: v.status,
+				scripterJobStatus: v.scripter_job?.status,
+				hasResults: !!(v.results && v.results.processed_data)
+			}))
+		});
 
 		// Clear existing auto-generated cards
 		promptCards = promptCards.filter(card => !card.isAuto);
 
 		// Create prompt cards from AI-generated visualizations
 		const autoCards = visualizations
-			.filter(viz => viz.applicable === true) // Only include applicable visualizations
+			.filter(viz => viz.applicable === true || isLoadingFromDb) // Include all when loading from DB
 			.sort((a, b) => (b.priority || 0) - (a.priority || 0)) // Sort by priority descending
-			.map(viz => ({
-				id: `auto-${viz.type}-${Date.now()}-${cardIdCounter++}`,
-				title: viz.name,
-				type: viz.type,
-				prompt: viz.prompt,
-				status: 'pending',
-				sessionId: null,
-				results: null,
-				error: null,
-				createdAt: Date.now(),
-				isAuto: true,
-				priority: viz.priority
-			}));
+			.map((viz, index) => {
+				// Check if this visualization has completed results
+				// A visualization is considered completed if it has results AND the scripter job is completed
+				const hasScripterJobCompleted = viz.scripter_job?.status === 'completed';
+				const hasResults = viz.results && viz.results.processed_data;
+				const isCompleted = isLoadingFromDb && hasScripterJobCompleted && hasResults;
+
+				return {
+					id: `auto-${viz.type}-${Date.now()}-${cardIdCounter++}`,
+					title: viz.name,
+					type: viz.type,
+					prompt: viz.prompt,
+					status: isCompleted ? 'completed' : 'pending',
+					sessionId: isCompleted ? viz.session_id : null,
+					results: hasResults ? (Array.isArray(viz.results.processed_data) ? viz.results.processed_data : [viz.results.processed_data]) : null,
+					error: viz.status === 'failed' ? viz.error_message : null,
+					createdAt: viz.created_at ? new Date(viz.created_at).getTime() : Date.now(),
+					isAuto: true,
+					priority: viz.priority,
+					// Try multiple sources for visualization ID: viz.id (from event or DB), visualizationIds array, or null
+					visualizationId: viz.id || visualizationIds?.[index] || null
+				};
+			});
 
 		// Add auto-generated cards to promptCards
 		promptCards = [...autoCards, ...promptCards];
+
+		console.log('Created auto cards:', {
+			totalCards: autoCards.length,
+			cards: autoCards.map(c => ({
+				id: c.id,
+				title: c.title,
+				type: c.type,
+				status: c.status,
+				hasResults: !!(c.results && c.results.length > 0),
+				resultsCount: c.results?.length || 0,
+				visualizationId: c.visualizationId
+			}))
+		});
 
 		// Wait for next tick before setting isAnalyzing to false
 		// This prevents the reactive statement from re-triggering
 		await tick();
 		isAnalyzing = false;
 
-		// Auto-submit all auto-generated cards
-		if (autoCards.length > 0) {
+		// Only auto-submit if these are NEW visualizations (not from DB)
+		// For DB visualizations, only submit pending ones
+		if (autoCards.length > 0 && !isLoadingFromDb) {
 			setTimeout(() => {
 				submitAllPrompts();
 			}, 500);
+		} else if (isLoadingFromDb) {
+			// For loaded visualizations, only submit pending ones (not completed)
+			const pendingCards = autoCards.filter(card => card.status === 'pending');
+			if (pendingCards.length > 0) {
+				setTimeout(() => {
+					submitAllPrompts();
+				}, 500);
+			}
+
+			// Auto-view the first completed visualization
+			const completedWithResults = autoCards.find(card => card.status === 'completed' && card.results && card.results.length > 0);
+			if (completedWithResults) {
+				setTimeout(() => {
+					autoViewVisualization(completedWithResults.id);
+				}, 100);
+			}
 		}
 	}
 
@@ -619,8 +716,25 @@
 		const step = selectedStep;
 		const analyzing = isAnalyzing;
 		const lastStep = lastAnalyzedStep;
+		const hasSaved = hasSavedVisualizations;
+		const savedCount = hasSavedVisualizationsCount;
 
-		if (mode === 'auto' && step && !analyzing && lastStep !== step) {
+		console.log('🔄 Reactive statement triggered:', {
+			mode,
+			step,
+			analyzing,
+			lastStep,
+			hasSaved,
+			savedCount,
+			willTriggerAnalysis: mode === 'auto' && step && !analyzing && lastStep !== step && !hasSaved && savedCount === 0
+		});
+
+		// Don't trigger auto-analysis if:
+		// - We have saved visualizations loaded from DB (either flag or count > 0)
+		// - Already analyzing
+		// - Same step as last analyzed
+		if (mode === 'auto' && step && !analyzing && lastStep !== step && !hasSaved && savedCount === 0) {
+			console.log('🚀 Triggering auto-analysis for step:', step);
 			// Clear existing cards when step changes
 			promptCards = [];
 			// Trigger new analysis

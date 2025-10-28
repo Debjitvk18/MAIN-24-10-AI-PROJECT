@@ -105,4 +105,23 @@ export class ApiService {
 
 		return this.makeApiCall('scripter/analyze-step', formData, 'POST', 'formdata');
 	}
+
+	/**
+	 * Update visualization status and link scripter job
+	 * @param {number} visualizationId - The visualization ID from database
+	 * @param {string} scripterJobId - The scripter job ID to link
+	 * @param {string} status - Status to set (processing, completed, failed)
+	 * @returns {Promise<any>}
+	 */
+	async updateVisualizationStatus(visualizationId, scripterJobId, status = 'processing') {
+		return this.makeApiCall(
+			`insights/visualization/${visualizationId}/status`,
+			{
+				scripter_job_id: scripterJobId,
+				status: status
+			},
+			'PATCH',
+			'json'
+		);
+	}
 }
